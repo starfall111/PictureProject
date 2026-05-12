@@ -1,4 +1,4 @@
-package util;
+package org.example.common.util;
 
 import com.aliyun.auth.credentials.Credential;
 import com.aliyun.auth.credentials.provider.StaticCredentialProvider;

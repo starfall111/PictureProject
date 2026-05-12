@@ -1,6 +1,4 @@
-package org.example.pictureBacked.service;
-
-import org.springframework.stereotype.Service;
+package org.example.server.service;
 
 import java.util.concurrent.ExecutionException;
 

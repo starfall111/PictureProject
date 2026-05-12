@@ -1,4 +1,4 @@
-package util;
+package org.example.common.util;
 
 import com.aliyun.oss.*;
 import com.aliyun.oss.common.auth.CredentialsProviderFactory;

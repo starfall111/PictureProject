@@ -1,10 +1,10 @@
-package exception;
+package org.example.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import result.BaseResponse;
-import result.ResultUtils;
+import org.example.common.result.BaseResponse;
+import org.example.common.result.ResultUtils;
 
 @RestControllerAdvice
 @Slf4j

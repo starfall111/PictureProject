@@ -1,4 +1,4 @@
-package exception;
+package org.example.common.exception;
 
 /**
  * @author Zou

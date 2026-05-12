@@ -1,8 +1,7 @@
-package util;
+package org.example.common.util;
 
-import constants.UserConstant;
-import exception.BusinessException;
-import exception.ErrorCode;
+import org.example.common.exception.BusinessException;
+import org.example.common.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,8 +11,6 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
 import javax.mail.internet.MimeMessage;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
@@ -37,7 +34,7 @@ public class EmailUtil {
 
     public void sendVerificationCode(String email,String code) {
         // 构建邮件内容
-        String subject = "【CodeAgent】邮箱验证码";
+        String subject = "【Picture】邮箱验证码";
         String content = "<div style=\"padding:20px;font-family:sans-serif;\">"
                 + "<h2>邮箱验证码</h2>"
                 + "<p>您的验证码为：<strong style=\"font-size:24px;color:#165DFF;\">" + code + "</strong></p>"

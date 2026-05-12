@@ -3,14 +3,24 @@ package vo;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
  * 用户信息(脱敏)
  * @author Zou
  */
-public class LoginUserVO {
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class LoginUserVO implements Serializable {
+
+
     /**
      * id
      */

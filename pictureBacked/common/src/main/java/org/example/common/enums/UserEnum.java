@@ -1,4 +1,4 @@
-package enums;
+package org.example.common.enums;
 
 import cn.hutool.core.util.ObjUtil;
 import lombok.Getter;

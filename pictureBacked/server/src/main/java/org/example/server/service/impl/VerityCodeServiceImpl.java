@@ -1,17 +1,17 @@
-package org.example.pictureBacked.service.impl;
+package org.example.server.service.impl;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ReUtil;
-import constants.UserConstant;
-import exception.ErrorCode;
-import exception.ThrowUtils;
-import org.example.pictureBacked.service.VerityCodeService;
+import org.example.common.constants.UserConstant;
+import org.example.common.exception.ErrorCode;
+import org.example.common.exception.ThrowUtils;
+import org.example.server.service.VerityCodeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import util.AliSMSUtil;
-import util.EmailUtil;
+import org.example.common.util.AliSMSUtil;
+import org.example.common.util.EmailUtil;
 
 import javax.annotation.Resource;
 import java.util.Random;
@@ -93,7 +93,7 @@ public class VerityCodeServiceImpl implements VerityCodeService {
         ThrowUtils.throwIf(ObjUtil.isEmpty(code), ErrorCode.PARAMS_ERROR, "验证码不能为空");
 
         //校验验证码是否相等
-        ThrowUtils.throwIf(verityCode.equals(code), ErrorCode.PARAMS_ERROR, "验证码错误");
+        ThrowUtils.throwIf(!verityCode.equals(code), ErrorCode.PARAMS_ERROR, "验证码错误");
 
         //清除验证码
         stringRedisTemplate.delete(key);

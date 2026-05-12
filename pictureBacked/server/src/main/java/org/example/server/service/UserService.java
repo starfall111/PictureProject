@@ -1,4 +1,4 @@
-package org.example.pictureBacked.service;
+package org.example.server.service;
 
 import dto.UserLoginDTO;
 import dto.UserRegisterDTO;
@@ -24,4 +24,10 @@ public interface UserService extends IService<User> {
      * 用户登录
      * */
     LoginUserVO userLogin(UserLoginDTO userLoginDTO, HttpServletRequest request);
+
+    /**
+     * 获取当前登录用户
+     * */
+
+
 }

@@ -1,4 +1,4 @@
-package org.example.pictureBacked.mapper;
+package org.example.server.mapper;
 
 import entity.User;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;

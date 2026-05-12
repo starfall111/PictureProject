@@ -4,13 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 /**
  * @author Zou
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserRegisterDTO {
+public class UserRegisterDTO implements Serializable {
 
     //注册类型 0为账号注册 1为手机号注册 2为邮箱注册
     private Integer type;

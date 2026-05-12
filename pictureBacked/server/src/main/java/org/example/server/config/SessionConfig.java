@@ -1,4 +1,4 @@
-package org.example.pictureBacked.config;
+package org.example.server.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

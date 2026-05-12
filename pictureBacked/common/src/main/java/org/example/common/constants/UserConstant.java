@@ -1,4 +1,4 @@
-package constants;
+package org.example.common.constants;
 
 /**
  * @author Zou

@@ -1,18 +1,18 @@
-package org.example.pictureBacked.controller;
+package org.example.server.controller;
 
 
 import cn.hutool.core.util.ObjUtil;
 import dto.UserLoginDTO;
 import dto.UserRegisterDTO;
-import exception.ErrorCode;
-import exception.ThrowUtils;
-import org.example.pictureBacked.service.UserService;
+import org.example.common.exception.ErrorCode;
+import org.example.common.exception.ThrowUtils;
+import org.example.server.service.UserService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import result.BaseResponse;
-import result.ResultUtils;
+import org.example.common.result.BaseResponse;
+import org.example.common.result.ResultUtils;
 import vo.LoginUserVO;
 
 import javax.annotation.Resource;

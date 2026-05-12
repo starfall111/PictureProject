@@ -1,2 +1,3 @@
 pictureFrontend/
 .claude/
+**/target/

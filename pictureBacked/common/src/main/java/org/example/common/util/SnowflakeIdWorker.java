@@ -1,4 +1,4 @@
-package util;
+package org.example.common.util;
 
 /**
  * 雪花算法 ID 生成器

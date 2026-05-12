@@ -1,26 +1,24 @@
-package org.example.pictureBacked.service.impl;
+package org.example.server.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
-import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import constants.UserConstant;
+import org.example.common.constants.UserConstant;
 import dto.UserLoginDTO;
 import dto.UserRegisterDTO;
 import entity.User;
-import enums.UserEnum;
-import exception.BusinessException;
-import exception.ErrorCode;
-import exception.ThrowUtils;
-import org.example.pictureBacked.service.UserService;
-import org.example.pictureBacked.mapper.UserMapper;
-import org.example.pictureBacked.service.VerityCodeService;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.example.common.enums.UserEnum;
+import org.example.common.exception.BusinessException;
+import org.example.common.exception.ErrorCode;
+import org.example.common.exception.ThrowUtils;
+import org.example.server.service.UserService;
+import org.example.server.mapper.UserMapper;
+import org.example.server.service.VerityCodeService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
-import util.SnowflakeIdWorker;
+import org.example.common.util.SnowflakeIdWorker;
 import vo.LoginUserVO;
 
 import javax.annotation.Resource;
@@ -47,7 +45,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         Integer type = userRegisterDTO.getType();
         String account = userRegisterDTO.getAccount();
         //主体数据判空
-        ThrowUtils.throwIf(ObjUtil.hasNull(userRegisterDTO, type, account), ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(ObjUtil.hasNull(type, account), ErrorCode.PARAMS_ERROR);
         //检查用户名长度
         ThrowUtils.throwIf(account.length() < 4, ErrorCode.PARAMS_ERROR, "用户名过短");
 
@@ -98,7 +96,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setUserRole(UserEnum.USER.getValue());
         boolean result = this.save(user);
 
-        ThrowUtils.throwIf(result, ErrorCode.SYSTEM_ERROR);
+        ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
         return user.getId();
     }
 
@@ -111,7 +109,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         Integer type = userLoginDTO.getType();
         String account = userLoginDTO.getAccount();
         //主体数据判空
-        ThrowUtils.throwIf(ObjUtil.hasNull(userLoginDTO, type, account), ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(ObjUtil.hasNull(type, account), ErrorCode.PARAMS_ERROR);
 
         //2.根据登录类型进行判定 账号/手机号/邮箱 + 密码登录 or 手机号/邮箱 + 验证码注册 根据 isVerityCode字段走不同的方法
         Integer isVerityCode = userLoginDTO.getIsVerityCode();

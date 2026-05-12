@@ -1,6 +1,6 @@
-package result;
+package org.example.common.result;
 
-import exception.ErrorCode;
+import org.example.common.exception.ErrorCode;
 import lombok.Data;
 
 import java.io.Serializable;

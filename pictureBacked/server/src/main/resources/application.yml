@@ -1,13 +1,36 @@
-server:
-  port: 4040
-  servlet:
-    context-path: /api
 spring:
+  redis:
+    host: localhost
+    port: 6379
+    database: 5
+    password: "125801"
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/picture
     username: root
     password: 125801
+  session:
+    timeout: 30m                    # Session 过期时间
+    store-type: redis               # 存储类型
+    redis:
+        namespace: "myapp:session"    # Redis key 前缀
+
+  mail:
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:1824109129@qq.com}
+    password: ${MAIL_PASSWORD:mdotctsxusxhbeih}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            port: 465
 mybatis-plus:
   configuration:
     # Mybatis-plus 配置
@@ -29,5 +52,21 @@ knife4j:
       default:
         api-rule: package
         api-rule-resources:
-          - org.example.pictureBacked.controller
+          - org.example.server.controller
 
+aliyun:
+  oss:
+    endpoint: https://oss-cn-beijing.aliyuncs.com
+    bucketName: zjx-project
+    region: cn-beijing
+  sms:
+    sign-name: 速通互联验证服务
+    region: cn-shanghai
+    server-url: dypnsapi.aliyuncs.com
+  captcha:
+    sceneId: bgyregln
+
+server:
+  port: 4040
+  servlet:
+    context-path: /api

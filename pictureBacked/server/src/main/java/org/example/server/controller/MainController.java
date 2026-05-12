@@ -1,11 +1,11 @@
-package org.example.pictureBacked.controller;
+package org.example.server.controller;
 
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import result.BaseResponse;
-import result.ResultUtils;
+import org.example.common.result.BaseResponse;
+import org.example.common.result.ResultUtils;
 
 /**
  * @author Zou

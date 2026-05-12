@@ -1,4 +1,4 @@
-package util;
+package org.example.common.util;
 
 import com.aliyun.captcha20230305.Client;
 import com.aliyun.captcha20230305.models.VerifyIntelligentCaptchaRequest;

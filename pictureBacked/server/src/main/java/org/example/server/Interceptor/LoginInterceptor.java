@@ -1,11 +1,11 @@
-package org.example.pictureBacked.Interceptor;
+package org.example.server.Interceptor;
 
 import cn.hutool.core.util.ObjUtil;
-import constants.UserConstant;
-import context.UserContext;
+import org.example.common.constants.UserConstant;
+import org.example.common.context.UserContext;
 import entity.User;
-import exception.BusinessException;
-import exception.ErrorCode;
+import org.example.common.exception.BusinessException;
+import org.example.common.exception.ErrorCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 

@@ -1,17 +1,17 @@
-package org.example.pictureBacked;
+package org.example.server;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScans;
 
 /**
  * @author Zou
  */
 
 @SpringBootApplication
-@MapperScan("org.example.pictureBacked.mapper")
+@MapperScan("org.example.server.mapper")
+@ComponentScan({"org.example.server","org.example.common"})
 public class PictureBackedApplication {
 
     public static void main(String[] args) {
