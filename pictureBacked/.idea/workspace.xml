@@ -5,31 +5,108 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="084bdd92-78ad-4864-b42b-f27f1ad8b803" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/common/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/common/src/main/java/exception/BusinessException.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/common/src/main/java/exception/ErrorCode.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/common/src/main/java/exception/GlobalExceptionHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/common/src/main/java/exception/ThrowUtils.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/common/src/main/java/result/BaseResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/common/src/main/java/result/ResultUtils.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pojo/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pojo/src/main/java/entity/DeleteRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pojo/src/main/java/entity/PageRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/server/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/server/src/main/java/org/example/pictureBacked/PictureBackedApplication.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/server/src/main/java/org/example/pictureBacked/config/CorsConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/server/src/main/java/org/example/pictureBacked/controller/MainController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/server/src/main/resources/application.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/f69d62c3-0bda-4042-b8c7-a8f4fad72f80.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources/f69d62c3-0bda-4042-b8c7-a8f4fad72f80/storage_v2/_src_/schema/picture._lyQ3Q.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/mybatisx/templates.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/constants/UserConstant.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/enums/UserEnum.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/util/SnowflakeIdWorker.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pojo/src/main/java/dto/UserLoginDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pojo/src/main/java/dto/UserRegisterDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pojo/src/main/java/entity/User.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pojo/src/main/java/vo/LoginUserVO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pojo/src/main/resources/generator/mapper/UserMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/java/org/example/pictureBacked/config/RedisConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/java/org/example/pictureBacked/mapper/UserMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/java/org/example/pictureBacked/service/UserService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/java/org/example/pictureBacked/service/impl/UserServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/src/main/resources/generator/mapper/UserMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sql/database.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/common/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/target/classes/exception/BusinessException.class" beforeDir="false" afterPath="$PROJECT_DIR$/common/target/classes/exception/BusinessException.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/target/classes/exception/ErrorCode.class" beforeDir="false" afterPath="$PROJECT_DIR$/common/target/classes/exception/ErrorCode.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/target/classes/exception/GlobalExceptionHandler.class" beforeDir="false" afterPath="$PROJECT_DIR$/common/target/classes/exception/GlobalExceptionHandler.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/target/classes/exception/ThrowUtils.class" beforeDir="false" afterPath="$PROJECT_DIR$/common/target/classes/exception/ThrowUtils.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/target/classes/result/BaseResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/common/target/classes/result/BaseResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/target/classes/result/ResultUtils.class" beforeDir="false" afterPath="$PROJECT_DIR$/common/target/classes/result/ResultUtils.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pojo/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pojo/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pojo/src/main/java/entity/DeleteRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/pojo/src/main/java/DeleteRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pojo/src/main/java/entity/PageRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/pojo/src/main/java/PageRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pojo/target/classes/entity/DeleteRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/pojo/target/classes/entity/DeleteRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pojo/target/classes/entity/PageRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/pojo/target/classes/entity/PageRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/server/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/target/classes/org/example/pictureBacked/PictureBackedApplication.class" beforeDir="false" afterPath="$PROJECT_DIR$/server/target/classes/org/example/pictureBacked/PictureBackedApplication.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/target/classes/org/example/pictureBacked/config/CorsConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/server/target/classes/org/example/pictureBacked/config/CorsConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/target/classes/org/example/pictureBacked/controller/MainController.class" beforeDir="false" afterPath="$PROJECT_DIR$/server/target/classes/org/example/pictureBacked/controller/MainController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/.vscode/extensions.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/env.d.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/openapi.config.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/package-lock.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/package.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/public/favicon.ico" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/App.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/api/index.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/api/mainController.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/api/typings.d.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/assets/test.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/components/GolbalHeader.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/layouts/BasicLayout.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/main.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/request.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/router/index.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/stores/counter.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/stores/user.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/views/AboutView.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/src/views/HomeView.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/tsconfig.app.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/tsconfig.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/tsconfig.node.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/vite.config.ts" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Enum" />
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "starfall111"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/starfall111/PictureProject.git",
+    "accountId": "d6dfce2a-e458-4901-80b3-9ead27d5712e"
+  }
+}]]></component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
   <component name="MavenImportPreferences">
     <option name="generalSettings">
       <MavenGeneralSettings>
@@ -42,7 +119,9 @@
   &quot;associatedIndex&quot;: 4
 }</component>
   <component name="ProjectId" id="3DZ7JDHOZnvNXEldW16jzw47TOe" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -56,9 +135,9 @@
     "RequestMappingsPanelWidth1": "75",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "Spring Boot.PictureBackedApplication.executor": "Debug",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "backed-git",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "E:/PictureProject/pictureBacked/server/src/main/resources",
+    "last_opened_file_path": "E:/aaa-Picture-Project/PictureProject -backed",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -67,8 +146,13 @@
     "project.structure.last.edited": "模块",
     "project.structure.proportion": "0.0",
     "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "MavenSettings",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
     "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mysql"
+    ]
   }
 }]]></component>
   <component name="RecentsManager">
@@ -77,6 +161,12 @@
       <recent name="E:\PictureProject\pictureBacked\server\src\main\java" />
       <recent name="E:\PictureProject\pictureBacked\pojo\src\main\java" />
       <recent name="E:\PictureProject\pictureBacked\common\src\main\java" />
+    </key>
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="util" />
     </key>
   </component>
   <component name="RunManager">
@@ -108,10 +198,43 @@
       <option name="presentableId" value="Default" />
       <updated>1778477664778</updated>
       <workItem from="1778477665859" duration="9104000" />
+      <workItem from="1778491744907" duration="13772000" />
+      <workItem from="1778552609256" duration="2543000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="backed-git" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="前后端初始化成功" />
+    <option name="LAST_COMMIT_MESSAGE" value="" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>
