@@ -15,7 +15,26 @@
             <a-col flex="120px">
                 <div class="user-login-status">
                     <div v-if="loginUserStore.loginUser.id">
-                        {{ loginUserStore.loginUser.userName ?? '无名' }} 
+                        <a-dropdown>
+                            <a-space>
+                                <a-avatar src="loginUserStore.loginUser.avatarUrl"></a-avatar>
+                                {{ loginUserStore.loginUser.userName ?? '无名' }}
+                            </a-space>
+                            <template #overlay>
+                                <a-menu>
+                                    <a-menu-item @click="logout()">
+                                        <LogoutOutlined />
+                                        退出登录
+                                    </a-menu-item>
+                                    <a-menu-item>
+                                        <UserOutlined />
+                                        个人中心
+                                    </a-menu-item>
+                                </a-menu>
+                            </template>
+                        </a-dropdown>
+
+
                     </div>
                     <div v-else>
                         <a-button type="primary" href="/user/login">登录</a-button>
@@ -32,9 +51,11 @@
 <script lang="ts" setup>
 import { h, ref } from 'vue'
 import { HomeOutlined } from '@ant-design/icons-vue'
-import type { MenuProps } from 'ant-design-vue'
+import { message, type MenuProps } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { userLoginUserStore } from '@/stores/user'
+import { LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
+import { logOutUsingPost } from '@/api/userController'
 
 const loginUserStore = userLoginUserStore()
 
@@ -69,6 +90,19 @@ const doMenuClick = ({ key }: { key: string }) => {
 router.afterEach((to, from, next) => {
     current.value = [to.path]
 })
+
+const logout = async () =>{
+    const res = await logOutUsingPost();
+    if(res.data.code === 0 && res.data.data){
+        loginUserStore.setLpginUser({
+            userName: "未登录",
+        });
+        message.success('退出登录成功');
+        router.push('/user/login');
+    }else{
+        message.error('退出登录失败');
+    }
+}
 </script>
 
 <style>
