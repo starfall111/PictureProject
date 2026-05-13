@@ -1,6 +1,6 @@
 package org.example.server.mapper;
 
-import entity.User;
+import org.example.pojo.entity.User;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

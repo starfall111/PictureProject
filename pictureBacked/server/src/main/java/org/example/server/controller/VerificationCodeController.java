@@ -1,7 +1,7 @@
 package org.example.server.controller;
 
 import cn.hutool.core.util.ObjUtil;
-import dto.SendVerificationCodeDTO;
+import org.example.pojo.dto.user.SendVerificationCodeDTO;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.example.server.service.VerityCodeService;

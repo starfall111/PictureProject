@@ -3,6 +3,10 @@ package org.example.common.enums;
 import cn.hutool.core.util.ObjUtil;
 import lombok.Getter;
 
+/**
+ * @author Zou
+ */
+
 @Getter
 public enum UserEnum {
 

@@ -11,4 +11,16 @@ public interface UserConstant {
     String REDIS_VERITY_CODE_KEY = "verity_code";
 
     String USER_LOGIN_STATE = "user_login";
+
+    String ADMIN_AUTH_ROLE = "admin";
+
+    String USER_AUTH_ROLE = "user";
+
+    String DEFAULT_PASSWORD = "123456";
+
+    String USER_ACCOUNT_FAILED = "userAccount";
+
+    String USER_PHONE_FAILED = "userPhone";
+
+    String USER_EMAIL_FAILED = "userEmail";
 }

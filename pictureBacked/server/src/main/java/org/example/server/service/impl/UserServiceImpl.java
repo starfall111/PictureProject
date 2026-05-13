@@ -4,26 +4,34 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import net.bytebuddy.implementation.bytecode.Throw;
 import org.example.common.constants.UserConstant;
-import dto.UserLoginDTO;
-import dto.UserRegisterDTO;
-import entity.User;
+import org.example.pojo.dto.user.*;
+import org.example.pojo.entity.User;
+import org.example.common.context.UserContext;
 import org.example.common.enums.UserEnum;
 import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
+import org.example.pojo.vo.UserVO;
 import org.example.server.service.UserService;
 import org.example.server.mapper.UserMapper;
 import org.example.server.service.VerityCodeService;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 import org.example.common.util.SnowflakeIdWorker;
-import vo.LoginUserVO;
+import org.example.pojo.vo.LoginUserVO;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * @author Zou
@@ -59,9 +67,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                 //检查account是否重复
                 //密码加密
                 String password = userRegisterDTO.getPassword();
-                ThrowUtils.throwIf(password.length() < 8 || userRegisterDTO.getCheckPassword().length() < 8, ErrorCode.PARAMS_ERROR, "密码过短");
+                ThrowUtils.throwIf(password.length() < 6 || userRegisterDTO.getCheckPassword().length() < 8, ErrorCode.PARAMS_ERROR, "密码过短");
                 ThrowUtils.throwIf(!password.equals(userRegisterDTO.getCheckPassword()), ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
-                checkAccount("userAccount", account);
+                checkAccount(UserConstant.USER_ACCOUNT_FAILED, account);
                 password = getEncryptPassword(password);
                 user.setUserAccount(account);
                 user.setUserPassword(password);
@@ -72,7 +80,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             //生成随机account填入数据库
             case 1:
                 verityCodeService.checkPhoneOrEmail(1, account);
-                ThrowUtils.throwIf(checkAccount("userPhone", account) > 0, ErrorCode.PARAMS_ERROR, "账号重复");
+                ThrowUtils.throwIf(checkAccount(UserConstant.USER_PHONE_FAILED, account) > 0, ErrorCode.PARAMS_ERROR, "账号重复");
                 ;
                 verityCodeService.verityCode(account, userRegisterDTO.getVerityCode());
                 user.setUserPhone(account);
@@ -81,7 +89,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                 break;
             case 2:
                 verityCodeService.checkPhoneOrEmail(2, account);
-                ThrowUtils.throwIf(checkAccount("userEmail", account) > 0, ErrorCode.PARAMS_ERROR, "账号重复");
+                ThrowUtils.throwIf(checkAccount(UserConstant.USER_EMAIL_FAILED, account) > 0, ErrorCode.PARAMS_ERROR, "账号重复");
                 ;
                 verityCodeService.verityCode(account, userRegisterDTO.getVerityCode());
                 user.setUserEmail(account);
@@ -120,21 +128,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (isVerityCode == 0) {
             switch (type) {
                 case 0:
-                    user = verityAccount("userAccount", account);
+                    user = verityAccount(UserConstant.USER_ACCOUNT_FAILED, account);
                     ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.PARAMS_ERROR, "用户不存在");
                     password = getEncryptPassword(password);
                     ThrowUtils.throwIf(!password.equals(user.getUserPassword()), ErrorCode.PARAMS_ERROR, "账号或密码错误");
                     break;
                 case 1:
                     verityCodeService.checkPhoneOrEmail(1, account);
-                    user = verityAccount("userPhone", account);
+                    user = verityAccount(UserConstant.USER_PHONE_FAILED, account);
                     ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.PARAMS_ERROR, "用户不存在");
                     password = getEncryptPassword(password);
                     ThrowUtils.throwIf(!password.equals(user.getUserPassword()), ErrorCode.PARAMS_ERROR, "账号或密码错误");
                     break;
                 case 2:
                     verityCodeService.checkPhoneOrEmail(2, account);
-                    user = verityAccount("userEmail", account);
+                    user = verityAccount(UserConstant.USER_EMAIL_FAILED, account);
                     ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.PARAMS_ERROR, "用户不存在");
                     password = getEncryptPassword(password);
                     ThrowUtils.throwIf(!password.equals(user.getUserPassword()), ErrorCode.PARAMS_ERROR, "账号或密码错误");
@@ -150,11 +158,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             user = switch (type) {
                 case 1 -> {
                     verityCodeService.checkPhoneOrEmail(1, account);
-                    yield verityAccount("userPhone", account);
+                    yield verityAccount(UserConstant.USER_PHONE_FAILED, account);
                 }
                 case 2 -> {
                     verityCodeService.checkPhoneOrEmail(2, account);
-                    yield verityAccount("userEmail", account);
+                    yield verityAccount(UserConstant.USER_EMAIL_FAILED, account);
                 }
 
                 default -> throw new BusinessException(ErrorCode.PARAMS_ERROR, "非法数据");
@@ -171,11 +179,94 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         //3.记录登录状态 session记录
         HttpSession session = request.getSession();
-        session.setAttribute("userId",user.getId());
+        session.setAttribute(UserConstant.USER_LOGIN_STATE, user);
         //4.返回LoginUserVO数据结构
         LoginUserVO userVO = new LoginUserVO();
-        BeanUtil.copyProperties(user,userVO);
+        BeanUtil.copyProperties(user, userVO);
         return userVO;
+    }
+
+    @Override
+    public LoginUserVO getLoginUser() {
+        User user = UserContext.get();
+        ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.NOT_LOGIN_ERROR);
+
+        user = this.getById(user.getId());
+        ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.NOT_LOGIN_ERROR);
+
+        LoginUserVO loginUserVO = new LoginUserVO();
+        BeanUtil.copyProperties(user, loginUserVO);
+        return loginUserVO;
+    }
+
+    @Override
+    public void addUser(UserAddDTO userAddDTO) {
+
+        //防止用户重复
+        User resultUser = verityAccount(UserConstant.USER_ACCOUNT_FAILED, userAddDTO.getUserAccount());
+
+        ThrowUtils.throwIf(!ObjUtil.isEmpty(resultUser),ErrorCode.PARAMS_ERROR,"用户已存在");
+        //构建入库user
+        User user = new User();
+        BeanUtil.copyProperties(userAddDTO, user);
+        user.setUserPassword(getEncryptPassword("123456"));
+        //入库
+        boolean result = this.save(user);
+
+        ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
+    }
+
+    @Override
+    public void updateUser(AdminUpdateDTO adminUpdateDTO) {
+        //先找用户信息
+        User user = this.getById(adminUpdateDTO.getId());
+        ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.PARAMS_ERROR, "用户不存在");
+        //更新用户信息
+        user = new User();
+        BeanUtil.copyProperties(adminUpdateDTO, user);
+        boolean result = this.updateById(user);
+
+        ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
+    }
+
+    @Override
+    public Page<UserVO> queryUserList(UserQueryDTO userQueryDTO) {
+
+        //构建查询条件
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        Long id = userQueryDTO.getId();
+        String account = userQueryDTO.getUserAccount();
+        String phone = userQueryDTO.getUserPhone();
+        String email = userQueryDTO.getUserEmail();
+        String name = userQueryDTO.getUserName();
+        String role = userQueryDTO.getUserRole();
+        String sortFiled = userQueryDTO.getSortField();
+        String sortOrder = userQueryDTO.getSortOrder();
+
+        queryWrapper.eq(!ObjUtil.isEmpty(id), "id", id);
+        queryWrapper.eq(!ObjUtil.isEmpty(role), "userRole", role);
+        queryWrapper.like(!ObjUtil.isEmpty(account), UserConstant.USER_ACCOUNT_FAILED, account);
+        queryWrapper.like(!ObjUtil.isEmpty(phone), UserConstant.USER_PHONE_FAILED, phone);
+        queryWrapper.like(!ObjUtil.isEmpty(email), UserConstant.USER_EMAIL_FAILED, email);
+        queryWrapper.like(!ObjUtil.isEmpty(name), "userName", name);
+        queryWrapper.orderBy(!ObjUtil.isEmpty(sortFiled), "ascend".equals(sortOrder), sortFiled);
+
+
+        Integer current = userQueryDTO.getCurrent();
+        Integer pageSize = userQueryDTO.getPageSize();
+
+        //先找到所有符合条件的数据
+        Page<User> userPage = this.page(new Page<>(current, pageSize), queryWrapper);
+
+        //创建分页集准备存放转换过的UserVO列表
+        Page<UserVO> userPageVO = new Page<>(current, pageSize, userPage.getTotal());
+
+        //将User列表转变为 UserVO列表
+        List<UserVO> userVOList = getUserVOList(userPage.getRecords());
+
+        userPageVO.setRecords(userVOList);
+
+        return userPageVO;
     }
 
     //密码加密
@@ -200,7 +291,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
 
-
     private User verityAccount(String filed, String account) {
         //校验基本信息
         ThrowUtils.throwIf(StrUtil.hasBlank(account), ErrorCode.PARAMS_ERROR);
@@ -210,5 +300,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         queryWrapper.eq(filed, account);
         //返回数据
         return this.baseMapper.selectOne(queryWrapper);
+    }
+
+    private UserVO getUserVO(User user) {
+        if (ObjUtil.isEmpty(user)) {
+            return null;
+        }
+        UserVO userVO = new UserVO();
+        BeanUtil.copyProperties(user, userVO);
+
+        return userVO;
+    }
+
+    private List<UserVO> getUserVOList(List<User> userList) {
+        if (ObjUtil.isEmpty(userList)) {
+            return new ArrayList<>();
+        }
+
+        return userList.stream()
+                .map(this::getUserVO)
+                .collect(Collectors.toList());
     }
 }

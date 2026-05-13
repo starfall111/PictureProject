@@ -1,12 +1,14 @@
 package org.example.server.service;
 
-import dto.UserLoginDTO;
-import dto.UserRegisterDTO;
-import entity.User;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.example.pojo.dto.user.*;
+import org.example.pojo.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
-import vo.LoginUserVO;
+import org.example.pojo.vo.LoginUserVO;
+import org.example.pojo.vo.UserVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
 * @author Zou
@@ -28,6 +30,22 @@ public interface UserService extends IService<User> {
     /**
      * 获取当前登录用户
      * */
+    LoginUserVO getLoginUser();
 
+    /**
+     * 新增用户
+     * */
+    void addUser(UserAddDTO userAddDTO);
+
+
+    /**
+     * 更新用户信息()
+     * */
+    void updateUser(AdminUpdateDTO adminUpdateDTO);
+
+    /**
+     * 分页查询
+     * */
+    Page<UserVO> queryUserList(UserQueryDTO userQueryDTO);
 
 }

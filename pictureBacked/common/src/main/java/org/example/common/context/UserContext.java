@@ -1,6 +1,6 @@
 package org.example.common.context;
 
-import entity.User;
+import org.example.pojo.entity.User;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -16,7 +16,7 @@ public class UserContext {
         USER_CONTEXT.set(user);
     }
 
-    public User get(){
+    public static User get(){
         return USER_CONTEXT.get();
     }
 

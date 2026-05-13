@@ -3,7 +3,7 @@ package org.example.server.Interceptor;
 import cn.hutool.core.util.ObjUtil;
 import org.example.common.constants.UserConstant;
 import org.example.common.context.UserContext;
-import entity.User;
+import org.example.pojo.entity.User;
 import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.springframework.stereotype.Component;

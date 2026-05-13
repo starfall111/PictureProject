@@ -1,4 +1,4 @@
-package dto;
+package org.example.pojo.dto.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
