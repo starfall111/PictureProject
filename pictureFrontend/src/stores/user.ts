@@ -1,13 +1,10 @@
 import { getLoginUserUsingGet } from "@/api/userController";
 import { message } from "ant-design-vue";
 import { defineStore } from "pinia";
-import { idText } from "typescript";
 import { ref } from "vue";
 
 export const userLoginUserStore = defineStore("loginUser", () => {
-    const loginUser = ref<API.LoginUserVO>({
-        userName: "未登录"
-    });
+    const loginUser = ref<API.LoginUserVO>({});
 
     async function getLoginUser() {
         // TODO: 这里应该调用后端接口获取用户信息
@@ -18,9 +15,9 @@ export const userLoginUserStore = defineStore("loginUser", () => {
         }
     }
 
-    function setLpginUser(user: API.LoginUserVO) {
+    function setLoginUser(user: API.LoginUserVO) {
         loginUser.value = user;
     }
 
-    return { loginUser, getLoginUser, setLpginUser }
+    return { loginUser, getLoginUser, setLoginUser }
 })

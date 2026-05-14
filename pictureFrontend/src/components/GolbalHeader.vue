@@ -17,7 +17,7 @@
                     <div v-if="loginUserStore.loginUser.id">
                         <a-dropdown>
                             <a-space>
-                                <a-avatar src="loginUserStore.loginUser.avatarUrl"></a-avatar>
+                                <a-avatar :src="loginUserStore.loginUser.avatarUrl"></a-avatar>
                                 {{ loginUserStore.loginUser.userName ?? '无名' }}
                             </a-space>
                             <template #overlay>
@@ -49,18 +49,20 @@
 
 
 <script lang="ts" setup>
-import { h, ref } from 'vue'
+import { computed, h, ref } from 'vue'
 import { HomeOutlined } from '@ant-design/icons-vue'
 import { message, type MenuProps } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { userLoginUserStore } from '@/stores/user'
 import { LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { logOutUsingPost } from '@/api/userController'
+import checkAccess from '@/access/checkAccess'
+import ACCESS_ENUM from '@/access/accessEnum'
 
 const loginUserStore = userLoginUserStore()
 
 const current = ref<string[]>([])
-const items = ref<MenuProps['items']>([
+const originItems = [
     {
         key: '/',
         icon: () => h(HomeOutlined),
@@ -68,16 +70,16 @@ const items = ref<MenuProps['items']>([
         title: '主页',
     },
     {
-        key: '/about',
-        label: '关于',
-        title: '关于',
+        key: '/admin/manage',
+        label: '用户管理',
+        title: '用户管理',
     },
     {
         key: 'others',
         label: h('a', { href: 'https://www.codefather.cn', target: '_blank' }, '编程导航'),
         title: '编程导航',
     },
-])
+]
 
 const router = useRouter()
 
@@ -94,15 +96,27 @@ router.afterEach((to, from, next) => {
 const logout = async () =>{
     const res = await logOutUsingPost();
     if(res.data.code === 0 && res.data.data){
-        loginUserStore.setLpginUser({
-            userName: "未登录",
-        });
+        loginUserStore.setLoginUser({});
         message.success('退出登录成功');
         router.push('/user/login');
     }else{
         message.error('退出登录失败');
     }
 }
+
+const filterMenus = (menus = [] as MenuProps['items']) => {
+    return menus?.filter(menu => {
+        const menuItem = menu as { key: string }
+        const route = router.getRoutes().find(r => r.path === menuItem.key)
+        if (route?.meta?.access) {
+            return checkAccess(loginUserStore.loginUser, route.meta.access as string)
+        }
+        return true
+    })
+}
+
+const items = computed<MenuProps['items']>(() => filterMenus(originItems))
+
 </script>
 
 <style>

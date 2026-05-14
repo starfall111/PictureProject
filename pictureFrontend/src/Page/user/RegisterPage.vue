@@ -119,56 +119,6 @@ const isPhone = (account: string) => {
     return /^1[3-9]\d{9}$/.test(account);
 };
 
-/* 阿里云验证码 */
-const { init: initCaptcha, triggerCaptcha, captchaVerifying } = useAliyunCaptcha({
-    onCaptchaVerify: async (captchaVerifyParam: string) => {
-        const account = registerDTO.account ?? '';
-        const type = isPhone(account) ? 1 : 2;
-        const res = await sendVerificationCodeUsingPost({
-            account: registerDTO.account,
-            captchaVerifyParam,
-            type: type
-        });
-
-        if (res.data.code === 0 && res.data.data) {
-            codeSent.value = true;
-            startCountdown();
-            message.success('验证码已发送');
-            return true;
-        } else {
-            message.error(res.data.message || '验证码发送失败');
-            return false;
-        }
-    }
-});
-
-onMounted(() => {
-    initCaptcha();
-});
-
-/* 验证码计时器 */
-const countdown = ref(0);
-let timer: ReturnType<typeof setInterval> | null = null;
-
-const startCountdown = () => {
-    countdown.value = 60;
-    timer = setInterval(() => {
-        countdown.value--;
-        if (countdown.value <= 0) {
-            clearInterval(timer!);
-            timer = null;
-        }
-    }, 1000);
-};
-
-const sendCode = () => {
-    if (!registerDTO.account) {
-        message.warning('请先输入账号');
-        return;
-    }
-    triggerCaptcha();
-};
-
 const onFinish = (values: any) => {
     console.log('Success:', values);
 };

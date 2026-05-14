@@ -61,7 +61,7 @@
                             </a-form-item>
 
                             <a-form-item name="password" label="密码" :rules="[{ required: true, message: '请输入密码' }, { min: 6, message: '密码长度不能小于6位' }]">
-                                <a-input v-model:value="passwordDTO.password" placeholder="请输入密码" :size="'large'" />
+                                <a-input-password v-model:value="passwordDTO.password" placeholder="请输入密码" :size="'large'" />
                                 <!-- <a-button type="primary" style="width: 40%;" :size="'large'">获取验证码</a-button> -->
                             </a-form-item>
 
