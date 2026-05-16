@@ -23,7 +23,7 @@ public class SessionConfig {
         // 防 XSS
         serializer.setUseHttpOnlyCookie(true);
         // 防 CSRF
-        serializer.setSameSite("Lax");
+//        serializer.setSameSite("Lax");
         return serializer;
     }
 }

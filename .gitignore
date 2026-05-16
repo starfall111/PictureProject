@@ -1,3 +1,5 @@
 pictureFrontend/
 .claude/
 **/target/
+**/src/test/
+**/temp/

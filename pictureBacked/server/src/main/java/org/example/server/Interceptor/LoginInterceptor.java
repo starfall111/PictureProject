@@ -23,6 +23,11 @@ public class LoginInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response,Object handler){
 
+        // 放行 OPTIONS 预检请求
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+
         HttpSession session = request.getSession(false);
         if(ObjUtil.hasEmpty(session,session.getAttribute(UserConstant.USER_LOGIN_STATE))){
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);

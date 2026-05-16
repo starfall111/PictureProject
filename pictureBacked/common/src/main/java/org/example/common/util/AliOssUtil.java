@@ -4,13 +4,17 @@ import com.aliyun.oss.*;
 import com.aliyun.oss.common.auth.CredentialsProviderFactory;
 import com.aliyun.oss.common.auth.EnvironmentVariableCredentialsProvider;
 import com.aliyun.oss.common.comm.SignVersion;
+import com.aliyun.oss.model.GetObjectRequest;
 import com.aliyun.oss.model.PutObjectRequest;
 import com.aliyun.oss.model.PutObjectResult;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.constants.ImageConstant;
+import org.example.common.context.UserContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.time.LocalDate;
@@ -122,6 +126,59 @@ public class AliOssUtil {
         } catch (ClientException ce) {
             log.error("OSS 客户端异常: {}", ce.getMessage());
             throw ce;
+        } finally {
+            if (ossClient != null) {
+                ossClient.shutdown();
+            }
+        }
+    }
+
+    /*
+    *  下载文件
+    *
+    * @parm
+    * */
+    public void download(String imageUrl,String name,long id) throws com.aliyuncs.exceptions.ClientException {
+        //从环境变量中获取访问凭证。运行本代码示例之前，请确保已设置环境变量OSS_ACCESS_KEY_ID和OSS_ACCESS_KEY_SECRET。
+        EnvironmentVariableCredentialsProvider credentialsProvider = CredentialsProviderFactory.newEnvironmentVariableCredentialsProvider();
+        // 填写不包含Bucket名称在内的Object完整路径，例如testfolder/exampleobject.txt。
+        String domain = bucketName + "." + endpoint.split("//")[1];
+        int domainIndex = imageUrl.indexOf(domain);
+        if (domainIndex < 0) {
+            log.warn("无法从 URL 提取 object key: {}", imageUrl);
+            return;
+        }
+        String objectKey = imageUrl.substring(domainIndex + domain.length() + 1);
+        // 填写Object下载到本地的完整路径。
+        String pathName = ImageConstant.TEMP_FILE_URL + id +  "_" +  name;
+
+        // 创建OSSClient实例。
+        // 当OSSClient实例不再使用时，调用shutdown方法以释放资源。
+        ClientBuilderConfiguration clientBuilderConfiguration = new ClientBuilderConfiguration();
+        clientBuilderConfiguration.setSignatureVersion(SignVersion.V4);
+        OSS ossClient = OSSClientBuilder.create()
+                .endpoint(endpoint)
+                .credentialsProvider(credentialsProvider)
+                .clientConfiguration(clientBuilderConfiguration)
+                .region(region)
+                .build();
+
+        try {
+            // 下载Object到本地文件，并保存到指定的本地路径中。如果指定的本地文件存在会覆盖，不存在则新建。
+            // 如果未指定本地路径，则下载后的文件默认保存到示例程序所属项目对应本地路径中。
+            ossClient.getObject(new GetObjectRequest(bucketName, objectKey), new File(pathName));
+        } catch (OSSException oe) {
+            System.out.println("Caught an OSSException, which means your request made it to OSS, "
+                    + "but was rejected with an error response for some reason.");
+            System.out.println("Error Message:" + oe.getErrorMessage());
+            System.out.println("Error Code:" + oe.getErrorCode());
+            System.out.println("Request ID:" + oe.getRequestId());
+            System.out.println("Host ID:" + oe.getHostId());
+        } catch (ClientException ce) {
+            System.out.println("Caught an ClientException, which means the client encountered "
+                    + "a serious internal problem while trying to communicate with OSS, "
+                    + "such as not being able to access the network.");
+            System.out.println("Error Message:" + ce.getMessage());
         } finally {
             if (ossClient != null) {
                 ossClient.shutdown();

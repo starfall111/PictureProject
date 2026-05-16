@@ -77,7 +77,7 @@ public class UserController {
     }
     //更新用户信息
     @PostMapping("/update")
-    private BaseResponse<Boolean> updateUser(@RequestBody UserUpdateDTO userUpdateDTO){
+    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateDTO userUpdateDTO){
         ThrowUtils.throwIf(ObjUtil.isEmpty(userUpdateDTO),ErrorCode.PARAMS_ERROR);
 
         User user = UserContext.get();
