@@ -26,7 +26,7 @@
                                         <LogoutOutlined />
                                         退出登录
                                     </a-menu-item>
-                                    <a-menu-item>
+                                    <a-menu-item @click="router.push('/user/center')">
                                         <UserOutlined />
                                         个人中心
                                     </a-menu-item>

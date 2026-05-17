@@ -4,6 +4,7 @@ import LoginPage from '@/Page/user/loginPage.vue'
 import BasicLayout from '@/layouts/BasicLayout.vue'
 import RegisterPage from '@/Page/user/RegisterPage.vue'
 import UserManagePage from '@/Page/user/UserManagePage.vue'
+import UserCenterPage from '@/Page/user/UserCenterPage.vue'
 import NoAuthPage from '@/Page/noAuth.vue'
 import ACCESS_ENUM from '@/access/accessEnum'
 
@@ -43,6 +44,14 @@ const router = createRouter({
           component: UserManagePage,
           meta: {
             access: ACCESS_ENUM.ADMIN
+          }
+        },
+        {
+          path: '/user/center',
+          name: 'userCenter',
+          component: UserCenterPage,
+          meta: {
+            access: ACCESS_ENUM.USER
           }
         },
         {
