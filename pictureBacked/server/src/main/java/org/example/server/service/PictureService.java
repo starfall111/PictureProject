@@ -8,6 +8,7 @@ import org.example.pojo.dto.picture.PictureQueryDTO;
 import org.example.pojo.dto.picture.PictureUpdateDTO;
 import org.example.pojo.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.example.pojo.vo.PictureEntityVO;
 import org.example.pojo.vo.PictureVO;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,7 +44,7 @@ public interface PictureService extends IService<Picture> {
     //2.删除图片
     boolean deletePicture(long id) throws Exception;
     //3.分页查询图片（管理员/普通用户）
-    public Page<Picture> queryPictureListAdmin(PictureQueryDTO queryDTO);
+    public Page<PictureEntityVO> queryPictureListAdmin(PictureQueryDTO queryDTO);
 
     public Page<PictureVO> queryPictureListUser(PictureQueryDTO queryDTO);
     //4.根据id获取图片信息（管理员/普通用户）

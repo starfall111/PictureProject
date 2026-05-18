@@ -31,9 +31,14 @@ public class PictureVO {
     private String introduction;
 
     /**
-     * 分类
+     * 分类 id
      */
-    private String category;
+    private Long categoryId;
+
+    /**
+     * 分类名称
+     */
+    private String categoryName;
 
     /**
      * 标签（JSON 数组）

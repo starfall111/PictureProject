@@ -27,9 +27,9 @@ public class PictureQueryDTO extends PageRequest {
     private String introduction;
 
     /**
-     * 分类
+     * 分类 id
      */
-    private String category;
+    private Long categoryId;
 
     /**
      * 标签（JSON 数组）

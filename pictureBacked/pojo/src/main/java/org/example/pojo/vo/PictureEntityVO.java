@@ -1,21 +1,15 @@
-package org.example.pojo.entity;
+package org.example.pojo.vo;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
-import com.baomidou.mybatisplus.annotation.TableName;
-import java.util.Date;
-import java.util.List;
-
 import lombok.Data;
 
-/**
- * 图片
- * @TableName picture
- */
-@TableName(value ="picture")
+import java.io.Serializable;
+import java.util.Date;
+
 @Data
-public class Picture {
+public class PictureEntityVO implements Serializable {
     /**
      * id
      */
@@ -41,7 +35,10 @@ public class Picture {
      * 分类 id
      */
     private Long categoryId;
-
+    /**
+     * 分类名称
+     */
+    private String categoryName;
     /**
      * 标签（JSON 数组）
      */
@@ -91,10 +88,4 @@ public class Picture {
      * 更新时间
      */
     private Date updateTime;
-
-    /**
-     * 是否删除
-     */
-    @TableLogic
-    private Integer isDelete;
 }

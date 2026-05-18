@@ -20,10 +20,13 @@ import org.example.common.util.AliOssUtil;
 import org.example.pojo.dto.picture.PictureEditDTO;
 import org.example.pojo.dto.picture.PictureQueryDTO;
 import org.example.pojo.dto.picture.PictureUpdateDTO;
+import org.example.pojo.entity.Category;
 import org.example.pojo.entity.Picture;
 import org.example.pojo.entity.User;
+import org.example.pojo.vo.PictureEntityVO;
 import org.example.pojo.vo.PictureVO;
 import org.example.pojo.vo.UserVO;
+import org.example.server.service.CategoryService;
 import org.example.server.service.PictureService;
 import org.example.server.mapper.PictureMapper;
 import org.example.server.service.UserService;
@@ -54,6 +57,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private CategoryService categoryService;
 
     @Override
     public Picture upload(MultipartFile file, Long imageId) throws Exception {
@@ -139,6 +145,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setTags(JSONUtil.toJsonStr(pictureUpdateDTO.getTags()));
         //校验图片数据
         validPicture(picture);
+        //校验分类是否存在
+        validCategory(picture.getCategoryId());
 
         //判断图片是否存在
         Picture oldPicture = this.getById(pictureUpdateDTO.getId());
@@ -156,6 +164,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setTags(JSONUtil.toJsonStr(pictureEditDTO.getTags()));
         picture.setEditTime(new Date());
         validPicture(picture);
+        //校验分类是否存在
+        validCategory(picture.getCategoryId());
         //判断图片是否存在
         Picture oldPicture = this.getById(pictureEditDTO.getId());
         ThrowUtils.throwIf(ObjUtil.isEmpty(oldPicture), ErrorCode.PARAMS_ERROR, "图片不存在");
@@ -190,11 +200,45 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
      * 管理员分页查询
      */
     @Override
-    public Page<Picture> queryPictureListAdmin(PictureQueryDTO queryDTO) {
+    public Page<PictureEntityVO> queryPictureListAdmin(PictureQueryDTO queryDTO) {
         //构建查询条件
         QueryWrapper queryWrapper = getQueryWrapper(queryDTO);
         //Page封装
-        return this.page(new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize()), queryWrapper);
+        Page<Picture> pictureList = this.page(new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize()), queryWrapper);
+        List<Picture> pictures = pictureList.getRecords();
+
+        Page<PictureEntityVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
+
+        if (ObjUtil.isEmpty(pictures)) {
+            return result;
+        }
+        List<PictureEntityVO> pictureEntityVOList = pictures.stream()
+                .map(picture -> {
+                    PictureEntityVO pictureEntityVO = new PictureEntityVO();
+                    BeanUtil.copyProperties(picture,pictureEntityVO);
+                    return pictureEntityVO;
+                })
+                .toList();
+        // 批量填充分类名称
+        Set<Long> categoryIds = pictureEntityVOList.stream()
+                .map(PictureEntityVO::getCategoryId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+        Map<Long, Category> categoryMap = categoryIds.isEmpty()
+                ? Map.of()
+                : categoryService.listByIds(categoryIds)
+                .stream()
+                .collect(Collectors.toMap(Category::getId, c -> c));
+
+        pictureEntityVOList.forEach(pictureEntityVO -> {
+            Long categoryId = pictureEntityVO.getCategoryId();
+            if (categoryId != null && categoryMap.containsKey(categoryId)) {
+                pictureEntityVO.setCategoryName(categoryMap.get(categoryId).getName());
+            }
+        });
+        result = result.setRecords(pictureEntityVOList);
+
+        return result;
     }
 
     /**
@@ -213,12 +257,25 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         List<PictureVO> pictureVOList = pictures.stream()
                 .map(PictureVO::objToVO)
                 .toList();
+
+        // 批量填充用户信息
         Set<Long> userIds = pictureVOList.stream()
                 .map(PictureVO::getUserId)
                 .collect(Collectors.toSet());
         Map<Long, List<User>> userIdUserMapList = userService.listByIds(userIds)
                 .stream()
                 .collect(Collectors.groupingBy(User::getId));
+
+        // 批量填充分类名称
+        Set<Long> categoryIds = pictureVOList.stream()
+                .map(PictureVO::getCategoryId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+        Map<Long, Category> categoryMap = categoryIds.isEmpty()
+                ? Map.of()
+                : categoryService.listByIds(categoryIds)
+                        .stream()
+                        .collect(Collectors.toMap(Category::getId, c -> c));
 
         pictureVOList.forEach(pictureVO -> {
             Long userId = pictureVO.getUserId();
@@ -229,6 +286,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             UserVO userVO = new UserVO();
             BeanUtil.copyProperties(user,userVO);
             pictureVO.setUserVO(userVO);
+
+            Long categoryId = pictureVO.getCategoryId();
+            if (categoryId != null && categoryMap.containsKey(categoryId)) {
+                pictureVO.setCategoryName(categoryMap.get(categoryId).getName());
+            }
         });
         result = result.setRecords(pictureVOList);
 
@@ -284,6 +346,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
     }
 
+    /**
+     * 校验分类是否存在
+     */
+    private void validCategory(Long categoryId) {
+        if (categoryId != null) {
+            Category category = categoryService.getById(categoryId);
+            ThrowUtils.throwIf(ObjUtil.isEmpty(category), ErrorCode.PARAMS_ERROR, "分类不存在");
+        }
+    }
+
 
     /**
      * 构建查询条件
@@ -292,7 +364,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long id = pictureQueryDTO.getId();
         String name = pictureQueryDTO.getName();
         String introduction = pictureQueryDTO.getIntroduction();
-        String category = pictureQueryDTO.getCategory();
+        Long categoryId = pictureQueryDTO.getCategoryId();
         List<String> tags = pictureQueryDTO.getTags();
         Long picSize = pictureQueryDTO.getPicSize();
         Integer picWidth = pictureQueryDTO.getPicWidth();
@@ -307,7 +379,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             queryWrapper.and(
                     qw -> qw.like("name", searchText)
                             .or()
-                            .like("introduction", introduction)
+                            .like("introduction", searchText)
             );
         }
 
@@ -321,7 +393,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
         queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
         queryWrapper.like(StrUtil.isNotBlank(introduction), "introduction", introduction);
-        queryWrapper.eq(StrUtil.isNotBlank(category), "category", category);
+        queryWrapper.eq(ObjUtil.isNotEmpty(categoryId), "categoryId", categoryId);
         queryWrapper.eq(ObjUtil.isNotEmpty(picSize), "picSize", picSize);
         queryWrapper.eq(ObjUtil.isNotEmpty(picHeight), "picHeight", picHeight);
         queryWrapper.eq(ObjUtil.isNotEmpty(picWidth), "picWidth", picWidth);
@@ -338,12 +410,19 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         PictureVO pictureVO = PictureVO.objToVO(picture);
 
         Long userId = picture.getUserId();
-
         if (userId != null && userId > 0) {
             User user = userService.getById(userId);
             UserVO userVO = new UserVO();
             BeanUtil.copyProperties(user, userVO);
             pictureVO.setUserVO(userVO);
+        }
+
+        Long categoryId = picture.getCategoryId();
+        if (categoryId != null && categoryId > 0) {
+            Category category = categoryService.getById(categoryId);
+            if (category != null) {
+                pictureVO.setCategoryName(category.getName());
+            }
         }
 
         return pictureVO;

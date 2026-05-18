@@ -15,7 +15,7 @@ public class PictureUpdateDTO implements Serializable {
     private Long id;
     private String name;
     private String introduction;
-    private String category;
+    private Long categoryId;
     private List<String> tags;
 
     @Serial

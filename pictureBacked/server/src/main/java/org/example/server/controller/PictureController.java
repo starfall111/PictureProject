@@ -18,6 +18,7 @@ import org.example.pojo.dto.picture.PictureEditDTO;
 import org.example.pojo.dto.picture.PictureQueryDTO;
 import org.example.pojo.dto.picture.PictureUpdateDTO;
 import org.example.pojo.entity.Picture;
+import org.example.pojo.vo.PictureEntityVO;
 import org.example.pojo.vo.PictureVO;
 import org.example.server.service.PictureService;
 import org.slf4j.Logger;
@@ -125,10 +126,10 @@ public class PictureController {
     //3.分页查询图片（管理员/普通用户）
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
     @PostMapping("/picture/admin/query")
-    public BaseResponse<Page<Picture>> queryPictureAdmin(PictureQueryDTO pictureQueryDTO){
+    public BaseResponse<Page<PictureEntityVO>> queryPictureAdmin(PictureQueryDTO pictureQueryDTO){
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO),ErrorCode.PARAMS_ERROR);
 
-        Page<Picture> result = pictureService.queryPictureListAdmin(pictureQueryDTO);
+        Page<PictureEntityVO> result = pictureService.queryPictureListAdmin(pictureQueryDTO);
 
         return ResultUtils.success(result);
     }
