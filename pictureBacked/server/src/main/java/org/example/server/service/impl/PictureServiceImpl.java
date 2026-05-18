@@ -2,28 +2,28 @@ package org.example.server.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.io.IoUtil;
-import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
-import org.example.common.constants.ImageConstant;
+import org.example.common.constants.PictureConstant;
 import org.example.common.context.UserContext;
 import org.example.common.enums.ReviewStatusEnum;
 import org.example.common.enums.UserEnum;
 import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
+import org.example.common.template.upload.FileUploadPicture;
+import org.example.common.template.upload.PictureUploadTemplate;
+import org.example.common.template.upload.UrlUploadPicture;
 import org.example.common.util.AliOssUtil;
 import org.example.common.util.EmailUtil;
-import org.example.pojo.dto.picture.PictureEditDTO;
-import org.example.pojo.dto.picture.PictureQueryDTO;
-import org.example.pojo.dto.picture.PictureReviewDTO;
-import org.example.pojo.dto.picture.PictureUpdateDTO;
+import org.example.pojo.dto.picture.*;
 import org.example.pojo.entity.Category;
 import org.example.pojo.entity.Picture;
 import org.example.pojo.entity.User;
@@ -34,17 +34,15 @@ import org.example.server.service.CategoryService;
 import org.example.server.service.PictureService;
 import org.example.server.mapper.PictureMapper;
 import org.example.server.service.UserService;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.*;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -68,10 +66,20 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Resource
     private EmailUtil emailUtil;
 
+    @Resource
+    private FileUploadPicture fileUploadPicture;
+
+    @Resource
+    private UrlUploadPicture urlUploadPicture;
+
     @Override
-    public Picture upload(MultipartFile file, Long imageId) throws Exception {
+    public Picture upload(Object inputResource, FileDTO fileDTO) throws Exception {
         Picture picture = new Picture();
         User user = UserContext.get();
+        Long imageId = null;
+        if (ObjUtil.isNotEmpty(fileDTO)){
+            imageId = fileDTO.getId();
+        }
         //初始状态为新图片
         boolean isSaved = false;
         //已经上传过，修改状态，后续走更新操作
@@ -81,32 +89,18 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             aliOssUtils.deleteByUrl(picture.getUrl());
             isSaved = true;
         }
-        //文件基本信息
-        String fileName = file.getOriginalFilename();
-        String ext = null;
-        if (fileName != null) {
-            ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-        } else {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件名不能为空");
-        }
-        //文件格式判断
-        ThrowUtils.throwIf(!ArrayUtil.contains(ImageConstant.IMAGE_TYPE_LIST, ext), ErrorCode.PARAMS_ERROR, "不支持的图片格式");
 
         //校验用户是否允许上传图片
         user = userService.getById(user.getId());
         ThrowUtils.throwIf(!validAuth(user), ErrorCode.UPLOAD_NO_PERMISSION);
 
-        //上传文件得到url
-        String url = aliOssUtils.upload(file.getBytes(), fileName);
+        PictureUploadTemplate pictureUploadTemplate = fileUploadPicture;
+        if (inputResource instanceof String){
+            pictureUploadTemplate = urlUploadPicture;
+        }
+
+        UploadPictureDTO uploadPictureDTO = pictureUploadTemplate.upload(inputResource);
         try {
-            //获取文件信息，图片大小、高度、宽度、宽高比
-            BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(file.getBytes()));
-            ThrowUtils.throwIf(ObjUtil.isEmpty(bufferedImage), ErrorCode.SYSTEM_ERROR);
-
-            int width = bufferedImage.getWidth();
-            int height = bufferedImage.getHeight();
-            double scale = (double) width / height;
-
             //管理员上传图片自动过审
             UserEnum userEnum = UserEnum.getByValue(user.getUserRole());
             if (UserEnum.ADMIN.equals(userEnum)) {
@@ -118,14 +112,28 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 picture.setReviewStatus(0);
             }
             //构建Picture存入数据库
-            picture.setName(fileName);
+            String name = uploadPictureDTO.getName();
+            if (ObjUtil.isNotEmpty(fileDTO)){
+                if (fileDTO.getName() != null){
+                    name = fileDTO.getName();
+                }
+                if (fileDTO.getCategoryId() != null){
+                    validCategory(fileDTO.getCategoryId());
+
+                    picture.setCategoryId(fileDTO.getCategoryId());
+                }
+                if (StrUtil.isNotBlank(fileDTO.getTags())){
+                    picture.setTags(fileDTO.getTags());
+                }
+            }
+            picture.setName(name);
             picture.setUserId(user.getId());
-            picture.setUrl(url);
-            picture.setPicWidth(width);
-            picture.setPicHeight(height);
-            picture.setPicScale(scale);
-            picture.setPicFormat(ext);
-            picture.setPicSize(file.getSize());
+            picture.setUrl(uploadPictureDTO.getUrl());
+            picture.setPicWidth(uploadPictureDTO.getPicWidth());
+            picture.setPicHeight(uploadPictureDTO.getPicHeight());
+            picture.setPicScale(uploadPictureDTO.getPicScale());
+            picture.setPicFormat(uploadPictureDTO.getPicFormat());
+            picture.setPicSize(uploadPictureDTO.getPicSize());
 
             if (isSaved) {
                 this.updateById(picture);
@@ -135,7 +143,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
             return picture;
         } catch (Exception e) {
-            aliOssUtils.deleteByUrl(url);
+            aliOssUtils.deleteByUrl(uploadPictureDTO.getUrl());
             log.error("图片上传失败");
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片上传失败");
         }
@@ -150,11 +158,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long id = UserContext.get().getId();
         aliOssUtils.download(url, name, id);
         //通过File拿到本地文件，转换为字节流返回
-        File filePath = new File(ImageConstant.TEMP_FILE_URL);
+        File filePath = new File(PictureConstant.TEMP_FILE_URL);
         if (!filePath.exists()) {
             filePath.mkdirs();
         }
-        String localFilePath = ImageConstant.TEMP_FILE_URL + id + "_" + name;
+        String localFilePath = PictureConstant.TEMP_FILE_URL + id + "_" + name;
         File localFile = new File(localFilePath);
         FileInputStream inputStream = new FileInputStream(localFile);
         return IoUtil.readBytes(inputStream);
@@ -212,7 +220,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         ThrowUtils.throwIf(ObjUtil.isEmpty(picture), ErrorCode.PARAMS_ERROR, "图片不存在");
         //仅管理员或自己可删除图片
         User user = UserContext.get();
-        if (!user.getId().equals(picture.getUserId()) || UserEnum.ADMIN.getValue().equals(user.getUserRole())) {
+        if (!user.getId().equals(picture.getUserId()) && !UserEnum.ADMIN.getValue().equals(user.getUserRole())) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
 
@@ -237,7 +245,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Page<Picture> pictureList = this.page(new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize()), queryWrapper);
         List<Picture> pictures = pictureList.getRecords();
 
-        Page<PictureEntityVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
+        Page<PictureEntityVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize(),pictureList.getTotal());
 
         if (ObjUtil.isEmpty(pictures)) {
             return result;
@@ -280,7 +288,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Page<Picture> pictureList = this.page(new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize()), queryWrapper);
         List<Picture> pictures = pictureList.getRecords();
 
-        Page<PictureVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
+        Page<PictureVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize(),pictureList.getTotal());
         if (ObjUtil.isEmpty(pictures)) {
             return result;
         }
@@ -397,6 +405,94 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         } catch (Exception e) {
             log.warn("审批通知邮件发送异常, pictureId={}, error={}", pictureReviewDTO.getId(), e.getMessage());
         }
+    }
+
+    @Override
+    public Integer pictureUploadByBatch(PictureUploadByBatchDTO pictureUploadByBatchDTO) {
+        //校验数据非空
+        String searchText = pictureUploadByBatchDTO.getSearchText();
+        int count = pictureUploadByBatchDTO.getCount();
+        String namePrefix = pictureUploadByBatchDTO.getProfile();
+        Long categoryId = pictureUploadByBatchDTO.getCategoryId();
+        List<String> tagList = pictureUploadByBatchDTO.getTags();
+        ThrowUtils.throwIf(StrUtil.isBlank(searchText),ErrorCode.PARAMS_ERROR,"搜索词不能为空");
+        if (StrUtil.isBlank(namePrefix)){
+            namePrefix = searchText;
+        }
+        //数据抓取
+        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1",searchText);
+        Document document;
+        try{
+            document = Jsoup.connect(fetchUrl).get();
+        } catch (IOException e) {
+            log.error("获取页面失败",e);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR,"获取页面失败");
+        }
+
+        Element element = document.getElementsByClass("dgControl").first();
+        ThrowUtils.throwIf(ObjUtil.isEmpty(element),ErrorCode.OPERATION_ERROR,"获取元素失败");
+        //获取图片元素
+//       Elements imgElementList = element.select("img.mimg");
+        //获取完整数据元素
+        Elements imgElementList = element.select(".iusc");
+        int uploadCount = 0;
+
+        for (Element imgElement : imgElementList){
+            //String fileUrl = imgElement.attr("src");
+
+//            if (StrUtil.isBlank(fileUrl)){
+//                log.error("当前url为空，跳过 {}",fileUrl);
+//                continue;
+//            }
+//           //处理图片上传地址，防止出现转义问题
+//            int questionMarkIndex = fileUrl.indexOf("?");
+//            if (questionMarkIndex > -1){
+//                fileUrl = fileUrl.substring(0,questionMarkIndex);
+//            }
+
+            //获取data-m属性中的JSON字符串
+            String dataM = imgElement.attr("m");
+            String fileUrl;
+            try{
+                //解析JSON字符串
+                JSONObject jsonObject = JSONUtil.parseObj(dataM);
+                //获取murl字段(原始图片url)
+                fileUrl = jsonObject.getStr("murl");
+            }catch (Exception e){
+                log.error("图片url解析失败",e);
+                continue;
+            }
+
+            if (StrUtil.isBlank(fileUrl)){
+                log.error("当前url为空，跳过 {}",fileUrl);
+                continue;
+            }
+
+            //上传图片
+            FileDTO fileDTO = new FileDTO();
+            if (StrUtil.isNotBlank(namePrefix)){
+                fileDTO.setName(namePrefix + (uploadCount + 1));
+            }
+            if (ObjUtil.isNotEmpty(categoryId)){
+                fileDTO.setCategoryId(categoryId);
+            }
+            if (ObjUtil.isNotEmpty(tagList)){
+                String tags = JSONUtil.toJsonStr(tagList);
+                fileDTO.setTags(tags);
+            }
+            try{
+                Picture picture = this.upload(fileUrl,fileDTO);
+                log.info("图片上传成功,id = {}",picture.getId());
+                uploadCount++;
+            }catch (Exception e) {
+                log.error("图片上传失败，fileUrl = {}",fileUrl);
+            }
+            if (uploadCount >= count){
+                break;
+            }
+        }
+
+        return uploadCount;
     }
 
     /**

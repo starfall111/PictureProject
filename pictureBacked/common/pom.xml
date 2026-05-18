@@ -50,6 +50,12 @@
             <artifactId>hutool-core</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-http</artifactId>
+        </dependency>
+
+
         <!--邮箱服务        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

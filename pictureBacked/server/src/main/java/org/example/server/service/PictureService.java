@@ -3,10 +3,7 @@ package org.example.server.service;
 import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.pojo.DeleteRequest;
-import org.example.pojo.dto.picture.PictureEditDTO;
-import org.example.pojo.dto.picture.PictureQueryDTO;
-import org.example.pojo.dto.picture.PictureReviewDTO;
-import org.example.pojo.dto.picture.PictureUpdateDTO;
+import org.example.pojo.dto.picture.*;
 import org.example.pojo.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.example.pojo.vo.PictureEntityVO;
@@ -25,10 +22,10 @@ import java.util.List;
 public interface PictureService extends IService<Picture> {
     /**
     * 上传图片文件
-    * @param file 文件
-    * @param imageId 入库的图片文件Id
+    * @param inputResource 文件 或 url
+    * @param fileDTO 入库的图片文件请求体
     * */
-    Picture upload(MultipartFile file,Long imageId) throws Exception;
+    Picture upload(Object inputResource,FileDTO fileDTO) throws Exception;
 
     /**
     * 下载文件
@@ -44,19 +41,16 @@ public interface PictureService extends IService<Picture> {
     //2.删除图片
     boolean deletePicture(long id) throws Exception;
     //3.分页查询图片（管理员/普通用户）
-    public Page<PictureEntityVO> queryPictureListAdmin(PictureQueryDTO queryDTO);
+    Page<PictureEntityVO> queryPictureListAdmin(PictureQueryDTO queryDTO);
 
-    public Page<PictureVO> queryPictureListUser(PictureQueryDTO queryDTO);
+    Page<PictureVO> queryPictureListUser(PictureQueryDTO queryDTO);
     //4.根据id获取图片信息（管理员/普通用户）
-    public Picture getByPictureIdAdmin(long id);
+    Picture getByPictureIdAdmin(long id);
 
-    public PictureVO getByPictureIdUser(long id);
+    PictureVO getByPictureIdUser(long id);
 
     //管理员对用户上传的图片进行审批：三种状态 0待审批（当用户在上传图片和修改图片时都需要将status重置，管理员传图时进行自动过审） 1 审批通过 2 审批未通过 ；为防止误操作，三种状态可互相流转
     void pictureReview(PictureReviewDTO pictureReviewDTO);
-    //调整分页查询得到的图片（应获得已通过审批的图片）
-    //调整当前图片详情获取策略，需要满足status为1 或者用户权限足够才可以时返回图片信息
-
     /**
      * todo 针对人工审核图片过于麻烦的问题，以下解决方案
      * 1.项目智能化升级，后续项目开发完毕后添加智能模块：
@@ -64,10 +58,13 @@ public interface PictureService extends IService<Picture> {
      * 智能审批系统：对接OCR技术来实现制动审批功能
      * 2.分级策略
      * 后续可开放vip或安全用户，针对这些用户不进行审批
-     * 3.手机号和邮箱强制绑定（当前可实现）
-     * 当用户想要上传图片时，如果账号未绑定手机号和邮箱，直接拒绝用户上传图片
+     * 3.手机号强制绑定（当前已实现）
+     * 当用户想要上传图片时，如果账号未绑定手机号，直接拒绝用户上传图片
      * 4.举报机制
      * */
 
-    //用户根据url来上传图片（改造upload，使用模板方法来实现）
+    //管理员批量获取图片
+    Integer pictureUploadByBatch(PictureUploadByBatchDTO pictureUploadByBatchDTO);
+
+
 }

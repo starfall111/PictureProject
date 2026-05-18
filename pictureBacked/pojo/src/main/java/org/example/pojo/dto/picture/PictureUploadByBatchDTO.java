@@ -1,4 +1,15 @@
 package org.example.pojo.dto.picture;
 
+import lombok.Data;
+
+import java.util.List;
+
+@Data
 public class PictureUploadByBatchDTO {
+
+    private String searchText;
+    private Integer count = 10;
+    private String profile;
+    private List<String> tags;
+    private Long categoryId;
 }

@@ -9,28 +9,28 @@ import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.example.common.util.AliOssUtil;
+import org.example.pojo.dto.picture.UploadPictureDTO;
 
 import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 
 @Slf4j
-public abstract class FileUploadTemplate {
+public abstract class PictureUploadTemplate {
 
     @Resource
     private AliOssUtil aliOssUtil;
 
-    public final String upload(Object inputResource) throws Exception {
+    public final UploadPictureDTO upload(Object inputResource) throws Exception {
         //校验文件是否合规
-        validPicture(inputResource);
+        String fileSuffix = validPicture(inputResource);
+
+        ThrowUtils.throwIf(StrUtil.isBlank(fileSuffix),ErrorCode.PARAMS_ERROR,"图片格式错误");
 
         //从URL提取文件名和后缀
-        //todo 获取原始文件名
         String fileName = getOriginFileName(inputResource);
-        String fileSuffix = FileUtil.getSuffix(fileName);
-        //后缀为空抛出错误
-        ThrowUtils.throwIf(StrUtil.isBlank(fileSuffix),ErrorCode.PARAMS_ERROR,"图片格式错误");
         //文件名为空时抛出错误
         ThrowUtils.throwIf(StrUtil.isBlank(fileName),ErrorCode.PARAMS_ERROR,"文件名不能为空");
         //确保文件名包含后缀
@@ -43,19 +43,16 @@ public abstract class FileUploadTemplate {
         String url = null;
         try {
             //创建临时目录
-            File tempDir = new File(PictureConstant.TEMP_FILE_URL);
-            if (!tempDir.exists()) {
-                tempDir.mkdirs();
-            }
+            //创建临时目录（使用项目根目录下的temp文件夹）
+            String projectRoot = System.getProperty("user.dir");
+            File tempDir = new File(projectRoot, "temp");
             //创建临时文件（前缀最多3字符，后缀为图片格式）
             tempFile = File.createTempFile("pic", "." + fileSuffix, tempDir);
-//            //下载URL内容到临时文件
-//            HttpUtil.downloadFile(inputResource, tempFile);
-//
-//            //读取临时文件字节，上传到阿里云OSS
-//            byte[] fileBytes = java.nio.file.Files.readAllBytes(tempFile.toPath());
-            byte[] fileBytes = getTempFileByte(inputResource,tempFile);
-            url = aliOssUtil.upload(fileBytes, fileName);
+
+            getTempFile(inputResource,tempFile);
+
+
+            url = aliOssUtil.upload(FileUtil.readBytes(tempFile), fileName);
 
             //获取图片信息：宽度、高度、宽高比
             BufferedImage bufferedImage = ImageIO.read(tempFile);
@@ -65,7 +62,15 @@ public abstract class FileUploadTemplate {
             int height = bufferedImage.getHeight();
             double scale = (double) width / height;
 
-            return url;
+            UploadPictureDTO uploadPictureDTO = new UploadPictureDTO();
+            uploadPictureDTO.setName(fileName);
+            uploadPictureDTO.setUrl(url);
+            uploadPictureDTO.setPicFormat(fileSuffix);
+            uploadPictureDTO.setPicSize(FileUtil.size(tempFile));
+            uploadPictureDTO.setPicHeight(height);
+            uploadPictureDTO.setPicWidth(width);
+            uploadPictureDTO.setPicScale(scale);
+            return uploadPictureDTO;
         } catch (Exception e) {
             if (url != null) {
                 aliOssUtil.deleteByUrl(url);
@@ -83,7 +88,7 @@ public abstract class FileUploadTemplate {
     /**
      * 校验数据源
      * */
-    protected abstract void validPicture(Object inputResource);
+    protected abstract String validPicture(Object inputResource);
 
     /**
      * 获取原始文件名
@@ -93,5 +98,5 @@ public abstract class FileUploadTemplate {
     /**
      * 获取临时文件字节流
      * */
-    protected  abstract byte[] getTempFileByte(Object inputResource,File file);
+    protected  abstract void getTempFile(Object inputResource, File file) throws IOException;
 }
