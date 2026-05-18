@@ -4,7 +4,6 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import net.bytebuddy.implementation.bytecode.Throw;
 import org.example.common.annotation.CheckAuth;
 import org.example.common.constants.UserConstant;
 import org.example.common.exception.BusinessException;
@@ -16,6 +15,7 @@ import org.example.common.util.AliOssUtil;
 import org.example.pojo.DeleteRequest;
 import org.example.pojo.dto.picture.PictureEditDTO;
 import org.example.pojo.dto.picture.PictureQueryDTO;
+import org.example.pojo.dto.picture.PictureReviewDTO;
 import org.example.pojo.dto.picture.PictureUpdateDTO;
 import org.example.pojo.entity.Picture;
 import org.example.pojo.vo.PictureEntityVO;
@@ -31,7 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/file")
+@RequestMapping("/picture")
 public class PictureController {
 
     private static final Logger log = LoggerFactory.getLogger(PictureController.class);
@@ -44,7 +44,7 @@ public class PictureController {
     /**
      * 图片上传
      * */
-    @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
+//    @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
     @PostMapping("/upload")
     public BaseResponse<PictureVO> upload(
             @RequestParam("files") MultipartFile file,
@@ -88,7 +88,7 @@ public class PictureController {
 
     //1.图片编辑信息：更改图片信息（管理员/普通用户）
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
-    @PostMapping("/picture/update")
+    @PostMapping("/update")
     public BaseResponse<Boolean> updatePicture(PictureUpdateDTO pictureUpdateDTO){
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUpdateDTO),ErrorCode.PARAMS_ERROR);
 
@@ -99,7 +99,7 @@ public class PictureController {
         return ResultUtils.success(result);
     }
 
-    @PostMapping("/picture/edit")
+    @PostMapping("/edit")
     public BaseResponse<Boolean> editPicture(PictureEditDTO pictureEditDTO){
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureEditDTO),ErrorCode.PARAMS_ERROR);
 
@@ -110,7 +110,7 @@ public class PictureController {
         return ResultUtils.success(result);
     }
     //2.删除图片
-    @DeleteMapping("/picture/delete")
+    @DeleteMapping("/delete")
     public BaseResponse<Boolean> deletePicture(DeleteRequest deleteRequest) throws Exception {
         ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest),ErrorCode.PARAMS_ERROR);
         Long id = deleteRequest.getId();
@@ -125,7 +125,7 @@ public class PictureController {
     }
     //3.分页查询图片（管理员/普通用户）
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
-    @PostMapping("/picture/admin/query")
+    @PostMapping("/admin/query")
     public BaseResponse<Page<PictureEntityVO>> queryPictureAdmin(PictureQueryDTO pictureQueryDTO){
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO),ErrorCode.PARAMS_ERROR);
 
@@ -134,10 +134,10 @@ public class PictureController {
         return ResultUtils.success(result);
     }
 
-    @PostMapping("/picture/user/query")
+    @PostMapping("/user/query")
     public BaseResponse<Page<PictureVO>> queryPictureUser(PictureQueryDTO pictureQueryDTO){
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO),ErrorCode.PARAMS_ERROR);
-
+        pictureQueryDTO.setReviewStatus(1);
         Page<PictureVO> result = pictureService.queryPictureListUser(pictureQueryDTO);
 
         return ResultUtils.success(result);
@@ -145,7 +145,7 @@ public class PictureController {
 
     //4.根据id获取图片信息（管理员/普通用户）
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
-    @GetMapping("/picture/admin/{id}")
+    @GetMapping("/admin/{id}")
     public BaseResponse<Picture> getPictureByIdAdmin(@PathVariable Long id){
         ThrowUtils.throwIf(ObjUtil.isEmpty(id),ErrorCode.PARAMS_ERROR);
 
@@ -154,7 +154,8 @@ public class PictureController {
         return ResultUtils.success(picture);
     }
 
-    @GetMapping("/picture/user/{id}")
+    //5.获取图片详细信息
+    @GetMapping("/user/{id}")
     public BaseResponse<PictureVO> getPictureByIdUser(@PathVariable Long id){
         ThrowUtils.throwIf(ObjUtil.isEmpty(id),ErrorCode.PARAMS_ERROR);
 
@@ -162,4 +163,16 @@ public class PictureController {
 
         return ResultUtils.success(pictureVO);
     }
+
+    //6.图片审批
+    @PostMapping("/review")
+    public BaseResponse<Boolean> reviewPicture(@RequestBody PictureReviewDTO pictureReviewDTO){
+        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureReviewDTO),ErrorCode.PARAMS_ERROR);
+
+        pictureService.pictureReview(pictureReviewDTO);
+
+        return ResultUtils.success(true);
+    }
+
+
 }

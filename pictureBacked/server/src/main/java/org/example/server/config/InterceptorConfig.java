@@ -20,6 +20,10 @@ public class InterceptorConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/user/register",
                         "/user/login",
+                        "/picture/query",
+//                        "/picture/user/{id}",
+                        "/category/list",
+                        "/tag/list",
                         "/verification/**",
                         "/main/**",
                         // knife4j / swagger 文档相关

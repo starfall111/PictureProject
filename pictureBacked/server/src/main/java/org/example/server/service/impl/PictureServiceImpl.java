@@ -10,15 +10,19 @@ import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.example.common.constants.ImageConstant;
 import org.example.common.context.UserContext;
+import org.example.common.enums.ReviewStatusEnum;
 import org.example.common.enums.UserEnum;
 import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.example.common.util.AliOssUtil;
+import org.example.common.util.EmailUtil;
 import org.example.pojo.dto.picture.PictureEditDTO;
 import org.example.pojo.dto.picture.PictureQueryDTO;
+import org.example.pojo.dto.picture.PictureReviewDTO;
 import org.example.pojo.dto.picture.PictureUpdateDTO;
 import org.example.pojo.entity.Category;
 import org.example.pojo.entity.Picture;
@@ -30,7 +34,6 @@ import org.example.server.service.CategoryService;
 import org.example.server.service.PictureService;
 import org.example.server.mapper.PictureMapper;
 import org.example.server.service.UserService;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -49,6 +52,7 @@ import java.util.stream.Collectors;
  * @description 针对表【picture(图片)】的数据库操作Service实现
  * @createDate 2026-05-14 21:47:55
  */
+@Slf4j
 @Service
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         implements PictureService {
@@ -60,6 +64,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private CategoryService categoryService;
+
+    @Resource
+    private EmailUtil emailUtil;
 
     @Override
     public Picture upload(MultipartFile file, Long imageId) throws Exception {
@@ -84,6 +91,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         //文件格式判断
         ThrowUtils.throwIf(!ArrayUtil.contains(ImageConstant.IMAGE_TYPE_LIST, ext), ErrorCode.PARAMS_ERROR, "不支持的图片格式");
+
+        //校验用户是否允许上传图片
+        user = userService.getById(user.getId());
+        ThrowUtils.throwIf(!validAuth(user), ErrorCode.UPLOAD_NO_PERMISSION);
+
         //上传文件得到url
         String url = aliOssUtils.upload(file.getBytes(), fileName);
         try {
@@ -94,6 +106,17 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             int width = bufferedImage.getWidth();
             int height = bufferedImage.getHeight();
             double scale = (double) width / height;
+
+            //管理员上传图片自动过审
+            UserEnum userEnum = UserEnum.getByValue(user.getUserRole());
+            if (UserEnum.ADMIN.equals(userEnum)) {
+                picture.setReviewStatus(1);
+                picture.setReviewMessage("管理员自动过审");
+                picture.setReviewerId(user.getId());
+                picture.setReviewTime(new Date());
+            } else {
+                picture.setReviewStatus(0);
+            }
             //构建Picture存入数据库
             picture.setName(fileName);
             picture.setUserId(user.getId());
@@ -164,11 +187,18 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setTags(JSONUtil.toJsonStr(pictureEditDTO.getTags()));
         picture.setEditTime(new Date());
         validPicture(picture);
-        //校验分类是否存在
-        validCategory(picture.getCategoryId());
+
         //判断图片是否存在
         Picture oldPicture = this.getById(pictureEditDTO.getId());
         ThrowUtils.throwIf(ObjUtil.isEmpty(oldPicture), ErrorCode.PARAMS_ERROR, "图片不存在");
+
+        //校验权限（只有本人和管理员才有资格修改）
+        User user = UserContext.get();
+        if (!user.getId().equals(oldPicture.getUserId()) && !UserEnum.ADMIN.getValue().equals(user.getUserRole())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+        //校验分类是否存在
+        validCategory(picture.getCategoryId());
         //更新
         return this.updateById(picture);
     }
@@ -215,7 +245,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         List<PictureEntityVO> pictureEntityVOList = pictures.stream()
                 .map(picture -> {
                     PictureEntityVO pictureEntityVO = new PictureEntityVO();
-                    BeanUtil.copyProperties(picture,pictureEntityVO);
+                    BeanUtil.copyProperties(picture, pictureEntityVO);
                     return pictureEntityVO;
                 })
                 .toList();
@@ -274,17 +304,17 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Map<Long, Category> categoryMap = categoryIds.isEmpty()
                 ? Map.of()
                 : categoryService.listByIds(categoryIds)
-                        .stream()
-                        .collect(Collectors.toMap(Category::getId, c -> c));
+                .stream()
+                .collect(Collectors.toMap(Category::getId, c -> c));
 
         pictureVOList.forEach(pictureVO -> {
             Long userId = pictureVO.getUserId();
             User user = null;
-            if (userIdUserMapList.containsKey(userId)){
+            if (userIdUserMapList.containsKey(userId)) {
                 user = userIdUserMapList.get(userId).get(0);
             }
             UserVO userVO = new UserVO();
-            BeanUtil.copyProperties(user,userVO);
+            BeanUtil.copyProperties(user, userVO);
             pictureVO.setUserVO(userVO);
 
             Long categoryId = pictureVO.getCategoryId();
@@ -299,6 +329,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
 
     //4.根据id获取图片信息（管理员/普通用户）
+
     /**
      * 管理员查看图片信息
      */
@@ -316,16 +347,57 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
      */
     @Override
     public PictureVO getByPictureIdUser(long id) {
-
+//        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+//        //只获取审批通过的图片
+//        queryWrapper.eq("id", id);
+//        queryWrapper.eq("reviewStatus", 1);
         Picture picture = this.getById(id);
         ThrowUtils.throwIf(ObjUtil.isEmpty(picture), ErrorCode.PARAMS_ERROR, "图片不存在");
 
         return getPictureVO(picture);
     }
 
+    /**
+     * 图片审批
+     */
+    @Override
+    public void pictureReview(PictureReviewDTO pictureReviewDTO) {
+        //获取图片信息
+        Picture oldPicture = this.getById(pictureReviewDTO.getId());
+        ThrowUtils.throwIf(ObjUtil.isEmpty(oldPicture), ErrorCode.PARAMS_ERROR, "图片不存在");
+        //获取当前操作员
+        User user = UserContext.get();
+        //校验图片信息状态(当操作状态和当前状态相同时返回)
+        ReviewStatusEnum reviewStatusEnum = ReviewStatusEnum.getByValue(oldPicture.getReviewStatus());
+        ThrowUtils.throwIf(reviewStatusEnum.equals(ReviewStatusEnum.getByValue(pictureReviewDTO.getReviewStatus())), ErrorCode.PARAMS_ERROR, "请勿重复操作");
+        //数据封装
+        Picture picture = new Picture();
+        BeanUtil.copyProperties(pictureReviewDTO, picture);
+        picture.setReviewerId(user.getId());
+        picture.setReviewTime(new Date());
+        //数据库操作
+        boolean result = this.updateById(picture);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
 
-
-
+        //审批成功后发送邮件通知上传者
+        try {
+            Long uploaderId = oldPicture.getUserId();
+            if (uploaderId != null) {
+                User uploader = userService.getById(uploaderId);
+                if (uploader != null && StrUtil.isNotBlank(uploader.getUserEmail())) {
+                    boolean passed = ReviewStatusEnum.PASS.getValue() == pictureReviewDTO.getReviewStatus();
+                    emailUtil.sendReviewNotice(
+                            uploader.getUserEmail(),
+                            oldPicture.getName(),
+                            passed,
+                            pictureReviewDTO.getReviewMessage()
+                    );
+                }
+            }
+        } catch (Exception e) {
+            log.warn("审批通知邮件发送异常, pictureId={}, error={}", pictureReviewDTO.getId(), e.getMessage());
+        }
+    }
 
     /**
      * 验证图片信息是否正常
@@ -372,6 +444,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Double picScale = pictureQueryDTO.getPicScale();
         Long userId = pictureQueryDTO.getUserId();
         String searchText = pictureQueryDTO.getSearchText();
+        //审核状态
+        Integer reviewStatus = pictureQueryDTO.getReviewStatus();
 
         QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
 
@@ -391,6 +465,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
         queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
+        queryWrapper.eq(ObjUtil.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
         queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
         queryWrapper.like(StrUtil.isNotBlank(introduction), "introduction", introduction);
         queryWrapper.eq(ObjUtil.isNotEmpty(categoryId), "categoryId", categoryId);
@@ -428,8 +503,23 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         return pictureVO;
     }
 
+    /**
+     * 校验是否允许上传图片（必须绑定手机号和邮箱或者是管理员）
+     */
+    private boolean validAuth(User user) {
+        //获取用户信息
+        UserEnum userEnum = UserEnum.getByValue(user.getUserRole());
+        String userPhone = user.getUserPhone();
+
+        if (UserEnum.ADMIN.equals(userEnum)) {
+            return true;
+        }
+
+        if (StrUtil.isBlank(userPhone)) {
+            return false;
+        }
+
+        return true;
+    }
 }
-
-
-
 

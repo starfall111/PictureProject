@@ -67,6 +67,11 @@ public class PictureQueryDTO extends PageRequest {
     private Long userId;
 
     /**
+    * 审核状态
+    */
+    private Integer reviewStatus;
+
+    /**
      * 收索关键字（图片名或图片简介）
      * */
     private String searchText;
