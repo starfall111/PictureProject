@@ -92,11 +92,11 @@
 
 <script setup lang="ts">
 import { h, ref, onMounted } from 'vue';
-import { UserOutlined, LockOutlined, SettingOutlined } from '@ant-design/icons-vue';
+import { UserOutlined, LockOutlined } from '@ant-design/icons-vue';
 import { MenuProps, message } from 'ant-design-vue';
 import { reactive } from 'vue';
 import { loginUsingPost } from '@/api/userController';
-import { useAliyunCaptcha } from '@/api/useAliyunCaptcha';
+import { useAliyunCaptcha } from '@/access/useAliyunCaptcha';
 import { sendVerificationCodeUsingPost } from '@/api/verificationCodeController';
 import router from '@/router';
 import { userLoginUserStore } from '@/stores/user';

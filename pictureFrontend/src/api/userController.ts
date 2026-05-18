@@ -132,7 +132,7 @@ export async function registerUsingPost(
 
 /** updateUser POST /api/user/update */
 export async function updateUserUsingPost1(
-  body: API.AdminUpdateDTO,
+  body: API.UserUpdateDTO,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseBoolean_>("/api/user/update", {

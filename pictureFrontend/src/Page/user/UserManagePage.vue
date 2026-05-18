@@ -24,7 +24,10 @@
           <a-button type="primary" html-type="submit">搜索</a-button>
         </a-form-item>
         <a-form-item>
-          <a-button type="primary" @click="doClear">重置</a-button>
+          <a-button @click="doClear">重置</a-button>
+        </a-form-item>
+        <a-form-item>
+          <a-button type="primary" @click="openAddModal">新增用户</a-button>
         </a-form-item>
       </a-form>
     </div>
@@ -56,6 +59,35 @@
 
     <!-- 修改用户信息弹窗 -->
     <UserEditModal v-model:open="editModalVisible" :record="currentRecord" @success="fetchData" />
+
+    <!-- 新增用户弹窗 -->
+    <a-modal
+      v-model:open="addModalVisible"
+      title="新增用户"
+      @ok="handleAddOk"
+      @cancel="addModalVisible = false"
+    >
+      <a-form :model="addForm" layout="vertical">
+        <a-form-item label="账号" :rules="[{ required: true, message: '请输入账号' }]">
+          <a-input v-model:value="addForm.userAccount" placeholder="请输入账号" />
+        </a-form-item>
+        <a-form-item label="用户名">
+          <a-input v-model:value="addForm.userName" placeholder="请输入用户名" />
+        </a-form-item>
+        <a-form-item label="头像链接">
+          <a-input v-model:value="addForm.userAvatar" placeholder="请输入头像链接" />
+        </a-form-item>
+        <a-form-item label="简介">
+          <a-input v-model:value="addForm.userProfile" placeholder="请输入简介" />
+        </a-form-item>
+        <a-form-item label="角色" :rules="[{ required: true, message: '请选择角色' }]">
+          <a-select v-model:value="addForm.userRole" placeholder="请选择角色">
+            <a-select-option value="admin">管理员</a-select-option>
+            <a-select-option value="user">普通用户</a-select-option>
+          </a-select>
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -63,7 +95,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { message } from 'ant-design-vue';
 import dayjs from 'dayjs';
-import { deleteUserUsingDelete, getUserInfoUsingGet, listUserVoByQueryUsingPost } from '@/api/userController';
+import { deleteUserUsingDelete, getUserInfoUsingGet, listUserVoByQueryUsingPost, addUserUsingPost } from '@/api/userController';
 import UserEditModal from '@/components/UserEditModal.vue';
 
 // ==================== 列表相关 ====================
@@ -157,6 +189,39 @@ const openEditModal = async (id: number) => {
     }
   } catch {
     message.error('获取用户信息失败');
+  }
+};
+
+// ==================== 新增用户弹窗 ====================
+
+const addModalVisible = ref(false);
+const addForm = reactive<{ userAccount?: string; userName?: string; userAvatar?: string; userProfile?: string; userRole?: string }>({});
+
+const openAddModal = () => {
+  addForm.userAccount = undefined;
+  addForm.userName = undefined;
+  addForm.userAvatar = undefined;
+  addForm.userProfile = undefined;
+  addForm.userRole = undefined;
+  addModalVisible.value = true;
+};
+
+const handleAddOk = async () => {
+  if (!addForm.userAccount?.trim()) {
+    message.warning('请输入账号');
+    return;
+  }
+  try {
+    const res = await addUserUsingPost({ ...addForm });
+    if (res.data.code === 0) {
+      message.success('新增成功');
+      addModalVisible.value = false;
+      fetchData();
+    } else {
+      message.error(res.data.message || '新增失败');
+    }
+  } catch {
+    message.error('新增失败');
   }
 };
 

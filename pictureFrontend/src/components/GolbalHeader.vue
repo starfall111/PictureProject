@@ -17,7 +17,7 @@
                     <div v-if="loginUserStore.loginUser.id">
                         <a-dropdown>
                             <a-space>
-                                <a-avatar :src="loginUserStore.loginUser.avatarUrl"></a-avatar>
+                                <a-avatar :src="loginUserStore.loginUser.userAvatar"></a-avatar>
                                 {{ loginUserStore.loginUser.userName ?? '无名' }}
                             </a-space>
                             <template #overlay>
@@ -57,7 +57,6 @@ import { userLoginUserStore } from '@/stores/user'
 import { LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { logOutUsingPost } from '@/api/userController'
 import checkAccess from '@/access/checkAccess'
-import ACCESS_ENUM from '@/access/accessEnum'
 
 const loginUserStore = userLoginUserStore()
 
@@ -73,6 +72,26 @@ const originItems = [
         key: '/admin/manage',
         label: '用户管理',
         title: '用户管理',
+    },
+    {
+        key: '/add_picture',
+        label: '创建图片',
+        title: '创建图片',
+    },
+    {
+        key: '/admin/pictureManage',
+        label: '图片管理',
+        title: '图片管理',
+    },
+    {
+        key: '/admin/categoryManage',
+        label: '分类管理',
+        title: '分类管理',
+    },
+    {
+        key: '/admin/tagManage',
+        label: '标签管理',
+        title: '标签管理',
     },
     {
         key: 'others',
@@ -93,13 +112,13 @@ router.afterEach((to, from, next) => {
     current.value = [to.path]
 })
 
-const logout = async () =>{
+const logout = async () => {
     const res = await logOutUsingPost();
-    if(res.data.code === 0 && res.data.data){
+    if (res.data.code === 0 && res.data.data) {
         loginUserStore.setLoginUser({});
         message.success('退出登录成功');
         router.push('/user/login');
-    }else{
+    } else {
         message.error('退出登录失败');
     }
 }

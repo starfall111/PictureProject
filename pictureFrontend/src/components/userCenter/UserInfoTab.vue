@@ -175,7 +175,7 @@ const handleSave = async () => {
   saveLoading.value = true;
   try {
     const res = await updateUserUsingPost1({
-      id: loginUserStore.loginUser.id,
+      // id: loginUserStore.loginUser.id,
       userName: editForm.userName,
       userPhone: editForm.userPhone,
       userEmail: editForm.userEmail,

@@ -15,6 +15,24 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseCategory_ = {
+    code?: number;
+    data?: Category;
+    message?: string;
+  };
+
+  type BaseResponseListCategory_ = {
+    code?: number;
+    data?: Category[];
+    message?: string;
+  };
+
+  type BaseResponseListTag_ = {
+    code?: number;
+    data?: Tag[];
+    message?: string;
+  };
+
   type BaseResponseLoginUserVO_ = {
     code?: number;
     data?: LoginUserVO;
@@ -27,15 +45,57 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePageCategory_ = {
+    code?: number;
+    data?: PageCategory_;
+    message?: string;
+  };
+
+  type BaseResponsePagePictureEntityVO_ = {
+    code?: number;
+    data?: PagePictureEntityVO_;
+    message?: string;
+  };
+
+  type BaseResponsePagePictureVO_ = {
+    code?: number;
+    data?: PagePictureVO_;
+    message?: string;
+  };
+
+  type BaseResponsePageTag_ = {
+    code?: number;
+    data?: PageTag_;
+    message?: string;
+  };
+
   type BaseResponsePageUserVO_ = {
     code?: number;
     data?: PageUserVO_;
     message?: string;
   };
 
+  type BaseResponsePicture_ = {
+    code?: number;
+    data?: Picture;
+    message?: string;
+  };
+
+  type BaseResponsePictureVO_ = {
+    code?: number;
+    data?: PictureVO;
+    message?: string;
+  };
+
   type BaseResponseString_ = {
     code?: number;
     data?: string;
+    message?: string;
+  };
+
+  type BaseResponseTag_ = {
+    code?: number;
+    data?: Tag;
     message?: string;
   };
 
@@ -51,8 +111,72 @@ declare namespace API {
     message?: string;
   };
 
+  type Category = {
+    count?: number;
+    createTime?: string;
+    editTime?: string;
+    id?: number;
+    isDelete?: number;
+    name?: string;
+    updateTime?: string;
+  };
+
+  type CategoryAddDTO = {
+    name?: string;
+  };
+
+  type CategoryQueryDTO = {
+    current?: number;
+    name?: string;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+  };
+
+  type CategoryUpdateDTO = {
+    id?: number;
+    name?: string;
+  };
+
+  type deletePictureUsingDELETEParams = {
+    id?: number;
+  };
+
   type DeleteRequest = {
     id?: number;
+  };
+
+  type downloadUsingGETParams = {
+    /** id */
+    id?: number;
+  };
+
+  type editPictureUsingPOSTParams = {
+    categoryId?: number;
+    id?: number;
+    introduction?: string;
+    name?: string;
+    tags?: string[];
+  };
+
+  type getCategoryByIdUsingGETParams = {
+    /** id */
+    id: number;
+  };
+
+  type getPictureByIdAdminUsingGETParams = {
+    /** id */
+    id: number;
+  };
+
+  type getPictureByIdUserUsingGETParams = {
+    /** id */
+    id: number;
+  };
+
+  type getTagByIdUsingGETParams = {
+    /** id */
+    id: number;
   };
 
   type getUserInfoUsingGETParams = {
@@ -74,6 +198,38 @@ declare namespace API {
     userRole?: string;
   };
 
+  type PageCategory_ = {
+    current?: number;
+    pages?: number;
+    records?: Category[];
+    size?: number;
+    total?: number;
+  };
+
+  type PagePictureEntityVO_ = {
+    current?: number;
+    pages?: number;
+    records?: PictureEntityVO[];
+    size?: number;
+    total?: number;
+  };
+
+  type PagePictureVO_ = {
+    current?: number;
+    pages?: number;
+    records?: PictureVO[];
+    size?: number;
+    total?: number;
+  };
+
+  type PageTag_ = {
+    current?: number;
+    pages?: number;
+    records?: Tag[];
+    size?: number;
+    total?: number;
+  };
+
   type PageUserVO_ = {
     current?: number;
     pages?: number;
@@ -82,10 +238,143 @@ declare namespace API {
     total?: number;
   };
 
+  type Picture = {
+    categoryId?: number;
+    createTime?: string;
+    editTime?: string;
+    id?: number;
+    introduction?: string;
+    isDelete?: number;
+    name?: string;
+    picFormat?: string;
+    picHeight?: number;
+    picScale?: number;
+    picSize?: number;
+    picWidth?: number;
+    tags?: string;
+    updateTime?: string;
+    url?: string;
+    userId?: number;
+  };
+
+  type PictureEntityVO = {
+    categoryId?: number;
+    categoryName?: string;
+    createTime?: string;
+    editTime?: string;
+    id?: number;
+    introduction?: string;
+    name?: string;
+    picFormat?: string;
+    picHeight?: number;
+    picScale?: number;
+    picSize?: number;
+    picWidth?: number;
+    tags?: string;
+    updateTime?: string;
+    url?: string;
+    userId?: number;
+  };
+
+  type PictureVO = {
+    categoryId?: number;
+    categoryName?: string;
+    id?: number;
+    introduction?: string;
+    name?: string;
+    picFormat?: string;
+    picHeight?: number;
+    picScale?: number;
+    picSize?: number;
+    picWidth?: number;
+    tags?: string[];
+    url?: string;
+    userId?: number;
+    userVO?: UserVO;
+  };
+
+  type queryPictureAdminUsingPOSTParams = {
+    categoryId?: number;
+    current?: number;
+    id?: number;
+    introduction?: string;
+    name?: string;
+    pageSize?: number;
+    picFormat?: string;
+    picHeight?: number;
+    picScale?: number;
+    picSize?: number;
+    picWidth?: number;
+    searchText?: string;
+    sortField?: string;
+    sortOrder?: string;
+    tags?: string[];
+    userId?: number;
+  };
+
+  type queryPictureUserUsingPOSTParams = {
+    categoryId?: number;
+    current?: number;
+    id?: number;
+    introduction?: string;
+    name?: string;
+    pageSize?: number;
+    picFormat?: string;
+    picHeight?: number;
+    picScale?: number;
+    picSize?: number;
+    picWidth?: number;
+    searchText?: string;
+    sortField?: string;
+    sortOrder?: string;
+    tags?: string[];
+    userId?: number;
+  };
+
   type SendVerificationCodeDTO = {
     account?: string;
     captchaVerifyParam?: string;
     type?: number;
+  };
+
+  type Tag = {
+    count?: number;
+    createTime?: string;
+    editTime?: string;
+    id?: number;
+    isDelete?: number;
+    name?: string;
+    updateTime?: string;
+  };
+
+  type TagAddDTO = {
+    name?: string;
+  };
+
+  type TagQueryDTO = {
+    current?: number;
+    name?: string;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+  };
+
+  type TagUpdateDTO = {
+    id?: number;
+    name?: string;
+  };
+
+  type updatePictureUsingPOSTParams = {
+    categoryId?: number;
+    id?: number;
+    introduction?: string;
+    name?: string;
+    tags?: string[];
+  };
+
+  type uploadUsingPOSTParams = {
+    /** id */
+    id?: number;
   };
 
   type User = {
@@ -139,6 +428,14 @@ declare namespace API {
     password?: string;
     type?: number;
     verityCode?: string;
+  };
+
+  type UserUpdateDTO = {
+    userAvatar?: string;
+    userEmail?: string;
+    userName?: string;
+    userPhone?: string;
+    userProfile?: string;
   };
 
   type UserVO = {
