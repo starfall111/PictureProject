@@ -6,7 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import net.bytebuddy.implementation.bytecode.Throw;
+import org.example.common.constants.ImageConstant;
 import org.example.common.constants.UserConstant;
 import org.example.pojo.dto.user.*;
 import org.example.pojo.entity.User;
@@ -15,22 +15,22 @@ import org.example.common.enums.UserEnum;
 import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
+import org.example.common.util.AliOssUtil;
 import org.example.pojo.vo.UserVO;
 import org.example.server.service.UserService;
 import org.example.server.mapper.UserMapper;
 import org.example.server.service.VerityCodeService;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 import org.example.common.util.SnowflakeIdWorker;
 import org.example.pojo.vo.LoginUserVO;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -46,6 +46,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Resource
     private VerityCodeService verityCodeService;
+
+    @Resource
+    private AliOssUtil aliOssUtil;
 
     @Override
     public long userRegister(UserRegisterDTO userRegisterDTO) {
@@ -67,7 +70,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                 //检查account是否重复
                 //密码加密
                 String password = userRegisterDTO.getPassword();
-                ThrowUtils.throwIf(password.length() < 6 || userRegisterDTO.getCheckPassword().length() < 8, ErrorCode.PARAMS_ERROR, "密码过短");
+                ThrowUtils.throwIf(password.length() < 6 || userRegisterDTO.getCheckPassword().length() < 6, ErrorCode.PARAMS_ERROR, "密码过短");
                 ThrowUtils.throwIf(!password.equals(userRegisterDTO.getCheckPassword()), ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
                 checkAccount(UserConstant.USER_ACCOUNT_FAILED, account);
                 password = getEncryptPassword(password);
@@ -300,6 +303,86 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         queryWrapper.eq(filed, account);
         //返回数据
         return this.baseMapper.selectOne(queryWrapper);
+    }
+
+    @Override
+    public void bindAccount(UserBindAccountDTO userBindAccountDTO) {
+        Integer type = userBindAccountDTO.getType();
+        String account = userBindAccountDTO.getAccount();
+        String verificationCode = userBindAccountDTO.getVerificationCode();
+
+        //1.判空
+        ThrowUtils.throwIf(ObjUtil.hasNull(type, account, verificationCode), ErrorCode.PARAMS_ERROR);
+
+        //2.校验格式
+        verityCodeService.checkPhoneOrEmail(type, account);
+
+        //3.校验验证码
+        verityCodeService.verityCode(account, verificationCode);
+
+        //4.检查是否已被其他用户绑定
+        String field = switch (type) {
+            case 1 -> UserConstant.USER_PHONE_FAILED;
+            case 2 -> UserConstant.USER_EMAIL_FAILED;
+            default -> throw new BusinessException(ErrorCode.PARAMS_ERROR, "数据非法");
+        };
+        ThrowUtils.throwIf(checkAccount(field, account) > 0, ErrorCode.PARAMS_ERROR, "该账号已被绑定");
+
+        //5.获取当前用户并更新
+        User currentUser = UserContext.get();
+        ThrowUtils.throwIf(ObjUtil.isEmpty(currentUser), ErrorCode.NOT_LOGIN_ERROR);
+
+        User updateUser = new User();
+        updateUser.setId(currentUser.getId());
+        if (type == 1) {
+            updateUser.setUserPhone(account);
+        } else {
+            updateUser.setUserEmail(account);
+        }
+
+        boolean result = this.updateById(updateUser);
+        ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
+    }
+
+    @Override
+    public String uploadAvatar(MultipartFile file) throws Exception {
+        //1.判空
+        ThrowUtils.throwIf(ObjUtil.isEmpty(file), ErrorCode.PARAMS_ERROR, "文件不能为空");
+
+        //2.校验文件格式
+        String fileName = file.getOriginalFilename();
+        ThrowUtils.throwIf(StrUtil.hasBlank(fileName), ErrorCode.PARAMS_ERROR, "文件名不能为空");
+        String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+        cn.hutool.core.util.ArrayUtil.contains(ImageConstant.IMAGE_TYPE_LIST, ext);
+        ThrowUtils.throwIf(!cn.hutool.core.util.ArrayUtil.contains(ImageConstant.IMAGE_TYPE_LIST, ext),
+                ErrorCode.PARAMS_ERROR, "不支持的图片格式");
+
+        //3.获取当前用户
+        User currentUser = UserContext.get();
+        ThrowUtils.throwIf(ObjUtil.isEmpty(currentUser), ErrorCode.NOT_LOGIN_ERROR);
+
+        //4.上传文件到OSS
+        String url = aliOssUtil.upload(file.getBytes(), fileName);
+        try {
+            //5.删除旧头像
+            User oldUser = this.getById(currentUser.getId());
+            if (StrUtil.isNotBlank(oldUser.getUserAvatar())) {
+                aliOssUtil.deleteByUrl(oldUser.getUserAvatar());
+            }
+
+            //6.更新用户头像链接
+            User updateUser = new User();
+            updateUser.setId(currentUser.getId());
+            updateUser.setUserAvatar(url);
+            boolean result = this.updateById(updateUser);
+            ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
+
+            return url;
+        } catch (Exception e) {
+            //上传失败，删除已上传的文件
+            aliOssUtil.deleteByUrl(url);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "头像上传失败");
+        }
     }
 
     private UserVO getUserVO(User user) {

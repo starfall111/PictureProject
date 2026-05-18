@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.example.common.result.BaseResponse;
 import org.example.common.result.ResultUtils;
 import org.example.pojo.vo.LoginUserVO;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -138,6 +139,26 @@ public class UserController {
 
         return ResultUtils.success(user);
     }
+    //换绑手机号/邮箱
+    @PostMapping("/bind/account")
+    public BaseResponse<Boolean> bindAccount(@RequestBody UserBindAccountDTO userBindAccountDTO) {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(userBindAccountDTO), ErrorCode.PARAMS_ERROR);
+
+        userService.bindAccount(userBindAccountDTO);
+
+        return ResultUtils.success(true);
+    }
+
+    //上传用户头像
+    @PostMapping("/avatar/upload")
+    public BaseResponse<String> uploadAvatar(@RequestParam("file") MultipartFile file) throws Exception {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(file), ErrorCode.PARAMS_ERROR, "文件不能为空");
+
+        String url = userService.uploadAvatar(file);
+
+        return ResultUtils.success(url);
+    }
+
     //根据ID获取信息
     @GetMapping("/get/info")
     public BaseResponse<UserVO> getUserInfo(){

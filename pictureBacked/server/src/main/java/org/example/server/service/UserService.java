@@ -48,5 +48,15 @@ public interface UserService extends IService<User> {
      * */
     Page<UserVO> queryUserList(UserQueryDTO userQueryDTO);
 
+    /**
+     * 换绑手机号/邮箱
+     * */
+    void bindAccount(UserBindAccountDTO userBindAccountDTO);
+
+    /**
+     * 上传用户头像
+     * */
+    String uploadAvatar(org.springframework.web.multipart.MultipartFile file) throws Exception;
+
 
 }
