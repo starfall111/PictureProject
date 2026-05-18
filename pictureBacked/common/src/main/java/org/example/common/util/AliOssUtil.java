@@ -9,12 +9,10 @@ import com.aliyun.oss.model.PutObjectRequest;
 import com.aliyun.oss.model.PutObjectResult;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.example.common.constants.ImageConstant;
-import org.example.common.context.UserContext;
+import org.example.common.constants.PictureConstant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.time.LocalDate;
@@ -150,7 +148,7 @@ public class AliOssUtil {
         }
         String objectKey = imageUrl.substring(domainIndex + domain.length() + 1);
         // 填写Object下载到本地的完整路径。
-        String pathName = ImageConstant.TEMP_FILE_URL + id +  "_" +  name;
+        String pathName = PictureConstant.TEMP_FILE_URL + id +  "_" +  name;
 
         // 创建OSSClient实例。
         // 当OSSClient实例不再使用时，调用shutdown方法以释放资源。

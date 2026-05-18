@@ -3,11 +3,11 @@ package org.example.common.constants;
 /**
  * @author Zou
  */
-public interface ImageConstant {
+public interface PictureConstant {
 
     String TEMP_FILE_URL = "./temp/";
 
-    String[] IMAGE_TYPE_LIST = {"jpg", "jpeg", "png", "gif", "bmp"};
+    String[] IMAGE_TYPE_LIST = {"jpg", "jpeg", "png", "webp"};
 
     long MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 }

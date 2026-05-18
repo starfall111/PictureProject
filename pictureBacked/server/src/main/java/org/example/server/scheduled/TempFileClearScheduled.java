@@ -1,7 +1,7 @@
 package org.example.server.scheduled;
 
 import cn.hutool.core.util.ObjUtil;
-import org.example.common.constants.ImageConstant;
+import org.example.common.constants.PictureConstant;
 import org.springframework.scheduling.annotation.Scheduled;
 import lombok.extern.slf4j.Slf4j;
 import java.io.File;
@@ -14,7 +14,7 @@ public class TempFileClearScheduled {
     //每小时清理已存在1小时的临时文件
     @Scheduled(fixedRate = 60 * 60 * 1000)
     public void tempFileClear() {
-        File dir = new File(ImageConstant.TEMP_FILE_URL);
+        File dir = new File(PictureConstant.TEMP_FILE_URL);
         if (dir.exists()) {
             return;
         }

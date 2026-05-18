@@ -6,7 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.example.common.constants.ImageConstant;
+import org.example.common.constants.PictureConstant;
 import org.example.common.constants.UserConstant;
 import org.example.pojo.dto.user.*;
 import org.example.pojo.entity.User;
@@ -353,8 +353,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String fileName = file.getOriginalFilename();
         ThrowUtils.throwIf(StrUtil.hasBlank(fileName), ErrorCode.PARAMS_ERROR, "文件名不能为空");
         String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-        cn.hutool.core.util.ArrayUtil.contains(ImageConstant.IMAGE_TYPE_LIST, ext);
-        ThrowUtils.throwIf(!cn.hutool.core.util.ArrayUtil.contains(ImageConstant.IMAGE_TYPE_LIST, ext),
+        cn.hutool.core.util.ArrayUtil.contains(PictureConstant.IMAGE_TYPE_LIST, ext);
+        ThrowUtils.throwIf(!cn.hutool.core.util.ArrayUtil.contains(PictureConstant.IMAGE_TYPE_LIST, ext),
                 ErrorCode.PARAMS_ERROR, "不支持的图片格式");
 
         //3.获取当前用户
