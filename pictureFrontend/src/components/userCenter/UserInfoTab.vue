@@ -70,13 +70,23 @@
 
         <a-row :gutter="24">
           <a-col :xs="24" :sm="24" :md="12">
-            <a-form-item label="手机号" name="userPhone">
-              <a-input v-model:value="editForm.userPhone" placeholder="请输入手机号" size="large" />
+            <a-form-item label="手机号">
+              <div class="readonly-field-row">
+                <a-input :value="editForm.userPhone || '未绑定'" disabled size="large" />
+                <a-button type="link" size="large" @click="goToSecurity">
+                  {{ editForm.userPhone ? '去修改' : '去绑定' }}
+                </a-button>
+              </div>
             </a-form-item>
           </a-col>
           <a-col :xs="24" :sm="24" :md="12">
-            <a-form-item label="邮箱" name="userEmail">
-              <a-input v-model:value="editForm.userEmail" placeholder="请输入邮箱" size="large" />
+            <a-form-item label="邮箱">
+              <div class="readonly-field-row">
+                <a-input :value="editForm.userEmail || '未绑定'" disabled size="large" />
+                <a-button type="link" size="large" @click="goToSecurity">
+                  {{ editForm.userEmail ? '去修改' : '去绑定' }}
+                </a-button>
+              </div>
             </a-form-item>
           </a-col>
         </a-row>
@@ -110,6 +120,7 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'update-success'): void;
+  (e: 'switch-security'): void;
 }>();
 
 const loginUserStore = userLoginUserStore();
@@ -164,6 +175,11 @@ const cancelEditing = () => {
   isEditing.value = false;
 };
 
+/** 跳转到安全设置 */
+const goToSecurity = () => {
+  emit('switch-security');
+};
+
 /** 保存修改 */
 const handleSave = async () => {
   try {
@@ -211,5 +227,15 @@ const handleSave = async () => {
 
 .edit-form {
   max-width: 720px;
+}
+
+.readonly-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.readonly-field-row .ant-input {
+  flex: 1;
 }
 </style>

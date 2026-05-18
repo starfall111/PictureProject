@@ -2,9 +2,7 @@ declare namespace API {
   type AdminUpdateDTO = {
     id?: number;
     userAvatar?: string;
-    userEmail?: string;
     userName?: string;
-    userPhone?: string;
     userProfile?: string;
     userRole?: string;
   };
@@ -18,6 +16,12 @@ declare namespace API {
   type BaseResponseCategory_ = {
     code?: number;
     data?: Category;
+    message?: string;
+  };
+
+  type BaseResponseInt_ = {
+    code?: number;
+    data?: number;
     message?: string;
   };
 
@@ -159,6 +163,14 @@ declare namespace API {
     tags?: string[];
   };
 
+  type FileDTO = {
+    categoryId?: number;
+    fileUrl?: string;
+    id?: number;
+    name?: string;
+    tags?: string;
+  };
+
   type getCategoryByIdUsingGETParams = {
     /** id */
     id: number;
@@ -251,6 +263,10 @@ declare namespace API {
     picScale?: number;
     picSize?: number;
     picWidth?: number;
+    reviewMessage?: string;
+    reviewStatus?: number;
+    reviewTime?: string;
+    reviewerId?: number;
     tags?: string;
     updateTime?: string;
     url?: string;
@@ -270,10 +286,28 @@ declare namespace API {
     picScale?: number;
     picSize?: number;
     picWidth?: number;
+    reviewMessage?: string;
+    reviewStatus?: number;
+    reviewTime?: string;
+    reviewerId?: number;
     tags?: string;
     updateTime?: string;
     url?: string;
     userId?: number;
+  };
+
+  type PictureReviewDTO = {
+    id?: number;
+    reviewMessage?: string;
+    reviewStatus?: number;
+  };
+
+  type PictureUploadByBatchDTO = {
+    categoryId?: number;
+    count?: number;
+    profile?: string;
+    searchText?: string;
+    tags?: string[];
   };
 
   type PictureVO = {
@@ -287,6 +321,10 @@ declare namespace API {
     picScale?: number;
     picSize?: number;
     picWidth?: number;
+    reviewMessage?: string;
+    reviewStatus?: number;
+    reviewTime?: string;
+    reviewerId?: number;
     tags?: string[];
     url?: string;
     userId?: number;
@@ -305,6 +343,7 @@ declare namespace API {
     picScale?: number;
     picSize?: number;
     picWidth?: number;
+    reviewStatus?: number;
     searchText?: string;
     sortField?: string;
     sortOrder?: string;
@@ -324,6 +363,7 @@ declare namespace API {
     picScale?: number;
     picSize?: number;
     picWidth?: number;
+    reviewStatus?: number;
     searchText?: string;
     sortField?: string;
     sortOrder?: string;
@@ -372,9 +412,12 @@ declare namespace API {
     tags?: string[];
   };
 
-  type uploadUsingPOSTParams = {
-    /** id */
+  type uploadUsingPOST1Params = {
+    categoryId?: number;
+    fileUrl?: string;
     id?: number;
+    name?: string;
+    tags?: string;
   };
 
   type User = {
@@ -399,6 +442,12 @@ declare namespace API {
     userName?: string;
     userProfile?: string;
     userRole?: string;
+  };
+
+  type UserBindAccountDTO = {
+    account?: string;
+    type?: number;
+    verificationCode?: string;
   };
 
   type UserLoginDTO = {
@@ -432,9 +481,7 @@ declare namespace API {
 
   type UserUpdateDTO = {
     userAvatar?: string;
-    userEmail?: string;
     userName?: string;
-    userPhone?: string;
     userProfile?: string;
   };
 

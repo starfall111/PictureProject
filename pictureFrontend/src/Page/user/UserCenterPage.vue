@@ -38,10 +38,11 @@
               <UserInfoTab
                 :userInfo="loginUserStore.loginUser"
                 @update-success="handleUpdateSuccess"
+                @switch-security="activeTab = 'security'"
               />
             </a-tab-pane>
             <a-tab-pane key="security" tab="安全设置">
-              <SecurityTab :userInfo="loginUserStore.loginUser" />
+              <SecurityTab :userInfo="loginUserStore.loginUser" @bind-success="handleUpdateSuccess" />
             </a-tab-pane>
           </a-tabs>
         </a-card>

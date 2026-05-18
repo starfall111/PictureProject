@@ -1,9 +1,12 @@
 <template>
-    <div id="userManagePage">
+    <div id="PictureManagePage">
         <div>
             <a-flex justify="space-between">
                 <h2>图片管理</h2>
-                <a-button type="primary" href="/add_picture" target="_blank">+ 创建图片</a-button>
+                <a-space>
+                    <a-button type="primary" href="/add_picture" target="_blank">+ 创建图片</a-button>
+                    <a-button type="primary" href="/add_picture/batch" target="_blank" ghost>+ 批量创建图片</a-button>
+                </a-space>
             </a-flex>
             <a-form layout="inline" :model="searchParams" @finish="doSearch">
                 <a-form-item label="关键词" name="searchText">
@@ -16,6 +19,11 @@
                     <a-select v-model:value="searchParams.tags" :options="tagOptions" mode="tags" placeholder="请输入标签"
                         allowClear style="min-width: 150px;" />
                 </a-form-item>
+                <a-form-item label="审核状态" name="reviewStatus">
+                    <a-select v-model:value="searchParams.reviewStatus" :options="PIC_REVIEW_STATUS_OPTIONS"
+                        placeholder="请输入审核状态" style="min-width: 180px" allow-clear />
+                </a-form-item>
+
                 <a-form-item>
                     <a-button type="primary" html-type="submit">搜索</a-button>
                 </a-form-item>
@@ -42,6 +50,13 @@
                         <div>宽高比：{{ record.picScale }}</div>
                         <div>大小：{{ (record.picSize / 1024).toFixed(2) }}KB</div>
                     </template>
+                    <!-- 审核信息 -->
+                    <template v-if="column.dataIndex === 'reviewMessage'">
+                        <div>审核状态：{{ PIC_REVIEW_STATUS_MAP[record.reviewStatus] }}</div>
+                        <div>审核信息：{{ record.reviewMessage }}</div>
+                        <div>审核人：{{ record.reviewerId }}</div>
+                    </template>
+
                     <template v-else-if="column.dataIndex === 'createTime'">
                         {{ dayjs(record.createTime).format('YYYY-MM-DD HH:mm:ss') }}
                     </template>
@@ -49,11 +64,21 @@
                         {{ dayjs(record.editTime).format('YYYY-MM-DD HH:mm:ss') }}
                     </template>
                     <template v-else-if="column.key === 'action'">
-                        <a-space>
-                            <a-button type="link" :href="`/add_picture?id=${record.id}`" target="_blank">编辑</a-button>
+                        <a-space wrap>
+                            <a-button v-if="record.reviewStatus !== PIC_REVIEW_STATUS_ENUM.PASS" type="link"
+                                @click="handleReview(record, PIC_REVIEW_STATUS_ENUM.PASS)">
+                                通过
+                            </a-button>
+                            <a-button v-if="record.reviewStatus !== PIC_REVIEW_STATUS_ENUM.REJECT" type="link" danger
+                                @click="handleReview(record, PIC_REVIEW_STATUS_ENUM.REJECT)">
+                                拒绝
+                            </a-button>
+                            <a-button type="link" :href="`/add_picture?id=${record.id}`" target="_blank">编辑
+                            </a-button>
                             <a-button type="link" danger @click="doDelete(record.id)">删除</a-button>
                         </a-space>
                     </template>
+
                 </template>
 
             </a-table>
@@ -65,11 +90,39 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 import dayjs from 'dayjs';
-import { deletePictureUsingDelete, queryPictureAdminUsingPost } from '@/api/pictureController';
+import { useRouter } from 'vue-router';
+import { deletePictureUsingDelete, queryPictureAdminUsingPost, reviewPictureUsingPost } from '@/api/pictureController';
 import { listTagUsingGet } from '@/api/tagController';
 import { listCategoryUsingGet } from '@/api/categoryController';
+import { PIC_REVIEW_STATUS_ENUM, PIC_REVIEW_STATUS_MAP, PIC_REVIEW_STATUS_OPTIONS } from '@/constants/picture';
+import { userLoginUserStore } from '@/stores/user';
+
+const router = useRouter()
+const loginUserStore = userLoginUserStore()
+
+// ==================== 创建图片校验 ====================
+
+const handleCreatePicture = () => {
+    const loginUser = loginUserStore.loginUser
+    if (!loginUser.userPhone && loginUser.userRole !== 'admin') {
+        Modal.confirm({
+            title: '请先绑定手机号',
+            content: '上传图片前需要绑定手机号，是否前往个人中心绑定？',
+            okText: '去绑定',
+            cancelText: '返回主页',
+            onOk: () => {
+                router.push('/user/center')
+            },
+            onCancel: () => {
+                router.push('/')
+            },
+        })
+        return
+    }
+    window.open('/add_picture', '_blank')
+}
 
 // ==================== 列表相关 ====================
 
@@ -169,6 +222,23 @@ const getTagCategoryOptions = async () => {
     }
 }
 
+const handleReview = async (record: API.Picture, reviewStatus: number) => {
+    const reviewMessage = reviewStatus === PIC_REVIEW_STATUS_ENUM.PASS ? '管理员操作通过' : '管理员操作拒绝'
+    const res = await reviewPictureUsingPost({
+        id: record.id,
+        reviewStatus,
+        reviewMessage,
+    })
+    if (res.data.code === 0) {
+        message.success('审核操作成功')
+        // 重新获取列表  
+        fetchData()
+    } else {
+        message.error('审核操作失败，' + res.data.message)
+    }
+}
+
+
 const columns = [
     {
         title: 'id',
@@ -204,6 +274,10 @@ const columns = [
         title: '用户 id',
         dataIndex: 'userId',
         width: 80,
+    },
+    {
+        title: '审核信息',
+        dataIndex: 'reviewMessage',
     },
     {
         title: '创建时间',

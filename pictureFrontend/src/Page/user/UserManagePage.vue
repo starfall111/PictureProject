@@ -36,7 +36,7 @@
       <a-table :columns="columns" :data-source="dataList" :pagination="pagination" @change="doTableChange">
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'userAvatar'">
-            <a-image :src="record.userAvatar" />
+            <a-image :src="record.userAvatar" style=" max-height: 150px;"/>
           </template>
           <template v-else-if="column.dataIndex === 'userRole'">
             <div v-if="record.userRole === 'admin'">
@@ -73,9 +73,6 @@
         </a-form-item>
         <a-form-item label="用户名">
           <a-input v-model:value="addForm.userName" placeholder="请输入用户名" />
-        </a-form-item>
-        <a-form-item label="头像链接">
-          <a-input v-model:value="addForm.userAvatar" placeholder="请输入头像链接" />
         </a-form-item>
         <a-form-item label="简介">
           <a-input v-model:value="addForm.userProfile" placeholder="请输入简介" />

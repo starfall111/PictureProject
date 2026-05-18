@@ -144,7 +144,6 @@ const { init: initCaptcha, triggerCaptcha, captchaVerifying } = useAliyunCaptcha
     onCaptchaVerify: async (captchaVerifyParam: string) => {
         const account = verificationCodeDTO.account ?? '';
         const type = isPhone(account) ? 1 : 2;
-        // TODO: 调用发送验证码 API，带上 captchaVerifyParam
         const res = await sendVerificationCodeUsingPost({
             account: verificationCodeDTO.account,
             captchaVerifyParam,

@@ -12,6 +12,8 @@ import PictureManagePage from '@/Page/picture/PictureManagePage.vue'
 import PictureDetailPage from '@/Page/picture/PictureDetailPage.vue'
 import CategoryManagePage from '@/Page/category/CategoryManagePage.vue'
 import TagManagePage from '@/Page/tag/TagManagePage.vue'
+import { pictureUploadByBatchUsingPost } from '@/api/pictureController'
+import PictureUploadByBatchPage from '@/Page/picture/PictureUploadByBatchPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -97,7 +99,12 @@ const router = createRouter({
           component: PictureDetailPage,
           props: true,
         },
-
+        {
+          path: '/add_picture/batch',
+          name: '批量抓图',
+          component: PictureUploadByBatchPage,
+          props: true,
+        },
         {
           path: 'about',
           name: 'about',
