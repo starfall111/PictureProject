@@ -97,7 +97,7 @@ import { MenuProps, message } from 'ant-design-vue';
 import { reactive } from 'vue';
 import { loginUsingPost } from '@/api/userController';
 import { useAliyunCaptcha } from '@/access/useAliyunCaptcha';
-import { sendVerificationCodeUsingPost } from '@/api/verificationCodeController';
+import { sendVerificationCodeUsingPost } from '@/api/noticeController';
 import router from '@/router';
 import { userLoginUserStore } from '@/stores/user';
 const current = ref<string[]>(['login']);

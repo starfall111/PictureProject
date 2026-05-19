@@ -131,10 +131,9 @@
           <!-- 单张图片 -->
           <a-list-item style="padding: 0">
             <!-- 单张图片 -->
-            <!-- 单张图片 -->
             <a-card hoverable @click="doClickPicture(picture)">
               <template #cover>
-                <img style="height: 180px; object-fit: cover" :alt="picture.name" :src="picture.url" />
+                <img style="height: 180px; object-fit: cover" :alt="picture.name" :src="picture.thumbnailUrl" />
               </template>
               <a-card-meta :title="picture.name">
                 <template #description>
@@ -172,7 +171,7 @@ const total = ref(0)
 const loading = ref(true)
 
 // 搜索条件  
-const searchParams = reactive<API.queryPictureUserUsingPOSTParams>({
+const searchParams = reactive<API.PictureQueryDTO>({
   current: 1,
   pageSize: 12,
   sortField: 'createTime',

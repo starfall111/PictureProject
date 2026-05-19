@@ -142,10 +142,6 @@ declare namespace API {
     name?: string;
   };
 
-  type deletePictureUsingDELETEParams = {
-    id?: number;
-  };
-
   type DeleteRequest = {
     id?: number;
   };
@@ -153,14 +149,6 @@ declare namespace API {
   type downloadUsingGETParams = {
     /** id */
     id?: number;
-  };
-
-  type editPictureUsingPOSTParams = {
-    categoryId?: number;
-    id?: number;
-    introduction?: string;
-    name?: string;
-    tags?: string[];
   };
 
   type FileDTO = {
@@ -258,6 +246,7 @@ declare namespace API {
     introduction?: string;
     isDelete?: number;
     name?: string;
+    originUrl?: string;
     picFormat?: string;
     picHeight?: number;
     picScale?: number;
@@ -268,9 +257,18 @@ declare namespace API {
     reviewTime?: string;
     reviewerId?: number;
     tags?: string;
+    thumbnailUrl?: string;
     updateTime?: string;
     url?: string;
     userId?: number;
+  };
+
+  type PictureEditDTO = {
+    categoryId?: number;
+    id?: number;
+    introduction?: string;
+    name?: string;
+    tags?: string[];
   };
 
   type PictureEntityVO = {
@@ -281,6 +279,7 @@ declare namespace API {
     id?: number;
     introduction?: string;
     name?: string;
+    originPictureUrl?: string;
     picFormat?: string;
     picHeight?: number;
     picScale?: number;
@@ -291,8 +290,29 @@ declare namespace API {
     reviewTime?: string;
     reviewerId?: number;
     tags?: string;
+    thumbnailUrl?: string;
     updateTime?: string;
     url?: string;
+    userId?: number;
+  };
+
+  type PictureQueryDTO = {
+    categoryId?: number;
+    current?: number;
+    id?: number;
+    introduction?: string;
+    name?: string;
+    pageSize?: number;
+    picFormat?: string;
+    picHeight?: number;
+    picScale?: number;
+    picSize?: number;
+    picWidth?: number;
+    reviewStatus?: number;
+    searchText?: string;
+    sortField?: string;
+    sortOrder?: string;
+    tags?: string[];
     userId?: number;
   };
 
@@ -300,6 +320,14 @@ declare namespace API {
     id?: number;
     reviewMessage?: string;
     reviewStatus?: number;
+  };
+
+  type PictureUpdateDTO = {
+    categoryId?: number;
+    id?: number;
+    introduction?: string;
+    name?: string;
+    tags?: string[];
   };
 
   type PictureUploadByBatchDTO = {
@@ -316,6 +344,7 @@ declare namespace API {
     id?: number;
     introduction?: string;
     name?: string;
+    originUrl?: string;
     picFormat?: string;
     picHeight?: number;
     picScale?: number;
@@ -326,49 +355,10 @@ declare namespace API {
     reviewTime?: string;
     reviewerId?: number;
     tags?: string[];
+    thumbnailUrl?: string;
     url?: string;
     userId?: number;
     userVO?: UserVO;
-  };
-
-  type queryPictureAdminUsingPOSTParams = {
-    categoryId?: number;
-    current?: number;
-    id?: number;
-    introduction?: string;
-    name?: string;
-    pageSize?: number;
-    picFormat?: string;
-    picHeight?: number;
-    picScale?: number;
-    picSize?: number;
-    picWidth?: number;
-    reviewStatus?: number;
-    searchText?: string;
-    sortField?: string;
-    sortOrder?: string;
-    tags?: string[];
-    userId?: number;
-  };
-
-  type queryPictureUserUsingPOSTParams = {
-    categoryId?: number;
-    current?: number;
-    id?: number;
-    introduction?: string;
-    name?: string;
-    pageSize?: number;
-    picFormat?: string;
-    picHeight?: number;
-    picScale?: number;
-    picSize?: number;
-    picWidth?: number;
-    reviewStatus?: number;
-    searchText?: string;
-    sortField?: string;
-    sortOrder?: string;
-    tags?: string[];
-    userId?: number;
   };
 
   type SendVerificationCodeDTO = {
@@ -402,14 +392,6 @@ declare namespace API {
   type TagUpdateDTO = {
     id?: number;
     name?: string;
-  };
-
-  type updatePictureUsingPOSTParams = {
-    categoryId?: number;
-    id?: number;
-    introduction?: string;
-    name?: string;
-    tags?: string[];
   };
 
   type uploadUsingPOST1Params = {

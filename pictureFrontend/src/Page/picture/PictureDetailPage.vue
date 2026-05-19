@@ -61,6 +61,12 @@
                                 <DeleteOutlined />
                             </template>
                         </a-button>
+                        <a-button type="primary" @click="doDownload">
+                            免费下载
+                            <template #icon>
+                                <DownloadOutlined />
+                            </template>
+                        </a-button>
                     </a-space>
 
                 </a-card>
@@ -76,6 +82,7 @@
 import { deletePictureUsingDelete, getPictureByIdUserUsingGet } from '@/api/pictureController';
 import router from '@/router';
 import { userLoginUserStore } from '@/stores/user';
+import { downloadImage } from '@/util/download';
 import { formatSize } from '@/util/format';
 import { message } from 'ant-design-vue';
 import { computed, onMounted, ref } from 'vue';
@@ -105,34 +112,40 @@ const fetchPictureDetail = async () => {
 
 const loginUserStore = userLoginUserStore()
 // 是否具有编辑权限  
-const canEdit = computed(() => {  
-  const loginUser = loginUserStore.loginUser;  
-  // 未登录不可编辑  
-  if (!loginUser.id) {  
-    return false  
-  }  
-  // 仅本人或管理员可编辑  
-  const user = picture.value.user || {}  
-  return loginUser.id === user.id || loginUser.userRole === 'admin'  
+const canEdit = computed(() => {
+    const loginUser = loginUserStore.loginUser;
+    // 未登录不可编辑  
+    if (!loginUser.id) {
+        return false
+    }
+    // 仅本人或管理员可编辑  
+    const user = picture.value.user || {}
+    return loginUser.id === user.id || loginUser.userRole === 'admin'
 })
 
 // 编辑  
-const doEdit = () => {  
-  router.push('/add_picture?id=' + picture.value.id)  
-}  
-// 删除  
-const doDelete = async () => {  
-  const id = picture.value.id  
-  if (!id) {  
-    return  
-  }  
-  const res = await deletePictureUsingDelete({ id })  
-  if (res.data.code === 0) {  
-    message.success('删除成功')  
-  } else {  
-    message.error('删除失败')  
-  }  
+const doEdit = () => {
+    router.push('/add_picture?id=' + picture.value.id)
 }
+// 删除  
+const doDelete = async () => {
+    const id = picture.value.id
+    if (!id) {
+        return
+    }
+    const res = await deletePictureUsingDelete({ id })
+    if (res.data.code === 0) {
+        message.success('删除成功')
+    } else {
+        message.error('删除失败')
+    }
+}
+
+// 处理下载  
+const doDownload = () => {  
+  downloadImage(picture.value.originUrl)  
+}
+
 
 
 onMounted(() => {

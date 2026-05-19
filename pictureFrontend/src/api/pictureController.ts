@@ -18,17 +18,17 @@ export async function getPictureByIdAdminUsingGet(
 
 /** queryPictureAdmin POST /api/picture/admin/query */
 export async function queryPictureAdminUsingPost(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.queryPictureAdminUsingPOSTParams,
+  body: API.PictureQueryDTO,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponsePagePictureEntityVO_>(
     "/api/picture/admin/query",
     {
       method: "POST",
-      params: {
-        ...params,
+      headers: {
+        "Content-Type": "application/json",
       },
+      data: body,
       ...(options || {}),
     }
   );
@@ -36,15 +36,15 @@ export async function queryPictureAdminUsingPost(
 
 /** deletePicture DELETE /api/picture/delete */
 export async function deletePictureUsingDelete(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.deletePictureUsingDELETEParams,
+  body: API.DeleteRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseBoolean_>("/api/picture/delete", {
     method: "DELETE",
-    params: {
-      ...params,
+    headers: {
+      "Content-Type": "application/json",
     },
+    data: body,
     ...(options || {}),
   });
 }
@@ -66,15 +66,15 @@ export async function downloadUsingGet(
 
 /** editPicture POST /api/picture/edit */
 export async function editPictureUsingPost(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.editPictureUsingPOSTParams,
+  body: API.PictureEditDTO,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseBoolean_>("/api/picture/edit", {
     method: "POST",
-    params: {
-      ...params,
+    headers: {
+      "Content-Type": "application/json",
     },
+    data: body,
     ...(options || {}),
   });
 }
@@ -96,15 +96,15 @@ export async function reviewPictureUsingPost(
 
 /** updatePicture POST /api/picture/update */
 export async function updatePictureUsingPost(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.updatePictureUsingPOSTParams,
+  body: API.PictureUpdateDTO,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseBoolean_>("/api/picture/update", {
     method: "POST",
-    params: {
-      ...params,
+    headers: {
+      "Content-Type": "application/json",
     },
+    data: body,
     ...(options || {}),
   });
 }
@@ -199,15 +199,33 @@ export async function getPictureByIdUserUsingGet(
 
 /** queryPictureUser POST /api/picture/user/query */
 export async function queryPictureUserUsingPost(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.queryPictureUserUsingPOSTParams,
+  body: API.PictureQueryDTO,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponsePagePictureVO_>("/api/picture/user/query", {
     method: "POST",
-    params: {
-      ...params,
+    headers: {
+      "Content-Type": "application/json",
     },
+    data: body,
     ...(options || {}),
   });
+}
+
+/** queryPictureUserCache POST /api/picture/user/query/cache */
+export async function queryPictureUserCacheUsingPost(
+  body: API.PictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponsePagePictureVO_>(
+    "/api/picture/user/query/cache",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: body,
+      ...(options || {}),
+    }
+  );
 }

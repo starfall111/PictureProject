@@ -7,12 +7,12 @@ import * as mainController from "./mainController";
 import * as pictureController from "./pictureController";
 import * as tagController from "./tagController";
 import * as userController from "./userController";
-import * as verificationCodeController from "./verificationCodeController";
+import * as noticeController from "./noticeController";
 export default {
   categoryController,
   mainController,
   pictureController,
   tagController,
   userController,
-  verificationCodeController,
+  noticeController,
 };

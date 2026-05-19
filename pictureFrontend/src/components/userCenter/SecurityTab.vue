@@ -147,8 +147,8 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
 import { LockOutlined, PhoneOutlined, MailOutlined } from '@ant-design/icons-vue';
-import { bindAccountUsingPost, updateUserUsingPost1 } from '@/api/userController';
-import { sendVerificationCodeUsingPost } from '@/api/verificationCodeController';
+import { bindAccountUsingPost } from '@/api/userController';
+import { sendVerificationCodeUsingPost } from '@/api/noticeController';
 import { useAliyunCaptcha } from '@/access/useAliyunCaptcha';
 
 interface Props {

@@ -97,32 +97,6 @@ import { deletePictureUsingDelete, queryPictureAdminUsingPost, reviewPictureUsin
 import { listTagUsingGet } from '@/api/tagController';
 import { listCategoryUsingGet } from '@/api/categoryController';
 import { PIC_REVIEW_STATUS_ENUM, PIC_REVIEW_STATUS_MAP, PIC_REVIEW_STATUS_OPTIONS } from '@/constants/picture';
-import { userLoginUserStore } from '@/stores/user';
-
-const router = useRouter()
-const loginUserStore = userLoginUserStore()
-
-// ==================== 创建图片校验 ====================
-
-const handleCreatePicture = () => {
-    const loginUser = loginUserStore.loginUser
-    if (!loginUser.userPhone && loginUser.userRole !== 'admin') {
-        Modal.confirm({
-            title: '请先绑定手机号',
-            content: '上传图片前需要绑定手机号，是否前往个人中心绑定？',
-            okText: '去绑定',
-            cancelText: '返回主页',
-            onOk: () => {
-                router.push('/user/center')
-            },
-            onCancel: () => {
-                router.push('/')
-            },
-        })
-        return
-    }
-    window.open('/add_picture', '_blank')
-}
 
 // ==================== 列表相关 ====================
 
@@ -131,7 +105,7 @@ const dataList = ref([])
 const total = ref(0)
 
 // 搜索条件  
-const searchParams = reactive<API.queryPictureAdminUsingPOSTParams>({
+const searchParams = reactive<API.PictureQueryDTO>({
     current: 1,
     pageSize: 10,
     sortField: 'createTime',
@@ -182,7 +156,7 @@ const doTableChange = (page: any) => {
 }
 
 const doDelete = async (id: any) => {
-    const res = await deletePictureUsingDelete(id)
+    const res = await deletePictureUsingDelete({id: id})
     if (res.data.code === 0) {
         message.success('删除成功')
         fetchData()
@@ -247,7 +221,7 @@ const columns = [
     },
     {
         title: '图片',
-        dataIndex: 'url',
+        dataIndex: 'thumbnailUrl',
     },
     {
         title: '名称',
