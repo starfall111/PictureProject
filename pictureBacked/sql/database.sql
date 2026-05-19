@@ -45,43 +45,47 @@ create table if not exists picture
     isDelete     tinyint  default 0                 not null comment '是否删除',
     INDEX idx_name (name),                 -- 提升基于图片名称的查询性能
     INDEX idx_introduction (introduction), -- 用于模糊搜索图片简介
-    INDEX idx_categoryId (categoryId),         -- 提升基于分类的查询性能
+    INDEX idx_categoryId (categoryId),     -- 提升基于分类的查询性能
     INDEX idx_tags (tags),                 -- 提升基于标签的查询性能
     INDEX idx_userId (userId)              -- 提升基于用户 ID 的查询性能
 ) comment '图片' collate = utf8mb4_unicode_ci;
 
 ALTER TABLE picture
     -- 添加新列
-    ADD COLUMN reviewStatus INT DEFAULT 0 NOT NULL COMMENT '审核状态：0-待审核; 1-通过; 2-拒绝',
-    ADD COLUMN reviewMessage VARCHAR(512) NULL COMMENT '审核信息',
-    ADD COLUMN reviewerId BIGINT NULL COMMENT '审核人 ID',
-    ADD COLUMN reviewTime DATETIME NULL COMMENT '审核时间';
+    ADD COLUMN reviewStatus  INT DEFAULT 0 NOT NULL COMMENT '审核状态：0-待审核; 1-通过; 2-拒绝',
+    ADD COLUMN reviewMessage VARCHAR(512)  NULL COMMENT '审核信息',
+    ADD COLUMN reviewerId    BIGINT        NULL COMMENT '审核人 ID',
+    ADD COLUMN reviewTime    DATETIME      NULL COMMENT '审核时间';
 
+ALTER TABLE picture
+    -- 添加新列
+    ADD COLUMN thumbnailUrl varchar(512) NULL COMMENT '缩略图 url',
+    ADD COLUMN originUrl varchar(512) NULL COMMENT '缩略图 url';
 -- 创建基于 reviewStatus 列的索引
 CREATE INDEX idx_reviewStatus ON picture (reviewStatus);
 
 
 create table if not exists category
 (
-    id    bigint auto_increment comment 'id' primary key,
-    name  varchar(128) not null comment '分类名称',
-    count int default 0,
-    createTime   datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    editTime     datetime default CURRENT_TIMESTAMP not null comment '编辑时间',
-    updateTime   datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    isDelete     tinyint  default 0                 not null comment '是否删除',
+    id         bigint auto_increment comment 'id' primary key,
+    name       varchar(128)                       not null comment '分类名称',
+    count      int      default 0,
+    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    editTime   datetime default CURRENT_TIMESTAMP not null comment '编辑时间',
+    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete   tinyint  default 0                 not null comment '是否删除',
     INDEX idx_name (name) -- 提升基于分类名称的查询性能
 ) comment '分类' collate = utf8mb4_unicode_ci;
 
 create table if not exists tag
 (
-    id    bigint auto_increment comment 'id' primary key,
-    name  varchar(128) not null comment 'tag名称',
-    count int default 0,
-    createTime   datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    editTime     datetime default CURRENT_TIMESTAMP not null comment '编辑时间',
-    updateTime   datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    isDelete     tinyint  default 0                 not null comment '是否删除',
+    id         bigint auto_increment comment 'id' primary key,
+    name       varchar(128)                       not null comment 'tag名称',
+    count      int      default 0,
+    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    editTime   datetime default CURRENT_TIMESTAMP not null comment '编辑时间',
+    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete   tinyint  default 0                 not null comment '是否删除',
     INDEX idx_name (name) -- 提升基于tag名称的查询性能
 ) comment '标签' collate = utf8mb4_unicode_ci;
 

@@ -4,9 +4,9 @@ import com.aliyun.oss.*;
 import com.aliyun.oss.common.auth.CredentialsProviderFactory;
 import com.aliyun.oss.common.auth.EnvironmentVariableCredentialsProvider;
 import com.aliyun.oss.common.comm.SignVersion;
-import com.aliyun.oss.model.GetObjectRequest;
-import com.aliyun.oss.model.PutObjectRequest;
-import com.aliyun.oss.model.PutObjectResult;
+import com.aliyun.oss.common.utils.BinaryUtil;
+import com.aliyun.oss.common.utils.IOUtils;
+import com.aliyun.oss.model.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.constants.PictureConstant;
@@ -15,8 +15,10 @@ import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Formatter;
 import java.util.UUID;
 
 @Getter
@@ -86,6 +88,69 @@ public class AliOssUtil {
         return endpoint.split("//")[0] + "//" + bucketName + "." + endpoint.split("//")[1] + "/" + FileName;
     }
 
+    public String processPicture(String styleType, String sourceImage) throws com.aliyuncs.exceptions.ClientException {
+
+        EnvironmentVariableCredentialsProvider credentialsProvider = CredentialsProviderFactory.newEnvironmentVariableCredentialsProvider();
+
+        // 创建OSSClient实例。
+        // 当OSSClient实例不再使用时，调用shutdown方法以释放资源。
+        ClientBuilderConfiguration clientBuilderConfiguration = new ClientBuilderConfiguration();
+        clientBuilderConfiguration.setSignatureVersion(SignVersion.V4);
+        OSS ossClient = OSSClientBuilder.create()
+                .endpoint(endpoint)
+                .credentialsProvider(credentialsProvider)
+                .clientConfiguration(clientBuilderConfiguration)
+                .region(region)
+                .build();
+
+        String dir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM"));
+        String newFileName = UUID.randomUUID().toString();
+        newFileName = newFileName + ".webp";
+        String targetImage = dir + "/" + newFileName;
+
+        // 从 URL 中提取 object key: https://bucket.endpoint/path → path
+        String domain = bucketName + "." + endpoint.split("//")[1];
+        int domainIndex = sourceImage.indexOf(domain);
+        if (domainIndex < 0) {
+            log.warn("无法从 URL 提取 object key: {}", sourceImage);
+            return "";
+        }
+        String objectKey = sourceImage.substring(domainIndex + domain.length() + 1);
+
+        try {
+            StringBuilder sbStyle = new StringBuilder();
+            Formatter styleFormatter = new Formatter(sbStyle);
+            // 将处理后的图片命名为example-resize.png并保存到当前Bucket。
+            // 填写Object完整路径。Object完整路径中不能包含Bucket名称。
+            styleFormatter.format("%s|sys/saveas,o_%s,b_%s", styleType,
+                    BinaryUtil.toBase64String(targetImage.getBytes()),
+                    BinaryUtil.toBase64String(bucketName.getBytes()));
+            System.out.println(sbStyle.toString());
+            ProcessObjectRequest request = new ProcessObjectRequest(bucketName, objectKey, sbStyle.toString());
+            GenericResult processResult = ossClient.processObject(request);
+            String json = IOUtils.readStreamAsString(processResult.getResponse().getContent(), "UTF-8");
+            processResult.getResponse().getContent().close();
+            System.out.println(json);
+        } catch (OSSException oe) {
+            System.out.println("Caught an OSSException, which means your request made it to OSS, "
+                    + "but was rejected with an error response for some reason.");
+            System.out.println("Error Message:" + oe.getErrorMessage());
+            System.out.println("Error Code:" + oe.getErrorCode());
+            System.out.println("Request ID:" + oe.getRequestId());
+            System.out.println("Host ID:" + oe.getHostId());
+        } catch (ClientException | IOException ce) {
+            System.out.println("Caught an ClientException, which means the client encountered "
+                    + "a serious internal problem while trying to communicate with OSS, "
+                    + "such as not being able to access the network.");
+            System.out.println("Error Message:" + ce.getMessage());
+        } finally {
+            if (ossClient != null) {
+                ossClient.shutdown();
+            }
+        }
+        return endpoint.split("//")[0] + "//" + bucketName + "." + endpoint.split("//")[1] + "/" + targetImage;
+    }
+
     /**
      * 根据完整 URL 删除 OSS 文件
      *
@@ -132,11 +197,11 @@ public class AliOssUtil {
     }
 
     /*
-    *  下载文件
-    *
-    * @parm
-    * */
-    public void download(String imageUrl,String name,long id) throws com.aliyuncs.exceptions.ClientException {
+     *  下载文件
+     *
+     * @parm
+     * */
+    public void download(String imageUrl, String name, long id) throws com.aliyuncs.exceptions.ClientException {
         //从环境变量中获取访问凭证。运行本代码示例之前，请确保已设置环境变量OSS_ACCESS_KEY_ID和OSS_ACCESS_KEY_SECRET。
         EnvironmentVariableCredentialsProvider credentialsProvider = CredentialsProviderFactory.newEnvironmentVariableCredentialsProvider();
         // 填写不包含Bucket名称在内的Object完整路径，例如testfolder/exampleobject.txt。
@@ -148,7 +213,7 @@ public class AliOssUtil {
         }
         String objectKey = imageUrl.substring(domainIndex + domain.length() + 1);
         // 填写Object下载到本地的完整路径。
-        String pathName = PictureConstant.TEMP_FILE_URL + id +  "_" +  name;
+        String pathName = PictureConstant.TEMP_FILE_URL + id + "_" + name;
 
         // 创建OSSClient实例。
         // 当OSSClient实例不再使用时，调用shutdown方法以释放资源。

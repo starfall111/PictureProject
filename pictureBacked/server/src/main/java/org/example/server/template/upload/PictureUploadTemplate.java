@@ -53,6 +53,18 @@ public abstract class PictureUploadTemplate {
 
             url = aliOssUtil.upload(FileUtil.readBytes(tempFile), fileName);
 
+            //OSS中存放三份文件 1.缩略图 2.压缩图 3.原始图像
+            //数据库内也维护三份图片URL 1.缩略图 URL 2. 压缩图URL 3. 原始图片URL
+            String format = "image/format,webp";
+            String resize = "image/resize,s_180";
+
+            long fileSize = FileUtil.size(tempFile);
+
+            String originImageUrl = url;
+
+            url = aliOssUtil.processPicture(format,url);
+            String thumbnailImageUrl = aliOssUtil.processPicture(resize,url);
+
             //获取图片信息：宽度、高度、宽高比
             BufferedImage bufferedImage = ImageIO.read(tempFile);
             ThrowUtils.throwIf(ObjUtil.isEmpty(bufferedImage), ErrorCode.SYSTEM_ERROR);
@@ -64,8 +76,10 @@ public abstract class PictureUploadTemplate {
             UploadPictureDTO uploadPictureDTO = new UploadPictureDTO();
             uploadPictureDTO.setName(fileName);
             uploadPictureDTO.setUrl(url);
+            uploadPictureDTO.setThumbnailUrl(thumbnailImageUrl);
+            uploadPictureDTO.setOriginUrl(originImageUrl);
             uploadPictureDTO.setPicFormat(fileSuffix);
-            uploadPictureDTO.setPicSize(FileUtil.size(tempFile));
+            uploadPictureDTO.setPicSize(fileSize);
             uploadPictureDTO.setPicHeight(height);
             uploadPictureDTO.setPicWidth(width);
             uploadPictureDTO.setPicScale(scale);

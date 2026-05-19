@@ -6,6 +6,8 @@ import lombok.Data;
 public class UploadPictureDTO {
     private String name;
     private String url;
+    private String thumbnailUrl;
+    private String originUrl;
     private Long picSize;
     private Integer picWidth;
     private Integer picHeight;
