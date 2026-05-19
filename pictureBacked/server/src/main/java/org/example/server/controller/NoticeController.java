@@ -4,7 +4,7 @@ import cn.hutool.core.util.ObjUtil;
 import org.example.pojo.dto.user.SendVerificationCodeDTO;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
-import org.example.server.service.VerityCodeService;
+import org.example.server.service.NoticeService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,16 +17,16 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/verification")
-public class VerificationCodeController {
+public class NoticeController {
 
     @Resource
-    private VerityCodeService verityCodeService;
+    private NoticeService noticeService;
 
     @PostMapping("/send")
     public BaseResponse<String> sendVerificationCode(@RequestBody SendVerificationCodeDTO sendVerificationCodeDTO) throws ExecutionException, InterruptedException {
         ThrowUtils.throwIf(ObjUtil.isEmpty(sendVerificationCodeDTO), ErrorCode.PARAMS_ERROR);
 
-        verityCodeService.sendCode(sendVerificationCodeDTO.getType(),sendVerificationCodeDTO.getAccount(),sendVerificationCodeDTO.getCaptchaVerifyParam());
+        noticeService.sendCode(sendVerificationCodeDTO.getType(),sendVerificationCodeDTO.getAccount(),sendVerificationCodeDTO.getCaptchaVerifyParam());
 
         return ResultUtils.success("发送成功");
     }

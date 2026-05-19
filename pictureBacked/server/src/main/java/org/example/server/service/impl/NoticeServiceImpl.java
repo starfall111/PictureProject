@@ -3,11 +3,10 @@ package org.example.server.service.impl;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ReUtil;
 import org.example.common.constants.UserConstant;
-import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.example.common.util.AliCaptchaUtil;
-import org.example.server.service.VerityCodeService;
+import org.example.server.service.NoticeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -24,9 +23,9 @@ import java.util.concurrent.TimeUnit;
  * @author Zou
  */
 @Service
-public class VerityCodeServiceImpl implements VerityCodeService {
+public class NoticeServiceImpl implements NoticeService {
 
-    private static final Logger log = LoggerFactory.getLogger(VerityCodeServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(NoticeServiceImpl.class);
     private final Random random = new Random();
     private static final int CODE_EXPIRE_SECONDS = 300;
 
@@ -49,7 +48,7 @@ public class VerityCodeServiceImpl implements VerityCodeService {
         checkPhoneOrEmail(type,account);
         //2.校验图形验证是否正确
         //TODO 后续前端集成图形验证后进行校验
-        ThrowUtils.throwIf(!aliCaptchaUtil.checkCaptcha(captchaVerifyParam),ErrorCode.PARAMS_ERROR,"验证错误，请重试");
+//        ThrowUtils.throwIf(!aliCaptchaUtil.checkCaptcha(captchaVerifyParam),ErrorCode.PARAMS_ERROR,"验证错误，请重试");
         //3.生成验证码
         // 生成 6 位验证码
         String code = String.format("%06d", random.nextInt(1000000));

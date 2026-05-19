@@ -19,7 +19,15 @@ import org.example.common.util.AliOssUtil;
 import org.example.pojo.vo.UserVO;
 import org.example.server.service.UserService;
 import org.example.server.mapper.UserMapper;
-import org.example.server.service.VerityCodeService;
+import org.example.server.service.NoticeService;
+import org.example.server.template.user.login.AccountLoginUser;
+import org.example.server.template.user.login.EmailLoginUser;
+import org.example.server.template.user.login.PhoneLoginUser;
+import org.example.server.template.user.login.UserLoginTemplate;
+import org.example.server.template.user.register.AccountRegisterUser;
+import org.example.server.template.user.register.EmailRegisterUser;
+import org.example.server.template.user.register.PhoneRegisterUser;
+import org.example.server.template.user.register.UserRegisterTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 import org.example.common.util.SnowflakeIdWorker;
@@ -39,16 +47,33 @@ import java.util.stream.Collectors;
  * @createDate 2026-05-11 20:54:16
  */
 
-//TODO DTO判空转交至Controller检查
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {
 
     @Resource
-    private VerityCodeService verityCodeService;
+    private NoticeService noticeService;
 
     @Resource
     private AliOssUtil aliOssUtil;
+
+    @Resource
+    private AccountRegisterUser accountRegisterUser;
+
+    @Resource
+    private EmailRegisterUser emailRegisterUser;
+
+    @Resource
+    private PhoneRegisterUser phoneRegisterUser;
+
+    @Resource
+    private AccountLoginUser accountLoginUser;
+
+    @Resource
+    private EmailLoginUser emailLoginUser;
+
+    @Resource
+    private PhoneLoginUser phoneLoginUser;
 
     @Override
     public long userRegister(UserRegisterDTO userRegisterDTO) {
@@ -57,52 +82,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String account = userRegisterDTO.getAccount();
         //主体数据判空
         ThrowUtils.throwIf(ObjUtil.hasNull(type, account), ErrorCode.PARAMS_ERROR);
-        //检查用户名长度
-        ThrowUtils.throwIf(account.length() < 4, ErrorCode.PARAMS_ERROR, "用户名过短");
 
-        User user = new User();
+        UserRegisterTemplate userRegister = accountRegisterUser;
 
         //判断注册类型
+        //todo 可拆解为模板方法
         switch (type) {
             case 0:
-                //检查密码长度
-                //校验密码是否一致
-                //检查account是否重复
-                //密码加密
-                String password = userRegisterDTO.getPassword();
-                ThrowUtils.throwIf(password.length() < 6 || userRegisterDTO.getCheckPassword().length() < 6, ErrorCode.PARAMS_ERROR, "密码过短");
-                ThrowUtils.throwIf(!password.equals(userRegisterDTO.getCheckPassword()), ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
-                checkAccount(UserConstant.USER_ACCOUNT_FAILED, account);
-                password = getEncryptPassword(password);
-                user.setUserAccount(account);
-                user.setUserPassword(password);
                 break;
-            //校验格式是否正确
-            //校验是否重复注册
-            //检验验证码
-            //生成随机account填入数据库
             case 1:
-                verityCodeService.checkPhoneOrEmail(1, account);
-                ThrowUtils.throwIf(checkAccount(UserConstant.USER_PHONE_FAILED, account) > 0, ErrorCode.PARAMS_ERROR, "账号重复");
-                ;
-                verityCodeService.verityCode(account, userRegisterDTO.getVerityCode());
-                user.setUserPhone(account);
-                user.setUserAccount(generateAccount());
-                user.setUserPassword(getEncryptPassword("123456"));
+                userRegister = phoneRegisterUser;
                 break;
             case 2:
-                verityCodeService.checkPhoneOrEmail(2, account);
-                ThrowUtils.throwIf(checkAccount(UserConstant.USER_EMAIL_FAILED, account) > 0, ErrorCode.PARAMS_ERROR, "账号重复");
-                ;
-                verityCodeService.verityCode(account, userRegisterDTO.getVerityCode());
-                user.setUserEmail(account);
-                user.setUserAccount(generateAccount());
-                user.setUserPassword(getEncryptPassword("123456"));
+                userRegister = emailRegisterUser;
                 break;
             default:
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "数据非法");
         }
         //2.入库
+        User user = userRegister.register(userRegisterDTO);
         user.setUserName("默认昵称");
         user.setUserRole(UserEnum.USER.getValue());
         boolean result = this.save(user);
@@ -115,71 +113,31 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public LoginUserVO userLogin(UserLoginDTO userLoginDTO, HttpServletRequest request) {
 
         //TODO 需要预留防撞库机制
-
         //1.校验数据 数据结构不为空、type不为空、account不为空
         Integer type = userLoginDTO.getType();
         String account = userLoginDTO.getAccount();
         //主体数据判空
         ThrowUtils.throwIf(ObjUtil.hasNull(type, account), ErrorCode.PARAMS_ERROR);
 
-        //2.根据登录类型进行判定 账号/手机号/邮箱 + 密码登录 or 手机号/邮箱 + 验证码注册 根据 isVerityCode字段走不同的方法
-        Integer isVerityCode = userLoginDTO.getIsVerityCode();
-        String password = userLoginDTO.getPassword();
+        UserLoginTemplate userLogin = accountLoginUser;
+
         User user = new User();
         //注： 抽象出校验格式方法
         //2.1密码登录 根据account从数据库找到数据，进行常规对比
-        if (isVerityCode == 0) {
-            switch (type) {
-                case 0:
-                    user = verityAccount(UserConstant.USER_ACCOUNT_FAILED, account);
-                    ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.PARAMS_ERROR, "用户不存在");
-                    password = getEncryptPassword(password);
-                    ThrowUtils.throwIf(!password.equals(user.getUserPassword()), ErrorCode.PARAMS_ERROR, "账号或密码错误");
-                    break;
-                case 1:
-                    verityCodeService.checkPhoneOrEmail(1, account);
-                    user = verityAccount(UserConstant.USER_PHONE_FAILED, account);
-                    ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.PARAMS_ERROR, "用户不存在");
-                    password = getEncryptPassword(password);
-                    ThrowUtils.throwIf(!password.equals(user.getUserPassword()), ErrorCode.PARAMS_ERROR, "账号或密码错误");
-                    break;
-                case 2:
-                    verityCodeService.checkPhoneOrEmail(2, account);
-                    user = verityAccount(UserConstant.USER_EMAIL_FAILED, account);
-                    ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.PARAMS_ERROR, "用户不存在");
-                    password = getEncryptPassword(password);
-                    ThrowUtils.throwIf(!password.equals(user.getUserPassword()), ErrorCode.PARAMS_ERROR, "账号或密码错误");
-                    break;
-                default:
-                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "非法数据");
-            }
-        }
-        //2.2验证码登录 先检查数据库内是否存在，存在走正常的登录逻辑，不存在则自动注册账号
-        else if (isVerityCode == 1) {
-            //TODO 考虑拆解 verityAccount（不传 password） 直接返回找到的user 不管是不是空，null在验证码登录时直接去注册方法，其他的手动才处理抛出错误
-            long count = 0;
-            user = switch (type) {
-                case 1 -> {
-                    verityCodeService.checkPhoneOrEmail(1, account);
-                    yield verityAccount(UserConstant.USER_PHONE_FAILED, account);
-                }
-                case 2 -> {
-                    verityCodeService.checkPhoneOrEmail(2, account);
-                    yield verityAccount(UserConstant.USER_EMAIL_FAILED, account);
-                }
-
-                default -> throw new BusinessException(ErrorCode.PARAMS_ERROR, "非法数据");
-            };
-            if (ObjUtil.isEmpty(user)) {
-                long id = userRegister(new UserRegisterDTO(type, account, null, null, userLoginDTO.getVerityCode()));
-                user = this.baseMapper.selectById(id);
-            } else {
-                verityCodeService.verityCode(account, userLoginDTO.getVerityCode());
-            }
-        } else {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "非法数据");
+        switch (type) {
+            case 0:
+                break;
+            case 1:
+                userLogin = phoneLoginUser;
+                break;
+            case 2:
+                userLogin = emailLoginUser;
+                break;
+            default:
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "非法数据");
         }
 
+        user = userLogin.login(userLoginDTO);
         //3.记录登录状态 session记录
         HttpSession session = request.getSession();
         session.setAttribute(UserConstant.USER_LOGIN_STATE, user);
@@ -208,7 +166,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         //防止用户重复
         User resultUser = verityAccount(UserConstant.USER_ACCOUNT_FAILED, userAddDTO.getUserAccount());
 
-        ThrowUtils.throwIf(!ObjUtil.isEmpty(resultUser),ErrorCode.PARAMS_ERROR,"用户已存在");
+        ThrowUtils.throwIf(!ObjUtil.isEmpty(resultUser), ErrorCode.PARAMS_ERROR, "用户已存在");
         //构建入库user
         User user = new User();
         BeanUtil.copyProperties(userAddDTO, user);
@@ -315,10 +273,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         ThrowUtils.throwIf(ObjUtil.hasNull(type, account, verificationCode), ErrorCode.PARAMS_ERROR);
 
         //2.校验格式
-        verityCodeService.checkPhoneOrEmail(type, account);
+        noticeService.checkPhoneOrEmail(type, account);
 
         //3.校验验证码
-        verityCodeService.verityCode(account, verificationCode);
+        noticeService.verityCode(account, verificationCode);
 
         //4.检查是否已被其他用户绑定
         String field = switch (type) {

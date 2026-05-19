@@ -1,4 +1,4 @@
-package org.example.common.template.upload;
+package org.example.server.template.upload;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ArrayUtil;

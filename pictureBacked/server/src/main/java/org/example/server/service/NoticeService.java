@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutionException;
  * @author Zou
  */
 
-public interface VerityCodeService {
+public interface NoticeService {
 
     void sendCode(Integer type,String account,String captchaVerifyParam) throws ExecutionException, InterruptedException;
 
