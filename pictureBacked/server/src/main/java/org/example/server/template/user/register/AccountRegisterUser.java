@@ -7,6 +7,9 @@ import org.example.pojo.dto.user.UserRegisterDTO;
 import org.example.pojo.entity.User;
 import org.springframework.stereotype.Service;
 
+/**
+ * @author Zou
+ */
 @Service
 public class AccountRegisterUser extends UserRegisterTemplate{
     @Override

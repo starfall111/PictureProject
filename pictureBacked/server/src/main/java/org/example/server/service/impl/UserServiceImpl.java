@@ -86,7 +86,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         UserRegisterTemplate userRegister = accountRegisterUser;
 
         //判断注册类型
-        //todo 可拆解为模板方法
         switch (type) {
             case 0:
                 break;
@@ -235,12 +234,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         password = UserConstant.SALT + password;
 
         return DigestUtils.md5DigestAsHex(password.getBytes());
-    }
-
-    //生成随机account
-    private String generateAccount() {
-        SnowflakeIdWorker snowflakeIdWorker = new SnowflakeIdWorker(0, 0);
-        return "user" + snowflakeIdWorker.nextId();
     }
 
     //抽象账号重复逻辑
