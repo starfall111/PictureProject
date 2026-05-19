@@ -98,7 +98,7 @@ public class PictureController {
     //1.图片编辑信息：更改图片信息（管理员/普通用户）
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
     @PostMapping("/update")
-    public BaseResponse<Boolean> updatePicture(PictureUpdateDTO pictureUpdateDTO) {
+    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateDTO pictureUpdateDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUpdateDTO), ErrorCode.PARAMS_ERROR);
 
         boolean result = pictureService.updatePicture(pictureUpdateDTO);
@@ -109,7 +109,7 @@ public class PictureController {
     }
 
     @PostMapping("/edit")
-    public BaseResponse<Boolean> editPicture(PictureEditDTO pictureEditDTO) {
+    public BaseResponse<Boolean> editPicture(@RequestBody PictureEditDTO pictureEditDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureEditDTO), ErrorCode.PARAMS_ERROR);
 
         boolean result = pictureService.editPicture(pictureEditDTO);
@@ -121,7 +121,7 @@ public class PictureController {
 
     //2.删除图片
     @DeleteMapping("/delete")
-    public BaseResponse<Boolean> deletePicture(DeleteRequest deleteRequest) throws Exception {
+    public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest) throws Exception {
         ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest), ErrorCode.PARAMS_ERROR);
         Long id = deleteRequest.getId();
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
@@ -137,7 +137,7 @@ public class PictureController {
     //3.分页查询图片（管理员/普通用户）
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
     @PostMapping("/admin/query")
-    public BaseResponse<Page<PictureEntityVO>> queryPictureAdmin(PictureQueryDTO pictureQueryDTO) {
+    public BaseResponse<Page<PictureEntityVO>> queryPictureAdmin(@RequestBody PictureQueryDTO pictureQueryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
 
         Page<PictureEntityVO> result = pictureService.queryPictureListAdmin(pictureQueryDTO);
@@ -146,10 +146,20 @@ public class PictureController {
     }
 
     @PostMapping("/user/query")
-    public BaseResponse<Page<PictureVO>> queryPictureUser(PictureQueryDTO pictureQueryDTO) {
+    public BaseResponse<Page<PictureVO>> queryPictureUser(@RequestBody PictureQueryDTO pictureQueryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
         pictureQueryDTO.setReviewStatus(1);
         Page<PictureVO> result = pictureService.queryPictureListUser(pictureQueryDTO);
+
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/user/query/cache")
+    public BaseResponse<Page<PictureVO>> queryPictureUserCache(@RequestBody PictureQueryDTO pictureQueryDTO) {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(pictureQueryDTO.getPageSize() > 20,ErrorCode.PARAMS_ERROR);
+        pictureQueryDTO.setReviewStatus(1);
+        Page<PictureVO> result = pictureService.queryPictureListUserCache(pictureQueryDTO);
 
         return ResultUtils.success(result);
     }

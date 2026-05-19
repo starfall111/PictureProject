@@ -1,7 +1,11 @@
 package org.example.server.service;
 
-import org.example.pojo.entity.Category;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.example.pojo.dto.category.CategoryQueryDTO;
+import org.example.pojo.entity.Category;
+
+import java.util.List;
 
 /**
 * @author Zou
@@ -10,4 +14,23 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface CategoryService extends IService<Category> {
 
+    /**
+     * 获取分类列表（带缓存）
+     */
+    List<Category> listCategoryCache();
+
+    /**
+     * 分页查询分类列表（带缓存）
+     */
+    Page<Category> queryCategoryPageCache(CategoryQueryDTO categoryQueryDTO);
+
+    /**
+     * 根据 id 获取分类（带缓存）
+     */
+    Category getCategoryByIdCache(Long id);
+
+    /**
+     * 清除分类相关缓存
+     */
+    void clearCategoryCache();
 }

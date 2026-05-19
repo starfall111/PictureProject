@@ -2,7 +2,6 @@ package org.example.server.controller;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.pojo.entity.Category;
 import org.example.common.annotation.CheckAuth;
@@ -15,7 +14,6 @@ import org.example.pojo.DeleteRequest;
 import org.example.pojo.dto.category.CategoryAddDTO;
 import org.example.pojo.dto.category.CategoryQueryDTO;
 import org.example.pojo.dto.category.CategoryUpdateDTO;
-import org.example.pojo.entity.Category;
 import org.example.server.service.CategoryService;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,6 +48,9 @@ public class CategoryController {
         boolean result = categoryService.save(category);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
+        // 清除分类缓存
+        categoryService.clearCategoryCache();
+
         return ResultUtils.success(category.getId());
     }
 
@@ -69,6 +70,9 @@ public class CategoryController {
         boolean result = categoryService.updateById(category);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
+        // 清除分类缓存
+        categoryService.clearCategoryCache();
+
         return ResultUtils.success(true);
     }
 
@@ -84,17 +88,18 @@ public class CategoryController {
         boolean result = categoryService.removeById(deleteRequest.getId());
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
+        // 清除分类缓存
+        categoryService.clearCategoryCache();
+
         return ResultUtils.success(true);
     }
 
     /**
-     * 获取全部分类列表
+     * 获取全部分类列表（带缓存）
      */
     @GetMapping("/list")
     public BaseResponse<List<Category>> listCategory() {
-        QueryWrapper<Category> queryWrapper = new QueryWrapper<>();
-        queryWrapper.orderBy(true,false,"count");
-        List<Category> list = categoryService.list(queryWrapper);
+        List<Category> list = categoryService.listCategoryCache();
         return ResultUtils.success(list);
     }
 
@@ -105,37 +110,20 @@ public class CategoryController {
     public BaseResponse<Category> getCategoryById(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
-        Category category = categoryService.getById(id);
+        Category category = categoryService.getCategoryByIdCache(id);
         ThrowUtils.throwIf(ObjUtil.isEmpty(category), ErrorCode.PARAMS_ERROR);
 
         return ResultUtils.success(category);
     }
 
     /**
-     * 分页查询分类列表
+     * 分页查询分类列表（带缓存）
      */
     @PostMapping("/page/query")
     public BaseResponse<Page<Category>> queryCategoryPage(@RequestBody CategoryQueryDTO categoryQueryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(categoryQueryDTO), ErrorCode.PARAMS_ERROR);
 
-        long current = categoryQueryDTO.getCurrent();
-        long pageSize = categoryQueryDTO.getPageSize();
-
-        QueryWrapper<Category> queryWrapper = new QueryWrapper<>();
-        String name = categoryQueryDTO.getName();
-        if (StrUtil.isNotBlank(name)) {
-            queryWrapper.like("name", name);
-        }
-
-        String sortField = categoryQueryDTO.getSortField();
-        if (StrUtil.isNotBlank(sortField)) {
-            queryWrapper.orderBy(true, "ascend".equals(categoryQueryDTO.getSortOrder()), sortField);
-        } else {
-            queryWrapper.orderByDesc("id");
-        }
-
-        Page<Category> page = categoryService.page(new Page<>(current, pageSize), queryWrapper);
-
+        Page<Category> page = categoryService.queryCategoryPageCache(categoryQueryDTO);
         return ResultUtils.success(page);
     }
 }

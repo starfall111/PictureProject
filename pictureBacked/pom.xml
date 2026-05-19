@@ -30,6 +30,7 @@
         <hutool.version>5.8.38</hutool.version>
         <knife4j.version>4.4.0</knife4j.version>
         <jsoup>1.15.3</jsoup>
+        <caffeine>3.1.8</caffeine>
     </properties>
 
     <dependencyManagement>
@@ -85,6 +86,14 @@
                 <artifactId>jsoup</artifactId>
                 <version>${jsoup}</version>
             </dependency>
+
+            <!-- 本地缓存 Caffeine -->
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine}</version>
+            </dependency>
+
 
         </dependencies>
     </dependencyManagement>

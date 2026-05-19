@@ -3,6 +3,7 @@ package org.example.server.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -10,6 +11,8 @@ import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.constants.PictureConstant;
 import org.example.common.context.UserContext;
@@ -34,15 +37,19 @@ import org.example.server.service.CategoryService;
 import org.example.server.service.PictureService;
 import org.example.server.mapper.PictureMapper;
 import org.example.server.service.UserService;
+import org.example.common.util.RedisCacheUtil;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -72,12 +79,24 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Resource
     private UrlUploadPicture urlUploadPicture;
 
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private RedisCacheUtil redisCacheUtil;
+
+    private final Cache<String, String> LOCAL_CACHE =
+            Caffeine.newBuilder()
+                    .maximumSize(1000L)
+                    .expireAfterWrite(5L, TimeUnit.MINUTES)
+                    .build();
+
     @Override
     public Picture upload(Object inputResource, FileDTO fileDTO) throws Exception {
         Picture picture = new Picture();
         User user = UserContext.get();
         Long imageId = null;
-        if (ObjUtil.isNotEmpty(fileDTO)){
+        if (ObjUtil.isNotEmpty(fileDTO)) {
             imageId = fileDTO.getId();
         }
         //初始状态为新图片
@@ -95,7 +114,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         ThrowUtils.throwIf(!validAuth(user), ErrorCode.UPLOAD_NO_PERMISSION);
 
         PictureUploadTemplate pictureUploadTemplate = fileUploadPicture;
-        if (inputResource instanceof String){
+        if (inputResource instanceof String) {
             pictureUploadTemplate = urlUploadPicture;
         }
 
@@ -113,22 +132,24 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
             //构建Picture存入数据库
             String name = uploadPictureDTO.getName();
-            if (ObjUtil.isNotEmpty(fileDTO)){
-                if (fileDTO.getName() != null){
+            if (ObjUtil.isNotEmpty(fileDTO)) {
+                if (fileDTO.getName() != null) {
                     name = fileDTO.getName();
                 }
-                if (fileDTO.getCategoryId() != null){
+                if (fileDTO.getCategoryId() != null) {
                     validCategory(fileDTO.getCategoryId());
 
                     picture.setCategoryId(fileDTO.getCategoryId());
                 }
-                if (StrUtil.isNotBlank(fileDTO.getTags())){
+                if (StrUtil.isNotBlank(fileDTO.getTags())) {
                     picture.setTags(fileDTO.getTags());
                 }
             }
             picture.setName(name);
             picture.setUserId(user.getId());
             picture.setUrl(uploadPictureDTO.getUrl());
+            picture.setThumbnailUrl(uploadPictureDTO.getThumbnailUrl());
+            picture.setOriginUrl(uploadPictureDTO.getOriginUrl());
             picture.setPicWidth(uploadPictureDTO.getPicWidth());
             picture.setPicHeight(uploadPictureDTO.getPicHeight());
             picture.setPicScale(uploadPictureDTO.getPicScale());
@@ -245,7 +266,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Page<Picture> pictureList = this.page(new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize()), queryWrapper);
         List<Picture> pictures = pictureList.getRecords();
 
-        Page<PictureEntityVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize(),pictureList.getTotal());
+        Page<PictureEntityVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize(), pictureList.getTotal());
 
         if (ObjUtil.isEmpty(pictures)) {
             return result;
@@ -284,55 +305,68 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
      */
     @Override
     public Page<PictureVO> queryPictureListUser(PictureQueryDTO queryDTO) {
-        QueryWrapper queryWrapper = getQueryWrapper(queryDTO);
-        Page<Picture> pictureList = this.page(new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize()), queryWrapper);
-        List<Picture> pictures = pictureList.getRecords();
 
-        Page<PictureVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize(),pictureList.getTotal());
-        if (ObjUtil.isEmpty(pictures)) {
-            return result;
-        }
-        List<PictureVO> pictureVOList = pictures.stream()
-                .map(PictureVO::objToVO)
-                .toList();
+        //构造redis Key
+        String key = JSONUtil.toJsonStr(queryDTO);
+        String hashKey = "queryPictureListUser:" + DigestUtils.md5DigestAsHex(key.getBytes());
 
-        // 批量填充用户信息
-        Set<Long> userIds = pictureVOList.stream()
-                .map(PictureVO::getUserId)
-                .collect(Collectors.toSet());
-        Map<Long, List<User>> userIdUserMapList = userService.listByIds(userIds)
-                .stream()
-                .collect(Collectors.groupingBy(User::getId));
+        int ttlSeconds = 300 + RandomUtil.randomInt(0, 600);
+        String cacheResult = redisCacheUtil.getWithLock(hashKey, ttlSeconds, () -> {
+            QueryWrapper queryWrapper = getQueryWrapper(queryDTO);
+            Page<Picture> pictureList = this.page(new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize()), queryWrapper);
+            List<Picture> pictures = pictureList.getRecords();
 
-        // 批量填充分类名称
-        Set<Long> categoryIds = pictureVOList.stream()
-                .map(PictureVO::getCategoryId)
-                .filter(id -> id != null && id > 0)
-                .collect(Collectors.toSet());
-        Map<Long, Category> categoryMap = categoryIds.isEmpty()
-                ? Map.of()
-                : categoryService.listByIds(categoryIds)
-                .stream()
-                .collect(Collectors.toMap(Category::getId, c -> c));
-
-        pictureVOList.forEach(pictureVO -> {
-            Long userId = pictureVO.getUserId();
-            User user = null;
-            if (userIdUserMapList.containsKey(userId)) {
-                user = userIdUserMapList.get(userId).get(0);
+            Page<PictureVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize(), pictureList.getTotal());
+            if (ObjUtil.isEmpty(pictures)) {
+                return null;
             }
-            UserVO userVO = new UserVO();
-            BeanUtil.copyProperties(user, userVO);
-            pictureVO.setUserVO(userVO);
+            List<PictureVO> pictureVOList = pictures.stream()
+                    .map(PictureVO::objToVO)
+                    .toList();
 
-            Long categoryId = pictureVO.getCategoryId();
-            if (categoryId != null && categoryMap.containsKey(categoryId)) {
-                pictureVO.setCategoryName(categoryMap.get(categoryId).getName());
-            }
+            // 批量填充用户信息
+            Set<Long> userIds = pictureVOList.stream()
+                    .map(PictureVO::getUserId)
+                    .collect(Collectors.toSet());
+            Map<Long, List<User>> userIdUserMapList = userService.listByIds(userIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(User::getId));
+
+            // 批量填充分类名称
+            Set<Long> categoryIds = pictureVOList.stream()
+                    .map(PictureVO::getCategoryId)
+                    .filter(id -> id != null && id > 0)
+                    .collect(Collectors.toSet());
+            Map<Long, Category> categoryMap = categoryIds.isEmpty()
+                    ? Map.of()
+                    : categoryService.listByIds(categoryIds)
+                    .stream()
+                    .collect(Collectors.toMap(Category::getId, c -> c));
+
+            pictureVOList.forEach(pictureVO -> {
+                Long userId = pictureVO.getUserId();
+                User user = null;
+                if (userIdUserMapList.containsKey(userId)) {
+                    user = userIdUserMapList.get(userId).get(0);
+                }
+                UserVO userVO = new UserVO();
+                BeanUtil.copyProperties(user, userVO);
+                pictureVO.setUserVO(userVO);
+
+                Long categoryId = pictureVO.getCategoryId();
+                if (categoryId != null && categoryMap.containsKey(categoryId)) {
+                    pictureVO.setCategoryName(categoryMap.get(categoryId).getName());
+                }
+            });
+            result = result.setRecords(pictureVOList);
+
+            return JSONUtil.toJsonStr(result);
         });
-        result = result.setRecords(pictureVOList);
 
-        return result;
+        if (cacheResult == null) {
+            return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
+        }
+        return JSONUtil.toBean(cacheResult, Page.class);
     }
 
 
@@ -415,29 +449,29 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         String namePrefix = pictureUploadByBatchDTO.getProfile();
         Long categoryId = pictureUploadByBatchDTO.getCategoryId();
         List<String> tagList = pictureUploadByBatchDTO.getTags();
-        ThrowUtils.throwIf(StrUtil.isBlank(searchText),ErrorCode.PARAMS_ERROR,"搜索词不能为空");
-        if (StrUtil.isBlank(namePrefix)){
+        ThrowUtils.throwIf(StrUtil.isBlank(searchText), ErrorCode.PARAMS_ERROR, "搜索词不能为空");
+        if (StrUtil.isBlank(namePrefix)) {
             namePrefix = searchText;
         }
         //数据抓取
-        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1",searchText);
+        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1", searchText);
         Document document;
-        try{
+        try {
             document = Jsoup.connect(fetchUrl).get();
         } catch (IOException e) {
-            log.error("获取页面失败",e);
-            throw new BusinessException(ErrorCode.OPERATION_ERROR,"获取页面失败");
+            log.error("获取页面失败", e);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取页面失败");
         }
 
         Element element = document.getElementsByClass("dgControl").first();
-        ThrowUtils.throwIf(ObjUtil.isEmpty(element),ErrorCode.OPERATION_ERROR,"获取元素失败");
+        ThrowUtils.throwIf(ObjUtil.isEmpty(element), ErrorCode.OPERATION_ERROR, "获取元素失败");
         //获取图片元素
 //       Elements imgElementList = element.select("img.mimg");
         //获取完整数据元素
         Elements imgElementList = element.select(".iusc");
         int uploadCount = 0;
 
-        for (Element imgElement : imgElementList){
+        for (Element imgElement : imgElementList) {
             //String fileUrl = imgElement.attr("src");
 
 //            if (StrUtil.isBlank(fileUrl)){
@@ -453,46 +487,69 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             //获取data-m属性中的JSON字符串
             String dataM = imgElement.attr("m");
             String fileUrl;
-            try{
+            try {
                 //解析JSON字符串
                 JSONObject jsonObject = JSONUtil.parseObj(dataM);
                 //获取murl字段(原始图片url)
                 fileUrl = jsonObject.getStr("murl");
-            }catch (Exception e){
-                log.error("图片url解析失败",e);
+            } catch (Exception e) {
+                log.error("图片url解析失败", e);
                 continue;
             }
 
-            if (StrUtil.isBlank(fileUrl)){
-                log.error("当前url为空，跳过 {}",fileUrl);
+            if (StrUtil.isBlank(fileUrl)) {
+                log.error("当前url为空，跳过 {}", fileUrl);
                 continue;
             }
 
             //上传图片
             FileDTO fileDTO = new FileDTO();
-            if (StrUtil.isNotBlank(namePrefix)){
+            if (StrUtil.isNotBlank(namePrefix)) {
                 fileDTO.setName(namePrefix + (uploadCount + 1));
             }
-            if (ObjUtil.isNotEmpty(categoryId)){
+            if (ObjUtil.isNotEmpty(categoryId)) {
                 fileDTO.setCategoryId(categoryId);
             }
-            if (ObjUtil.isNotEmpty(tagList)){
+            if (ObjUtil.isNotEmpty(tagList)) {
                 String tags = JSONUtil.toJsonStr(tagList);
                 fileDTO.setTags(tags);
             }
-            try{
-                Picture picture = this.upload(fileUrl,fileDTO);
-                log.info("图片上传成功,id = {}",picture.getId());
+            try {
+                Picture picture = this.upload(fileUrl, fileDTO);
+                log.info("图片上传成功,id = {}", picture.getId());
                 uploadCount++;
-            }catch (Exception e) {
-                log.error("图片上传失败，fileUrl = {}",fileUrl);
+            } catch (Exception e) {
+                log.error("图片上传失败，fileUrl = {}", fileUrl);
             }
-            if (uploadCount >= count){
+            if (uploadCount >= count) {
                 break;
             }
         }
 
         return uploadCount;
+    }
+
+    @Override
+    public Page<PictureVO> queryPictureListUserCache(PictureQueryDTO queryDTO) {
+        //构造本地缓存 Key
+        String key = JSONUtil.toJsonStr(queryDTO);
+        String hashKey = "queryPictureListUser:" + DigestUtils.md5DigestAsHex(key.getBytes());
+        //本地缓存查询
+        String cacheValue = LOCAL_CACHE.getIfPresent(hashKey);
+        if (ObjUtil.isNotEmpty(cacheValue)){
+            Page<PictureVO> cachePage = JSONUtil.toBean(cacheValue, Page.class);
+            return cachePage;
+        }
+
+        //查找数据库数据
+        Page<PictureVO> pictureVOPage = queryPictureListUser(queryDTO);
+        //存入本地缓存
+        cacheValue = JSONUtil.toJsonStr(pictureVOPage);
+
+        LOCAL_CACHE.put(hashKey,cacheValue);
+
+        //返回数据
+        return pictureVOPage;
     }
 
     /**

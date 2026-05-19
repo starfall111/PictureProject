@@ -2,7 +2,6 @@ package org.example.server.controller;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.common.annotation.CheckAuth;
 import org.example.common.constants.UserConstant;
@@ -14,7 +13,6 @@ import org.example.pojo.DeleteRequest;
 import org.example.pojo.dto.tag.TagAddDTO;
 import org.example.pojo.dto.tag.TagQueryDTO;
 import org.example.pojo.dto.tag.TagUpdateDTO;
-import org.example.pojo.entity.Category;
 import org.example.pojo.entity.Tag;
 import org.example.server.service.TagService;
 import org.springframework.web.bind.annotation.*;
@@ -50,6 +48,9 @@ public class TagController {
         boolean result = tagService.save(tag);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
+        // 清除标签缓存
+        tagService.clearTagCache();
+
         return ResultUtils.success(tag.getId());
     }
 
@@ -69,6 +70,9 @@ public class TagController {
         boolean result = tagService.updateById(tag);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
+        // 清除标签缓存
+        tagService.clearTagCache();
+
         return ResultUtils.success(true);
     }
 
@@ -84,6 +88,9 @@ public class TagController {
         boolean result = tagService.removeById(deleteRequest.getId());
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
+        // 清除标签缓存
+        tagService.clearTagCache();
+
         return ResultUtils.success(true);
     }
 
@@ -94,48 +101,29 @@ public class TagController {
     public BaseResponse<Tag> getTagById(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
-        Tag tag = tagService.getById(id);
+        Tag tag = tagService.getTagByIdCache(id);
         ThrowUtils.throwIf(ObjUtil.isEmpty(tag), ErrorCode.PARAMS_ERROR);
 
         return ResultUtils.success(tag);
     }
 
     /**
-     * 获取全部分类列表
+     * 获取全部标签列表（带缓存）
      */
     @GetMapping("/list")
     public BaseResponse<List<Tag>> listTag() {
-        QueryWrapper<Tag> queryWrapper = new QueryWrapper<>();
-        queryWrapper.orderBy(true,false,"count");
-        List<Tag> list = tagService.list(queryWrapper);
+        List<Tag> list = tagService.listTagCache();
         return ResultUtils.success(list);
     }
 
     /**
-     * 分页查询标签列表
+     * 分页查询标签列表（带缓存）
      */
     @PostMapping("/page/query")
     public BaseResponse<Page<Tag>> queryTagPage(@RequestBody TagQueryDTO tagQueryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(tagQueryDTO), ErrorCode.PARAMS_ERROR);
 
-        long current = tagQueryDTO.getCurrent();
-        long pageSize = tagQueryDTO.getPageSize();
-
-        QueryWrapper<Tag> queryWrapper = new QueryWrapper<>();
-        String name = tagQueryDTO.getName();
-        if (StrUtil.isNotBlank(name)) {
-            queryWrapper.like("name", name);
-        }
-
-        String sortField = tagQueryDTO.getSortField();
-        if (StrUtil.isNotBlank(sortField)) {
-            queryWrapper.orderBy(true, "ascend".equals(tagQueryDTO.getSortOrder()), sortField);
-        } else {
-            queryWrapper.orderByDesc("id");
-        }
-
-        Page<Tag> page = tagService.page(new Page<>(current, pageSize), queryWrapper);
-
+        Page<Tag> page = tagService.queryTagPageCache(tagQueryDTO);
         return ResultUtils.success(page);
     }
 }
