@@ -31,6 +31,18 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListSpaceLevel_ = {
+    code?: number;
+    data?: SpaceLevel[];
+    message?: string;
+  };
+
+  type BaseResponseListSpaceVO_ = {
+    code?: number;
+    data?: SpaceVO[];
+    message?: string;
+  };
+
   type BaseResponseListTag_ = {
     code?: number;
     data?: Tag[];
@@ -67,6 +79,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePageSpace_ = {
+    code?: number;
+    data?: PageSpace_;
+    message?: string;
+  };
+
   type BaseResponsePageTag_ = {
     code?: number;
     data?: PageTag_;
@@ -88,6 +106,12 @@ declare namespace API {
   type BaseResponsePictureVO_ = {
     code?: number;
     data?: PictureVO;
+    message?: string;
+  };
+
+  type BaseResponseSpace_ = {
+    code?: number;
+    data?: Space;
     message?: string;
   };
 
@@ -156,6 +180,7 @@ declare namespace API {
     fileUrl?: string;
     id?: number;
     name?: string;
+    spaceId?: number;
     tags?: string;
   };
 
@@ -170,6 +195,16 @@ declare namespace API {
   };
 
   type getPictureByIdUserUsingGETParams = {
+    /** id */
+    id: number;
+  };
+
+  type getSpaceByIdUsingGETParams = {
+    /** id */
+    id: number;
+  };
+
+  type getSpaceByUserIdUsingGETParams = {
     /** id */
     id: number;
   };
@@ -222,6 +257,14 @@ declare namespace API {
     total?: number;
   };
 
+  type PageSpace_ = {
+    current?: number;
+    pages?: number;
+    records?: Space[];
+    size?: number;
+    total?: number;
+  };
+
   type PageTag_ = {
     current?: number;
     pages?: number;
@@ -256,6 +299,7 @@ declare namespace API {
     reviewStatus?: number;
     reviewTime?: string;
     reviewerId?: number;
+    spaceId?: number;
     tags?: string;
     thumbnailUrl?: string;
     updateTime?: string;
@@ -302,6 +346,7 @@ declare namespace API {
     id?: number;
     introduction?: string;
     name?: string;
+    nullSpaceId?: boolean;
     pageSize?: number;
     picFormat?: string;
     picHeight?: number;
@@ -312,6 +357,7 @@ declare namespace API {
     searchText?: string;
     sortField?: string;
     sortOrder?: string;
+    spaceId?: number;
     tags?: string[];
     userId?: number;
   };
@@ -367,6 +413,84 @@ declare namespace API {
     type?: number;
   };
 
+  type Space = {
+    createTime?: string;
+    editTime?: string;
+    id?: number;
+    isDelete?: number;
+    maxCount?: number;
+    maxSize?: number;
+    spaceLevel?: number;
+    spaceName?: string;
+    totalCount?: number;
+    totalSize?: number;
+    updateTime?: string;
+    userId?: number;
+  };
+
+  type SpaceAddDTO = {
+    maxCount?: number;
+    maxSize?: number;
+    spaceLevel?: number;
+    spaceName?: string;
+    userId?: number;
+  };
+
+  type SpaceEditDTO = {
+    id?: number;
+    spaceName?: string;
+  };
+
+  type SpaceLevel = {
+    maxCount?: number;
+    maxSize?: number;
+    text?: string;
+    value?: number;
+  };
+
+  type SpaceQueryDTO = {
+    createTime?: string;
+    current?: number;
+    editTime?: string;
+    id?: number;
+    maxCount?: number;
+    maxSize?: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+    spaceLevel?: number;
+    spaceName?: string;
+    totalCount?: number;
+    totalSize?: number;
+    updateTime?: string;
+    userId?: number;
+  };
+
+  type SpaceUpdateDTO = {
+    id?: number;
+    maxCount?: number;
+    maxSize?: number;
+    spaceLevel?: number;
+    spaceName?: string;
+    totalCount?: number;
+    totalSize?: number;
+    userId?: number;
+  };
+
+  type SpaceVO = {
+    createTime?: string;
+    editTime?: string;
+    id?: number;
+    maxCount?: number;
+    maxSize?: number;
+    spaceLevel?: number;
+    spaceName?: string;
+    totalCount?: number;
+    totalSize?: number;
+    userId?: number;
+    userVO?: UserVO;
+  };
+
   type Tag = {
     count?: number;
     createTime?: string;
@@ -399,6 +523,7 @@ declare namespace API {
     fileUrl?: string;
     id?: number;
     name?: string;
+    spaceId?: number;
     tags?: string;
   };
 

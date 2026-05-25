@@ -12,8 +12,12 @@ import PictureManagePage from '@/Page/picture/PictureManagePage.vue'
 import PictureDetailPage from '@/Page/picture/PictureDetailPage.vue'
 import CategoryManagePage from '@/Page/category/CategoryManagePage.vue'
 import TagManagePage from '@/Page/tag/TagManagePage.vue'
-import { pictureUploadByBatchUsingPost } from '@/api/pictureController'
 import PictureUploadByBatchPage from '@/Page/picture/PictureUploadByBatchPage.vue'
+import SpaceManagePage from '@/Page/space/SpaceManagePage.vue'
+import AddSpacePage from '@/Page/space/AddSpacePage.vue'
+import MySpacePage from '@/Page/space/MySpacePage.vue'
+import SpaceDetailPage from '@/Page/space/SpaceDetailPage.vue'
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -62,6 +66,18 @@ const router = createRouter({
           }
         },
         {
+          path: '/my_space',
+          name: '我的空间',
+          component: MySpacePage,
+        },
+        {
+          path: '/space/:id',
+          name: '空间详情',
+          component: SpaceDetailPage,
+          props: true,
+        },
+
+        {
           path: '/add_picture',
           name: '创建图片',
           component: AddPicturePage,
@@ -73,6 +89,14 @@ const router = createRouter({
           path: '/admin/pictureManage',
           name: '图片管理',
           component: PictureManagePage,
+          meta: {
+            access: ACCESS_ENUM.ADMIN
+          }
+        },
+        {
+          path: '/admin/spaceManage',
+          name: '空间管理',
+          component: SpaceManagePage,
           meta: {
             access: ACCESS_ENUM.ADMIN
           }
@@ -105,6 +129,12 @@ const router = createRouter({
           component: PictureUploadByBatchPage,
           props: true,
         },
+        {
+          path: '/add_space',
+          name: '创建空间',
+          component: AddSpacePage,
+        },
+
         {
           path: 'about',
           name: 'about',

@@ -22,14 +22,22 @@
                             </a-space>
                             <template #overlay>
                                 <a-menu>
-                                    <a-menu-item @click="logout()">
-                                        <LogoutOutlined />
-                                        退出登录
-                                    </a-menu-item>
                                     <a-menu-item @click="router.push('/user/center')">
                                         <UserOutlined />
                                         个人中心
                                     </a-menu-item>
+                                    <a-menu-item>
+                                        <router-link to="/my_space">
+                                            <UserOutlined />
+                                            我的空间
+                                        </router-link>
+                                    </a-menu-item>
+                                    <a-menu-item @click="logout()">
+                                        <LogoutOutlined />
+                                        退出登录
+                                    </a-menu-item>
+
+
                                 </a-menu>
                             </template>
                         </a-dropdown>
@@ -84,6 +92,12 @@ const originItems = [
         title: '图片管理',
     },
     {
+        key: '/admin/spaceManage',
+        label: '空间管理',
+        title: '空间管理',
+    },
+
+    {
         key: '/admin/categoryManage',
         label: '分类管理',
         title: '分类管理',
@@ -92,11 +106,6 @@ const originItems = [
         key: '/admin/tagManage',
         label: '标签管理',
         title: '标签管理',
-    },
-    {
-        key: 'others',
-        label: h('a', { href: 'https://www.codefather.cn', target: '_blank' }, '编程导航'),
-        title: '编程导航',
     },
 ]
 

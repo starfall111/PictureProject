@@ -2,11 +2,15 @@
   <div id="basicLayout">
     <a-layout style="min-height: 100vh">
       <a-layout-header class="header">
-        <golbal-header />
+        <global-header />
       </a-layout-header>
-      <a-layout-content class="content">
-        <router-view />
-      </a-layout-content>
+      <a-layout>
+        <GlobalSider class="sider" />
+        <a-layout-content class="content">
+          <router-view />
+        </a-layout-content>
+      </a-layout>
+
       <a-layout-footer>
         <div class="footer">
           全局底部版权信息栏
@@ -18,7 +22,8 @@
 
 <script setup lang="ts">
 import { healthUsingGet } from '@/api/mainController';
-import GolbalHeader from '@/components/GolbalHeader.vue';
+import GlobalHeader from '@/components/GlobalHeader.vue';
+import GlobalSider from '@/components/GlobalSider.vue';
 
 healthUsingGet().then(res => {
   console.log('后端健康检查结果:', res.data.data);
@@ -49,6 +54,25 @@ healthUsingGet().then(res => {
   margin-bottom: 16px;
   color: unset;
   background: white;
+}
+
+#basicLayout .header {
+  margin-bottom: 1px;
+}
+
+#basicLayout .content {
+  padding: 28px;
+}
+
+#basicLayout .sider {
+  background: #fff;
+  padding-top: 20px;
+  border-right: 0.5px solid #eee;
+}
+
+#basicLayout :deep(.ant-menu-root) {
+  border-bottom: none !important;
+  border-inline-end: none !important;
 }
 
 </style>

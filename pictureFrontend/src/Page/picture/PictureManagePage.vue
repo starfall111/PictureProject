@@ -33,8 +33,8 @@
         <div class="table">
             <a-table :columns="columns" :data-source="dataList" :pagination="pagination" @change="doTableChange">
                 <template #bodyCell="{ column, record }">
-                    <template v-if="column.dataIndex === 'url'">
-                        <a-image :src="record.url" :width="120" />
+                    <template v-if="column.dataIndex === 'thumbnailUrl'">
+                        <a-image :src="record.thumbnailUrl" :width="120" />
                     </template>
                     <!-- 标签 -->
                     <template v-if="column.dataIndex === 'tags'">

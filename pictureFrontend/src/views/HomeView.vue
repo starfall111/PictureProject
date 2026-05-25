@@ -13,20 +13,13 @@
       <div v-if="!categoryExpanded" class="category-bar-inline">
         <span class="category-label">分类：</span>
         <div class="category-bar-content">
-          <a-checkable-tag
-            :checked="selectedCategory === 0"
-            @change="selectedCategory = 0; doSearch()"
-            class="category-item"
-          >
+          <a-checkable-tag :checked="selectedCategory === 0" @change="selectedCategory = 0; doSearch()"
+            class="category-item">
             全部
           </a-checkable-tag>
-          <a-checkable-tag
-            v-for="category in visibleCategoryList"
-            :key="category.value"
-            :checked="selectedCategory === category.value"
-            @change="selectedCategory = category.value; doSearch()"
-            class="category-item"
-          >
+          <a-checkable-tag v-for="category in visibleCategoryList" :key="category.value"
+            :checked="selectedCategory === category.value" @change="selectedCategory = category.value; doSearch()"
+            class="category-item">
             {{ category.label }}
           </a-checkable-tag>
         </div>
@@ -38,32 +31,20 @@
       <template v-else>
         <div class="category-bar-header">
           <span class="category-label">分类：</span>
-          <a-input-search
-            v-model:value="categorySearchText"
-            placeholder="搜索分类"
-            size="small"
-            style="width: 160px; margin-right: 8px"
-            allow-clear
-          />
+          <a-input-search v-model:value="categorySearchText" placeholder="搜索分类" size="small"
+            style="width: 160px; margin-right: 8px" allow-clear />
           <a-button type="link" size="small" @click="categoryExpanded = false; categorySearchText = ''">
             收起
           </a-button>
         </div>
         <div class="category-bar-content expanded">
-          <a-checkable-tag
-            :checked="selectedCategory === 0"
-            @change="selectedCategory = 0; doSearch()"
-            class="category-item"
-          >
+          <a-checkable-tag :checked="selectedCategory === 0" @change="selectedCategory = 0; doSearch()"
+            class="category-item">
             全部
           </a-checkable-tag>
-          <a-checkable-tag
-            v-for="category in visibleCategoryList"
-            :key="category.value"
-            :checked="selectedCategory === category.value"
-            @change="selectedCategory = category.value; doSearch()"
-            class="category-item"
-          >
+          <a-checkable-tag v-for="category in visibleCategoryList" :key="category.value"
+            :checked="selectedCategory === category.value" @change="selectedCategory = category.value; doSearch()"
+            class="category-item">
             {{ category.label }}
           </a-checkable-tag>
         </div>
@@ -84,13 +65,8 @@
       <div v-if="!tagExpanded" class="tag-bar-inline">
         <span class="tag-label">标签：</span>
         <div class="tag-bar-content">
-          <a-checkable-tag
-            v-for="tag in visibleTagList"
-            :key="tag.name"
-            :checked="selectedTagList.includes(tag.name)"
-            @change="toggleTag(tag.name)"
-            class="tag-item"
-          >
+          <a-checkable-tag v-for="tag in visibleTagList" :key="tag.name" :checked="selectedTagList.includes(tag.name)"
+            @change="toggleTag(tag.name)" class="tag-item">
             {{ tag.name }}
           </a-checkable-tag>
         </div>
@@ -102,55 +78,24 @@
       <template v-else>
         <div class="tag-bar-header">
           <span class="tag-label">标签：</span>
-          <a-input-search
-            v-model:value="tagSearchText"
-            placeholder="搜索标签"
-            size="small"
-            style="width: 160px; margin-right: 8px"
-            allow-clear
-          />
+          <a-input-search v-model:value="tagSearchText" placeholder="搜索标签" size="small"
+            style="width: 160px; margin-right: 8px" allow-clear />
           <a-button type="link" size="small" @click="tagExpanded = false; tagSearchText = ''">收起</a-button>
         </div>
         <div class="tag-bar-content expanded">
-          <a-checkable-tag
-            v-for="tag in visibleTagList"
-            :key="tag.name"
-            :checked="selectedTagList.includes(tag.name)"
-            @change="toggleTag(tag.name)"
-            class="tag-item"
-          >
+          <a-checkable-tag v-for="tag in visibleTagList" :key="tag.name" :checked="selectedTagList.includes(tag.name)"
+            @change="toggleTag(tag.name)" class="tag-item">
             {{ tag.name }}
           </a-checkable-tag>
         </div>
       </template>
     </div>
     <!-- 图片列表 -->
-    <a-list :grid="{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4, xl: 5, xxl: 6 }" :data-source="dataList"
-      :pagination="pagination" :loading="loading">
-      <template #renderItem="{ item: picture }">
-          <!-- 单张图片 -->
-          <a-list-item style="padding: 0">
-            <!-- 单张图片 -->
-            <a-card hoverable @click="doClickPicture(picture)">
-              <template #cover>
-                <img style="height: 180px; object-fit: cover" :alt="picture.name" :src="picture.thumbnailUrl" />
-              </template>
-              <a-card-meta :title="picture.name">
-                <template #description>
-                  <a-flex>
-                    <a-tag color="green">
-                      {{ picture.categoryName ?? '默认' }}
-                    </a-tag>
-                    <a-tag v-for="tag in picture.tags" :key="tag">
-                      {{ tag }}
-                    </a-tag>
-                  </a-flex>
-                </template>
-              </a-card-meta>
-            </a-card>
-          </a-list-item>
-      </template>
-    </a-list>
+    <!-- 图片列表 -->
+    <PictureList :dataList="dataList" :loading="loading" />
+    <a-pagination style="text-align: right" v-model:current="searchParams.current"
+      v-model:pageSize="searchParams.pageSize" :total="total" @change="onPageChange" />
+
   </div>
 
 
@@ -164,6 +109,7 @@ import { listTagUsingGet } from '@/api/tagController'
 import { message } from 'ant-design-vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import PictureList  from '@/components/PictureList.vue'
 
 // 数据  
 const dataList = ref([])
@@ -178,20 +124,11 @@ const searchParams = reactive<API.PictureQueryDTO>({
   sortOrder: 'descend',
 })
 
-// 分页参数  
-const pagination = computed(() => {
-  return {
-    current: searchParams.current ?? 1,
-    pageSize: searchParams.pageSize ?? 10,
-    total: total.value,
-    // 切换页号时，会修改搜索参数并获取数据  
-    onChange: (page, pageSize) => {
-      searchParams.current = page
-      searchParams.pageSize = pageSize
-      fetchData()
-    },
-  }
-})
+const onPageChange = (page, pageSize) => {
+  searchParams.current = page
+  searchParams.pageSize = pageSize
+  fetchData()
+}
 
 const doSearch = () => {
   // 重置搜索条件  

@@ -5,6 +5,7 @@
 import * as categoryController from "./categoryController";
 import * as mainController from "./mainController";
 import * as pictureController from "./pictureController";
+import * as spaceController from "./spaceController";
 import * as tagController from "./tagController";
 import * as userController from "./userController";
 import * as noticeController from "./noticeController";
@@ -12,6 +13,7 @@ export default {
   categoryController,
   mainController,
   pictureController,
+  spaceController,
   tagController,
   userController,
   noticeController,
