@@ -5,10 +5,13 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
 import lombok.Data;
+import org.springframework.stereotype.Service;
 
 /**
  * 图片
@@ -17,7 +20,7 @@ import lombok.Data;
  */
 @TableName(value = "picture")
 @Data
-public class Picture {
+public class Picture implements Serializable {
     /**
      * id
      */
@@ -53,6 +56,12 @@ public class Picture {
      * 分类 id
      */
     private Long categoryId;
+
+    /**
+     * 空间 id
+     */
+    private Long spaceId;
+
 
     /**
      * 标签（JSON 数组）
@@ -129,4 +138,7 @@ public class Picture {
      */
     @TableLogic
     private Integer isDelete;
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 }

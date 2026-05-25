@@ -14,5 +14,10 @@ public class FileDTO {
 
     private Long categoryId;
 
+    /**
+     * 空间 id
+     */
+    private Long spaceId;
+
     private String tags;
 }

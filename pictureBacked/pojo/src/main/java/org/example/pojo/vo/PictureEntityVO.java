@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -119,4 +120,7 @@ public class PictureEntityVO implements Serializable {
      * 更新时间
      */
     private Date updateTime;
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 }

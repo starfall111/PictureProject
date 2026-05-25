@@ -5,9 +5,13 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
+/**
+ * @author Zou
+ */
 @Data
 public class UserVO implements Serializable {
     /**
@@ -54,4 +58,7 @@ public class UserVO implements Serializable {
      * 创建时间
      */
     private Date createTime;
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 }

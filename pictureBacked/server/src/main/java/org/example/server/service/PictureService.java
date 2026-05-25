@@ -39,7 +39,7 @@ public interface PictureService extends IService<Picture> {
     boolean editPicture(PictureEditDTO pictureEditDTO);
 
     //2.删除图片
-    boolean deletePicture(long id) throws Exception;
+    Boolean deletePicture(long id) throws Exception;
     //3.分页查询图片（管理员/普通用户）
     Page<PictureEntityVO> queryPictureListAdmin(PictureQueryDTO queryDTO);
 

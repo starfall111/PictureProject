@@ -5,11 +5,16 @@ import cn.hutool.json.JSONUtil;
 import lombok.Data;
 import org.example.pojo.entity.Picture;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * @author Zou
+ */
 @Data
-public class PictureVO {
+public class PictureVO implements Serializable {
 
     /**
      * id
@@ -111,6 +116,9 @@ public class PictureVO {
      * 创建用户信息
      * */
     private UserVO userVO;
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public static Picture voToObj(PictureVO pictureVO){
         if (pictureVO == null){

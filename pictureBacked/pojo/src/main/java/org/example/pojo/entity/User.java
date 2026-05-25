@@ -3,6 +3,7 @@ package org.example.pojo.entity;
 import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.FileDescriptor;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import lombok.Data;
@@ -88,4 +89,7 @@ public class User implements Serializable {
      */
     @TableLogic
     private Integer isDelete;
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 }

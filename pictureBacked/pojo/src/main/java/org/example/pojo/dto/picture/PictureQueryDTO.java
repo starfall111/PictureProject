@@ -67,6 +67,16 @@ public class PictureQueryDTO extends PageRequest {
     private Long userId;
 
     /**
+     * 所属空间 spaceId
+     */
+    private Long spaceId;
+
+    /**
+     * 空间分页查询和公共图库查询
+     */
+    private Boolean nullSpaceId;
+
+    /**
     * 审核状态
     */
     private Integer reviewStatus;
