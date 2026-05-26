@@ -3,6 +3,7 @@ package org.example.pojo.dto.picture;
 import lombok.Data;
 import org.example.pojo.PageRequest;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -85,4 +86,15 @@ public class PictureQueryDTO extends PageRequest {
      * 收索关键字（图片名或图片简介）
      * */
     private String searchText;
+
+    /**
+     * 开始编辑时间
+     */
+    private Date startEditTime;
+
+    /**
+     * 结束编辑时间
+     */
+    private Date endEditTime;
+
 }
