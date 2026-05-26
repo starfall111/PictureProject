@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div id="home">
 
     <!-- 搜索框 -->
@@ -90,12 +90,32 @@
         </div>
       </template>
     </div>
-    <!-- 图片列表 -->
-    <!-- 图片列表 -->
-    <PictureList :dataList="dataList" :loading="loading" />
-    <a-pagination style="text-align: right" v-model:current="searchParams.current"
-      v-model:pageSize="searchParams.pageSize" :total="total" @change="onPageChange" />
 
+    <!-- 布局切换 -->
+    <div class="layout-bar">
+      <a-radio-group v-model:value="currentLayoutMode" button-style="solid" size="small" @change="onLayoutChange">
+        <a-radio-button value="waterfall">
+          <AppstoreOutlined /> 瀑布流
+        </a-radio-button>
+        <a-radio-button value="grid">
+          <TableOutlined /> 网格
+        </a-radio-button>
+      </a-radio-group>
+    </div>
+
+    <!-- 图片列表 -->
+    <PictureList
+      :dataList="allPictures"
+      :loading="isLoading && allPictures.length === 0"
+      :layoutMode="currentLayoutMode"
+      :showSocial="true"
+      :hasMore="hasMore"
+      :isLoadingMore="isLoading"
+      @loadMore="onLoadMore"
+    />
+
+    <!-- 分享弹窗 -->
+    <ShareModal v-model:open="shareModalOpen" :picture="sharePicture" />
   </div>
 
 
@@ -107,75 +127,178 @@ import { listCategoryUsingGet } from '@/api/categoryController'
 import { queryPictureUserUsingPost } from '@/api/pictureController'
 import { listTagUsingGet } from '@/api/tagController'
 import { message } from 'ant-design-vue'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import PictureList  from '@/components/PictureList.vue'
+import PictureList from '@/components/PictureList/index.vue'
+import ShareModal from '@/components/ShareModal.vue'
+import { useLayoutPreferenceStore } from '@/stores/layoutPreference'
+import { AppstoreOutlined, TableOutlined } from '@ant-design/icons-vue'
 
-// 数据  
-const dataList = ref([])
+const layoutStore = useLayoutPreferenceStore()
+const currentLayoutMode = ref<'waterfall' | 'grid'>(layoutStore.layoutMode)
+
+const onLayoutChange = () => {
+  layoutStore.setLayoutMode(currentLayoutMode.value)
+}
+
+// ==================== 无限滚动数据 ====================
+
+const allPictures = ref<API.PictureVO[]>([])
+const currentPage = ref(1)
+const pageSize = 12
+const hasMore = ref(true)
+const isLoading = ref(false)
 const total = ref(0)
-const loading = ref(true)
 
-// 搜索条件  
+// 搜索条件
 const searchParams = reactive<API.PictureQueryDTO>({
   current: 1,
-  pageSize: 12,
+  pageSize,
   sortField: 'createTime',
   sortOrder: 'descend',
 })
 
-const onPageChange = (page, pageSize) => {
-  searchParams.current = page
-  searchParams.pageSize = pageSize
-  fetchData()
+/**
+ * 获取数据
+ * @param reset 是否重置（筛选变化时清空重新加载）
+ */
+const fetchData = async (reset = false) => {
+  if (isLoading.value) return
+  if (!reset && !hasMore.value) return
+
+  if (reset) {
+    currentPage.value = 1
+    allPictures.value = []
+    hasMore.value = true
+  }
+
+  isLoading.value = true
+
+  const params: API.PictureQueryDTO = {
+    current: currentPage.value,
+    pageSize,
+    sortField: searchParams.sortField,
+    sortOrder: searchParams.sortOrder,
+    searchText: searchParams.searchText,
+    tags: [...selectedTagList.value],
+  }
+  if (selectedCategory.value !== 0) {
+    params.categoryId = selectedCategory.value
+  }
+
+  try {
+    const res = await queryPictureUserUsingPost(params)
+    if (res.data.data) {
+      const records = res.data.data.records ?? []
+      total.value = res.data.data.total ?? 0
+
+      if (reset) {
+        allPictures.value = records
+      } else {
+        allPictures.value = [...allPictures.value, ...records]
+      }
+
+      hasMore.value = allPictures.value.length < total.value
+      currentPage.value++
+    } else {
+      message.error('获取数据失败，' + res.data.message)
+    }
+  } catch {
+    message.error('网络错误，请稍后重试')
+  } finally {
+    isLoading.value = false
+  }
 }
 
+// 筛选变化 → 重置加载
 const doSearch = () => {
-  // 重置搜索条件  
-  searchParams.current = 1
-  fetchData()
+  fetchData(true)
+  nextTick(() => {
+    setupObserver()
+  })
 }
 
+// 触底加载更多
+const onLoadMore = () => {
+  fetchData(false)
+}
+
+// IntersectionObserver 自动加载
+const sentinelRef = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+
+const setupObserver = () => {
+
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
+
+  // 在下一帧确保 DOM 已渲染
+  setTimeout(() => {
+    const sentinel = document.getElementById('scroll-sentinel')
+    if (!sentinel) return
+
+    observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore.value && !isLoading.value) {
+          onLoadMore()
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(sentinel)
+  }, 100)
+}
+
+// 首次加载后判断是否需要自动填充
+const ensureFullPage = async () => {
+  // 如果首屏数据不足以填满视口，继续加载
+  if (hasMore.value && allPictures.value.length < pageSize) {
+    await fetchData(false)
+  }
+}
+
+// ==================== 分享弹窗 ====================
+const shareModalOpen = ref(false)
+const sharePicture = ref<API.PictureVO>()
+
+// ==================== 标签和分类 ====================
 const categoryList = ref<{ value: number; label: string }[]>([])
-const selectedCategory = ref<number>(0)
-const categoryExpanded = ref(false)
-const categorySearchText = ref('')
 const tagList = ref<{ name: string; count: number }[]>([])
+const selectedCategory = ref(0)
 const selectedTagList = ref<string[]>([])
+const categoryExpanded = ref(false)
 const tagExpanded = ref(false)
+const categorySearchText = ref('')
 const tagSearchText = ref('')
 
-// 分类栏：收起态显示前 10 个，展开态显示全部（支持搜索过滤）
+const VISIBLE_COUNT = 10
+
 const visibleCategoryList = computed(() => {
-  if (!categoryExpanded.value) {
-    return categoryList.value.slice(0, 10)
-  }
-  if (categorySearchText.value) {
-    const keyword = categorySearchText.value.toLowerCase()
-    return categoryList.value.filter(c => c.label.toLowerCase().includes(keyword))
-  }
-  return categoryList.value
+  const keyword = categorySearchText.value.trim().toLowerCase()
+  if (!keyword) return categoryList.value.slice(0, VISIBLE_COUNT)
+  return categoryList.value.filter(c => c.label.toLowerCase().includes(keyword))
 })
 
-// 分类数超过 10 个才显示"更多"按钮
-const showCategoryExpandBtn = computed(() => categoryList.value.length > 10)
+const showCategoryExpandBtn = computed(() => {
+  const keyword = categorySearchText.value.trim().toLowerCase()
+  const list = keyword
+    ? categoryList.value.filter(c => c.label.toLowerCase().includes(keyword))
+    : categoryList.value
+  return list.length > VISIBLE_COUNT
+})
 
-// 收起态只显示前 8 个热门标签，展开态显示全部（支持搜索过滤）
 const visibleTagList = computed(() => {
-  if (!tagExpanded.value) {
-    return tagList.value.slice(0, 8)
-  }
-  if (tagSearchText.value) {
-    const keyword = tagSearchText.value.toLowerCase()
-    return tagList.value.filter(tag => tag.name.toLowerCase().includes(keyword))
-  }
-  return tagList.value
+  const keyword = tagSearchText.value.trim().toLowerCase()
+  const filtered = keyword
+    ? tagList.value.filter(t => t.name.toLowerCase().includes(keyword))
+    : tagList.value
+  return filtered
 })
 
-// 标签总数超过 8 个才显示展开按钮
 const showExpandBtn = computed(() => tagList.value.length > 8)
 
-// 切换标签选中状态
 const toggleTag = (tagName: string) => {
   const index = selectedTagList.value.indexOf(tagName)
   if (index > -1) {
@@ -186,7 +309,6 @@ const toggleTag = (tagName: string) => {
   doSearch()
 }
 
-// 移除单个已选标签
 const removeTag = (tagName: string) => {
   const index = selectedTagList.value.indexOf(tagName)
   if (index > -1) {
@@ -195,29 +317,23 @@ const removeTag = (tagName: string) => {
   doSearch()
 }
 
-// 清除所有已选标签
 const clearAllTags = () => {
   selectedTagList.value = []
   doSearch()
 }
 
-// 获取标签和分类选项  
 const getTagCategoryOptions = async () => {
   const res_tag = await listTagUsingGet()
   const res_category = await listCategoryUsingGet()
   if (res_category.data.code === 0 && res_category.data.data) {
-    // 转换成下拉选项组件接受的格式  
-    categoryList.value = (res_category.data.data ?? []).map((data: any) => {
-      return {
-        value: data.id,
-        label: data.name,
-      }
-    })
+    categoryList.value = (res_category.data.data ?? []).map((data: any) => ({
+      value: data.id,
+      label: data.name,
+    }))
   } else {
     message.error('加载选项失败，' + res_category.data.message)
   }
   if (res_tag.data.code === 0 && res_tag.data.data) {
-    // 按 count 降序排列（热度排序）
     tagList.value = (res_tag.data.data ?? [])
       .map((tag: any) => ({ name: tag.name, count: tag.count ?? 0 }))
       .sort((a, b) => b.count - a.count)
@@ -226,49 +342,39 @@ const getTagCategoryOptions = async () => {
   }
 }
 
-const fetchData = async () => {
-  loading.value = true
-  // 转换搜索参数
-  const params = {
-    ...searchParams,
-    tags: [...selectedTagList.value],
-  }
-  if (selectedCategory.value !== 0) {
-    params.categoryId = selectedCategory.value
-  }
-  const res = await queryPictureUserUsingPost(params)
-  if (res.data.data) {
-    dataList.value = res.data.data.records ?? []
-    total.value = res.data.data.total ?? 0
-  } else {
-    message.error('获取数据失败，' + res.data.message)
-  }
-  loading.value = false
-}
-
 const router = useRouter()
-// 跳转至图片详情  
-const doClickPicture = (picture) => {
-  router.push({
-    path: `/picture/${picture.id}`,
-  })
-}
 
+// ==================== 初始化 ====================
 
-onMounted(() => {
-  getTagCategoryOptions()
+onMounted(async () => {
+  await getTagCategoryOptions()
+  await fetchData(true)
+  setupObserver()
+  ensureFullPage()
 })
 
-
-// 页面加载时请求一次  
-onMounted(() => {
-  fetchData()
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
 })
 
-
+// watch(currentLayoutMode, (newMode) => {
+//   nextTick(() => {
+//     setupObserver()
+//   })
+// })
 </script>
 
 <style>
+/* ===== 布局切换 ===== */
+#home .layout-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
 /* ===== 分类栏 ===== */
 #home .category-bar {
   margin-bottom: 16px;
@@ -338,7 +444,6 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
-/* 收起态：标签和展开按钮同一行 */
 #home .tag-bar-inline {
   display: flex;
   align-items: center;
@@ -350,11 +455,9 @@ onMounted(() => {
   flex-wrap: nowrap;
   overflow: hidden;
   gap: 4px;
-  /* 不设 flex:1，避免把按钮挤出 */
   max-width: calc(100% - 80px);
 }
 
-/* 展开态 header */
 #home .tag-bar-header {
   display: flex;
   align-items: center;
@@ -367,7 +470,6 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-/* 展开态标签区域 */
 #home .tag-bar-content.expanded {
   max-height: 220px;
   overflow-y: auto;

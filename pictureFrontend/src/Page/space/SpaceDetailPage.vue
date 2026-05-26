@@ -1,4 +1,4 @@
-<template>
+﻿<template>
 
   <div id="SpaceDetailPage">
     <!-- 空间信息 -->
@@ -19,8 +19,8 @@
 
     <div style="height: 16px;"></div>
 
-    <!-- 图片列表 -->
-    <PictureList :dataList="dataList" :loading="loading" :showOp="true" :onReload="fetchData" />
+    <!-- 图片列表 — 私人空间固定使用网格布局，无社交功能 -->
+    <PictureList :dataList="dataList" :loading="loading" :showOp="true" :onReload="fetchData" layoutMode="grid" />
     <a-pagination style="text-align: right" v-model:current="searchParams.current"
       v-model:pageSize="searchParams.pageSize" :total="total" :show-total="() => `图片总数 ${total} / ${space.maxCount}`"
       @change="onPageChange" />
@@ -36,7 +36,7 @@ import { getSpaceByIdUsingGet } from '@/api/spaceController';
 import { formatSize } from '@/util/format';
 import { message } from 'ant-design-vue';
 import { onMounted, reactive, ref } from 'vue';
-import PictureList from '@/components/PictureList.vue';
+import PictureList from '@/components/PictureList/index.vue';
 import PictureSearchForm from '@/components/PictureSearchForm.vue';
 
 const props = defineProps<{
