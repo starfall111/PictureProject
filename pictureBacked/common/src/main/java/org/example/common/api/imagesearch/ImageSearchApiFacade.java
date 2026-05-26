@@ -24,10 +24,12 @@ public class ImageSearchApiFacade {
         return imageList;
     }
 
-    public static void main(String[] args) {
-        // 测试以图搜图功能
-        String imageUrl = "https://zjx-project.oss-cn-beijing.aliyuncs.com/2026/05/be6b54f9-903e-49d4-b928-5f3a88a09c90.webp";
-        List<ImageSearchResult> resultList = searchImage(imageUrl);
-        System.out.println("结果列表" + resultList);
-    }
+//    public static void main(String[] args) {
+//        // 测试以图搜图功能
+//        String imageUrl = "https://zjx-project.oss-cn-beijing.aliyuncs.com/2026/05/be6b54f9-903e-49d4-b928-5f3a88a09c90.webp";
+//        List<ImageSearchResult> resultList = searchImage(imageUrl);
+//        System.out.println("结果列表" + resultList);
+//    }
+
+
 }

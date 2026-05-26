@@ -7,19 +7,28 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.common.annotation.CheckAuth;
 import org.example.common.api.imagesearch.ImageSearchApiFacade;
 import org.example.common.api.imagesearch.model.ImageSearchResult;
+import org.example.common.api.pexels.PexelsPicture;
+import org.example.common.api.pexels.model.PexelsResponse;
 import org.example.common.constants.UserConstant;
 import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
+import org.example.common.context.UserContext;
+import org.example.pojo.entity.User;
 import org.example.common.result.BaseResponse;
 import org.example.common.result.ResultUtils;
 import org.example.common.util.AliOssUtil;
 import org.example.pojo.DeleteRequest;
 import org.example.pojo.dto.picture.*;
+import org.example.pojo.dto.social.BatchStatusQueryDTO;
+
 import org.example.pojo.entity.Picture;
 import org.example.pojo.vo.PictureEntityVO;
 import org.example.pojo.vo.PictureVO;
+import org.example.pojo.vo.ToggleFavoriteVO;
+import org.example.pojo.vo.ToggleLikeVO;
 import org.example.server.service.PictureService;
+import org.example.server.service.SocialService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 
 @RestController
 @RequestMapping("/picture")
@@ -40,6 +49,9 @@ public class PictureController {
 
     @Resource
     private AliOssUtil aliOssUtils;
+
+    @Resource
+    private SocialService socialService;
 
     /**
      * 图片上传
@@ -185,6 +197,7 @@ public class PictureController {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
         PictureVO pictureVO = pictureService.getByPictureIdUser(id);
+        //todo 没有封装用户是否点赞收藏数据
 
         return ResultUtils.success(pictureVO);
     }
@@ -227,4 +240,76 @@ public class PictureController {
         return ResultUtils.success(resultList);
     }
 
+
+    // ==================== 社交功能接口 ====================
+
+    /**
+     * 点赞/取消点赞
+     */
+    @PostMapping("/like/{pictureId}")
+    public BaseResponse<ToggleLikeVO> toggleLike(@PathVariable Long pictureId) {
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        User user = UserContext.get();
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);
+        ToggleLikeVO result = socialService.toggleLike(pictureId, user.getId());
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 批量获取点赞状态
+     */
+    @PostMapping("/like/status")
+    public BaseResponse<Map<Long, Boolean>> batchLikeStatus(@RequestBody BatchStatusQueryDTO request) {
+        List<Long> pictureIds = request.getPictureIds();
+        ThrowUtils.throwIf(pictureIds == null || pictureIds.isEmpty(), ErrorCode.PARAMS_ERROR);
+        User user = UserContext.get();
+        Long userId = user != null ? user.getId() : null;
+        Map<Long, Boolean> result = socialService.batchLikeStatus(pictureIds, userId);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 收藏/取消收藏
+     */
+    @PostMapping("/favorite/{pictureId}")
+    public BaseResponse<ToggleFavoriteVO> toggleFavorite(@PathVariable Long pictureId) {
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        User user = UserContext.get();
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);
+        ToggleFavoriteVO result = socialService.toggleFavorite(pictureId, user.getId());
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 批量获取收藏状态
+     */
+    @PostMapping("/favorite/status")
+    public BaseResponse<Map<Long, Boolean>> batchFavoriteStatus(@RequestBody BatchStatusQueryDTO request) {
+        List<Long> pictureIds = request.getPictureIds();
+        ThrowUtils.throwIf(pictureIds == null || pictureIds.isEmpty(), ErrorCode.PARAMS_ERROR);
+        User user = UserContext.get();
+        Long userId = user != null ? user.getId() : null;
+        Map<Long, Boolean> result = socialService.batchFavoriteStatus(pictureIds, userId);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 记录分享行为
+     */
+    @PostMapping("/share/{pictureId}")
+    public BaseResponse<Boolean> recordShare(@PathVariable Long pictureId) {
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        socialService.recordShare(pictureId);
+        return ResultUtils.success(true);
+    }
+
+    @Resource
+    private PexelsPicture pexelsPicture;
+
+    @GetMapping("/test/pexels")
+    public BaseResponse<List<PexelsResponse>> test(){
+        List<PexelsResponse> result = pexelsPicture.getPexelsPicture("");
+
+        return ResultUtils.success(result);
+    }
 }

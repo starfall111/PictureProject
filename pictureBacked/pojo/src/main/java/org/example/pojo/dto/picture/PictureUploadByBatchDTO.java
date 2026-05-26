@@ -12,4 +12,6 @@ public class PictureUploadByBatchDTO {
     private String profile;
     private List<String> tags;
     private Long categoryId;
+    /** 图片搜索来源，默认 bing */
+    private String searchSource = "pexels";
 }

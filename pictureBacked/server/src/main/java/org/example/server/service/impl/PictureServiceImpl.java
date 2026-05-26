@@ -5,7 +5,6 @@ import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -33,17 +32,18 @@ import org.example.pojo.entity.Category;
 import org.example.pojo.entity.Picture;
 import org.example.pojo.entity.User;
 import org.example.pojo.vo.PictureEntityVO;
+import org.example.pojo.vo.PictureSocialVO;
+import org.example.pojo.vo.PictureStatisticsVO;
 import org.example.pojo.vo.PictureVO;
 import org.example.pojo.vo.UserVO;
 import org.example.server.service.CategoryService;
+import org.example.server.service.SocialService;
 import org.example.server.service.PictureService;
 import org.example.server.mapper.PictureMapper;
 import org.example.server.service.UserService;
 import org.example.common.util.RedisCacheUtil;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.example.common.api.imagesearch.strategy.ImageSearchStrategy;
+import org.example.common.api.imagesearch.strategy.ImageSourceResult;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -95,6 +95,20 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     //程序化事务控制
     @Resource
     private TransactionTemplate transactionTemplate;
+
+    @Resource
+    private SocialService socialService;
+
+    @Resource
+    private List<ImageSearchStrategy> imageSearchStrategyList;
+
+    private Map<String, ImageSearchStrategy> imageSearchStrategyMap;
+
+    @javax.annotation.PostConstruct
+    private void initStrategyMap() {
+        imageSearchStrategyMap = imageSearchStrategyList.stream()
+                .collect(Collectors.toMap(ImageSearchStrategy::getSourceType, s -> s));
+    }
 
     // 本地缓存暂时禁用
 //    private final Cache<String, String> LOCAL_CACHE =
@@ -184,6 +198,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 }
                 if (StrUtil.isNotBlank(fileDTO.getTags())) {
                     picture.setTags(fileDTO.getTags());
+                }
+                if (StrUtil.isNotBlank(fileDTO.getIntroduction())) {
+                    picture.setIntroduction(fileDTO.getIntroduction());
                 }
             }
             picture.setName(name);
@@ -459,6 +476,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             if (categoryId != null && categoryMap.containsKey(categoryId)) {
                 pictureVO.setCategoryName(categoryMap.get(categoryId).getName());
             }
+            // 填充社交数据（仅公共图库图片）
+            fillSocialData(pictureVOList);
+
         });
         result = result.setRecords(pictureVOList);
 
@@ -506,8 +526,33 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             Space space = spaceService.getById(picture.getSpaceId());
             spaceService.validAuthUser(space,UserContext.get());
         }
+        PictureVO pictureVO = getPictureVO(picture);
 
-        return getPictureVO(picture);
+        // 填充社交数据（仅公共图库）
+        if (picture.getSpaceId() == null) {
+            User currentUser = UserContext.get();
+            Long currentUserId = currentUser != null ? currentUser.getId() : null;
+            List<Long> ids = Collections.singletonList(id);
+            Map<Long, PictureStatisticsVO> statsMap = socialService.batchStatistics(ids);
+            PictureStatisticsVO stats = statsMap.getOrDefault(id, new PictureStatisticsVO());
+
+            PictureSocialVO socialVO = new PictureSocialVO();
+            socialVO.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
+            socialVO.setFavoriteCount(stats.getFavoriteCount() != null ? stats.getFavoriteCount() : 0);
+            socialVO.setShareCount(stats.getShareCount() != null ? stats.getShareCount() : 0);
+            if (currentUserId != null) {
+                Map<Long, Boolean> likeStatus = socialService.batchLikeStatus(ids, currentUserId);
+                Map<Long, Boolean> favStatus = socialService.batchFavoriteStatus(ids, currentUserId);
+                socialVO.setIsLiked(likeStatus.getOrDefault(id, false));
+                socialVO.setIsFavorited(favStatus.getOrDefault(id, false));
+            } else {
+                socialVO.setIsLiked(false);
+                socialVO.setIsFavorited(false);
+            }
+            pictureVO.setSocialInfo(socialVO);
+        }
+
+        return pictureVO;
     }
 
     /**
@@ -560,63 +605,30 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         String namePrefix = pictureUploadByBatchDTO.getProfile();
         Long categoryId = pictureUploadByBatchDTO.getCategoryId();
         List<String> tagList = pictureUploadByBatchDTO.getTags();
+        String searchSource = pictureUploadByBatchDTO.getSearchSource();
         ThrowUtils.throwIf(StrUtil.isBlank(searchText), ErrorCode.PARAMS_ERROR, "搜索词不能为空");
         if (StrUtil.isBlank(namePrefix)) {
             namePrefix = searchText;
         }
-        //数据抓取
-        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1", searchText);
-        Document document;
-        try {
-            document = Jsoup.connect(fetchUrl).get();
-        } catch (IOException e) {
-            log.error("获取页面失败", e);
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取页面失败");
-        }
 
-        Element element = document.getElementsByClass("dgControl").first();
-        ThrowUtils.throwIf(ObjUtil.isEmpty(element), ErrorCode.OPERATION_ERROR, "获取元素失败");
-        //获取图片元素
-//       Elements imgElementList = element.select("img.mimg");
-        //获取完整数据元素
-        Elements imgElementList = element.select(".iusc");
+        //根据 searchSource 选择策略
+        ImageSearchStrategy strategy = imageSearchStrategyMap.get(searchSource);
+        ThrowUtils.throwIf(strategy == null, ErrorCode.PARAMS_ERROR, "不支持的搜索来源: " + searchSource);
+
+        //使用策略搜索图片
+        List<ImageSourceResult> imageResults = strategy.searchImages(searchText, count);
         int uploadCount = 0;
 
-        for (Element imgElement : imgElementList) {
-            //String fileUrl = imgElement.attr("src");
-
-//            if (StrUtil.isBlank(fileUrl)){
-//                log.error("当前url为空，跳过 {}",fileUrl);
-//                continue;
-//            }
-//           //处理图片上传地址，防止出现转义问题
-//            int questionMarkIndex = fileUrl.indexOf("?");
-//            if (questionMarkIndex > -1){
-//                fileUrl = fileUrl.substring(0,questionMarkIndex);
-//            }
-
-            //获取data-m属性中的JSON字符串
-            String dataM = imgElement.attr("m");
-            String fileUrl;
-            try {
-                //解析JSON字符串
-                JSONObject jsonObject = JSONUtil.parseObj(dataM);
-                //获取murl字段(原始图片url)
-                fileUrl = jsonObject.getStr("murl");
-            } catch (Exception e) {
-                log.error("图片url解析失败", e);
-                continue;
-            }
-
-            if (StrUtil.isBlank(fileUrl)) {
-                log.error("当前url为空，跳过 {}", fileUrl);
-                continue;
-            }
-
+        for (ImageSourceResult result : imageResults) {
             //上传图片
             FileDTO fileDTO = new FileDTO();
-            if (StrUtil.isNotBlank(namePrefix)) {
+            if (StrUtil.isNotBlank(result.getName())) {
+                fileDTO.setName(result.getName());
+            } else if (StrUtil.isNotBlank(namePrefix)) {
                 fileDTO.setName(namePrefix + (uploadCount + 1));
+            }
+            if (StrUtil.isNotBlank(result.getIntroduction())) {
+                fileDTO.setIntroduction(result.getIntroduction());
             }
             if (ObjUtil.isNotEmpty(categoryId)) {
                 fileDTO.setCategoryId(categoryId);
@@ -626,11 +638,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 fileDTO.setTags(tags);
             }
             try {
-                Picture picture = this.upload(fileUrl, fileDTO);
+                Picture picture = this.upload(result.getUrl(), fileDTO);
                 log.info("图片上传成功,id = {}", picture.getId());
                 uploadCount++;
             } catch (Exception e) {
-                log.error("图片上传失败，fileUrl = {}", fileUrl);
+                log.error("图片上传失败，错误信息 = {}", result.getUrl(),e);
             }
             if (uploadCount >= count) {
                 break;
@@ -752,6 +764,51 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
     /**
+     * 批量填充社交数据（仅公共图库图片）
+     */
+    private void fillSocialData(List<PictureVO> pictureVOList) {
+        // 过滤出公共图库图片（spaceId == null）
+        List<Long> publicIds = pictureVOList.stream()
+                .filter(vo -> vo.getSpaceId() == null)
+                .map(PictureVO::getId)
+                .collect(Collectors.toList());
+        if (publicIds.isEmpty()) {
+            return;
+        }
+
+        // 获取当前用户
+        User currentUser = UserContext.get();
+        Long currentUserId = currentUser != null ? currentUser.getId() : null;
+
+        // 批量获取统计数据
+        Map<Long, PictureStatisticsVO> statsMap = socialService.batchStatistics(publicIds);
+
+        // 批量获取点赞/收藏状态
+        Map<Long, Boolean> likeStatusMap = currentUserId != null
+                ? socialService.batchLikeStatus(publicIds, currentUserId)
+                : Collections.emptyMap();
+        Map<Long, Boolean> favStatusMap = currentUserId != null
+                ? socialService.batchFavoriteStatus(publicIds, currentUserId)
+                : Collections.emptyMap();
+
+        for (PictureVO vo : pictureVOList) {
+            if (vo.getSpaceId() != null) {
+                continue;
+            }
+            Long picId = vo.getId();
+            PictureStatisticsVO stats = statsMap.getOrDefault(picId, new PictureStatisticsVO());
+            PictureSocialVO socialVO = new PictureSocialVO();
+            socialVO.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
+            socialVO.setFavoriteCount(stats.getFavoriteCount() != null ? stats.getFavoriteCount() : 0);
+            socialVO.setShareCount(stats.getShareCount() != null ? stats.getShareCount() : 0);
+            socialVO.setIsLiked(likeStatusMap.getOrDefault(picId, false));
+            socialVO.setIsFavorited(favStatusMap.getOrDefault(picId, false));
+            vo.setSocialInfo(socialVO);
+        }
+    }
+
+
+    /**
      * 获取图像用户信息
      */
     private PictureVO getPictureVO(Picture picture) {
@@ -795,4 +852,3 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         return true;
     }
 }
-

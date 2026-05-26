@@ -36,7 +36,6 @@ public class PictureVO implements Serializable {
      */
     private String originUrl;
 
-
     /**
      * 图片名称
      */
@@ -114,30 +113,42 @@ public class PictureVO implements Serializable {
 
     /**
      * 创建用户信息
-     * */
+     */
     private UserVO userVO;
+
+    /**
+     * 空间 id（为空表示公共空间）
+     */
+    private Long spaceId;
+
+    // ==================== 社交字段（仅公共图库 spaceId == null 时有值） ====================
+
+    /**
+     * 社交信息
+     */
+    private PictureSocialVO socialInfo;
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    public static Picture voToObj(PictureVO pictureVO){
-        if (pictureVO == null){
+    public static Picture voToObj(PictureVO pictureVO) {
+        if (pictureVO == null) {
             return null;
         }
 
         Picture picture = new Picture();
-        BeanUtil.copyProperties(pictureVO,picture);
+        BeanUtil.copyProperties(pictureVO, picture);
         picture.setTags(JSONUtil.toJsonStr(pictureVO.getTags()));
         return picture;
     }
 
-    public static PictureVO objToVO(Picture picture){
-        if (picture == null){
+    public static PictureVO objToVO(Picture picture) {
+        if (picture == null) {
             return null;
         }
         PictureVO pictureVO = new PictureVO();
 
-        BeanUtil.copyProperties(picture,pictureVO);
+        BeanUtil.copyProperties(picture, pictureVO);
         pictureVO.setTags(JSONUtil.toList(picture.getTags(), String.class));
         return pictureVO;
     }

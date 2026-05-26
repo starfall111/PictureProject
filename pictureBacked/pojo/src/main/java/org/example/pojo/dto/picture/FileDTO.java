@@ -20,4 +20,9 @@ public class FileDTO {
     private Long spaceId;
 
     private String tags;
+
+    /**
+     * 简介
+     */
+    private String introduction;
 }
