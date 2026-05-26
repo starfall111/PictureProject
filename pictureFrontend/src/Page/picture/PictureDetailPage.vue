@@ -84,7 +84,7 @@ import router from '@/router';
 import { userLoginUserStore } from '@/stores/user';
 import { downloadImage } from '@/util/download';
 import { formatSize } from '@/util/format';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 import { computed, onMounted, ref } from 'vue';
 
 
@@ -127,18 +127,27 @@ const canEdit = computed(() => {
 const doEdit = () => {
     router.push('/add_picture?id=' + picture.value.id)
 }
-// 删除  
-const doDelete = async () => {
-    const id = picture.value.id
-    if (!id) {
-        return
-    }
-    const res = await deletePictureUsingDelete({ id })
-    if (res.data.code === 0) {
-        message.success('删除成功')
-    } else {
-        message.error('删除失败')
-    }
+// 删除
+const doDelete = () => {
+    Modal.confirm({
+        title: '确认删除',
+        content: '确定要删除该图片吗？此操作不可恢复。',
+        okText: '确定删除',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+            const id = picture.value.id
+            if (!id) {
+                return
+            }
+            const res = await deletePictureUsingDelete({ id })
+            if (res.data.code === 0) {
+                message.success('删除成功')
+            } else {
+                message.error('删除失败')
+            }
+        },
+    })
 }
 
 // 处理下载  

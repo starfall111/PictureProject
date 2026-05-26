@@ -94,6 +94,24 @@ export async function reviewPictureUsingPost(
   });
 }
 
+/** searchPictureByPicture POST /api/picture/search/picture */
+export async function searchPictureByPictureUsingPost(
+  body: API.SearchPictureByPictureDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseListImageSearchResult_>(
+    "/api/picture/search/picture",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
 /** updatePicture POST /api/picture/update */
 export async function updatePictureUsingPost(
   body: API.PictureUpdateDTO,
@@ -210,22 +228,4 @@ export async function queryPictureUserUsingPost(
     data: body,
     ...(options || {}),
   });
-}
-
-/** queryPictureUserCache POST /api/picture/user/query/cache */
-export async function queryPictureUserCacheUsingPost(
-  body: API.PictureQueryDTO,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponsePagePictureVO_>(
-    "/api/picture/user/query/cache",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      data: body,
-      ...(options || {}),
-    }
-  );
 }

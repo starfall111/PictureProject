@@ -1,34 +1,31 @@
 <template>
 
-<!-- 空间信息 -->
-<a-flex justify="space-between">
-  <h2>{{ space.spaceName }}（私有空间）</h2>
-  <a-space size="middle">
-    <a-button type="primary" :href="`/add_picture?spaceId=${id}`" target="_blank">
-      + 创建图片
-    </a-button>
-    <a-tooltip
-      :title="`占用空间 ${formatSize(space.totalSize)} / ${formatSize(space.maxSize)}`"
-    >
-      <a-progress
-        type="circle"
-        :percent="((space.totalSize * 100) / space.maxSize).toFixed(1)"
-        :size="42"
-      />
-    </a-tooltip>
-  </a-space>
-</a-flex>
+  <div id="SpaceDetailPage">
+    <!-- 空间信息 -->
+    <a-flex justify="space-between">
+      <h2>{{ space.spaceName }}（私有空间）</h2>
+      <a-space size="middle">
+        <a-button type="primary" :href="`/add_picture?spaceId=${id}`" target="_blank">
+          + 创建图片
+        </a-button>
+        <a-tooltip :title="`占用空间 ${formatSize(space.totalSize)} / ${formatSize(space.maxSize)}`">
+          <a-progress type="circle" :percent="((space.totalSize * 100) / space.maxSize).toFixed(1)" :size="42" />
+        </a-tooltip>
+      </a-space>
+      <!-- 搜索表单 -->
+    </a-flex>
 
-<!-- 图片列表 -->
-<PictureList :dataList="dataList" :loading="loading" :showOp="true" :onReload="fetchData"/>
-<a-pagination
-  style="text-align: right"
-  v-model:current="searchParams.current"
-  v-model:pageSize="searchParams.pageSize"
-  :total="total"
-  :show-total="() => `图片总数 ${total} / ${space.maxCount}`"
-  @change="onPageChange"
-/>
+    <PictureSearchForm :onSearch="onSearch" />
+
+    <div style="height: 16px;"></div>
+
+    <!-- 图片列表 -->
+    <PictureList :dataList="dataList" :loading="loading" :showOp="true" :onReload="fetchData" />
+    <a-pagination style="text-align: right" v-model:current="searchParams.current"
+      v-model:pageSize="searchParams.pageSize" :total="total" :show-total="() => `图片总数 ${total} / ${space.maxCount}`"
+      @change="onPageChange" />
+  </div>
+
 
 
 </template>
@@ -39,7 +36,8 @@ import { getSpaceByIdUsingGet } from '@/api/spaceController';
 import { formatSize } from '@/util/format';
 import { message } from 'ant-design-vue';
 import { onMounted, reactive, ref } from 'vue';
-import PictureList  from '@/components/PictureList.vue';
+import PictureList from '@/components/PictureList.vue';
+import PictureSearchForm from '@/components/PictureSearchForm.vue';
 
 const props = defineProps<{
   id: string | number
@@ -72,7 +70,7 @@ const total = ref(0)
 const loading = ref(true)
 
 // 搜索条件
-const searchParams = reactive<API.PictureQueryDTO>({
+const searchParams = ref<API.PictureQueryDTO>({
   current: 1,
   pageSize: 12,
   sortField: 'createTime',
@@ -81,8 +79,18 @@ const searchParams = reactive<API.PictureQueryDTO>({
 
 // 分页参数
 const onPageChange = (page, pageSize) => {
-  searchParams.current = page
-  searchParams.pageSize = pageSize
+  searchParams.value.current = page
+  searchParams.value.pageSize = pageSize
+  fetchData()
+}
+
+// 搜索
+const onSearch = (newSearchParams: API.PictureQueryDTO) => {
+  searchParams.value = {
+    ...searchParams.value,
+    ...newSearchParams,
+    current: 1,
+  }
   fetchData()
 }
 
@@ -92,7 +100,7 @@ const fetchData = async () => {
   // 转换搜索参数
   const params = {
     spaceId: props.id,
-    ...searchParams,
+    ...searchParams.value,
   }
   const res = await queryPictureUserUsingPost(params)
   if (res.data.data) {
@@ -103,6 +111,7 @@ const fetchData = async () => {
   }
   loading.value = false
 }
+
 
 // 页面加载时请求一次
 onMounted(() => {
