@@ -11,8 +11,8 @@ import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
+//import com.github.benmanes.caffeine.cache.Cache;
+//import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.constants.PictureConstant;
 import org.example.common.context.UserContext;
@@ -85,21 +85,23 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Resource
     private UrlUploadPicture urlUploadPicture;
 
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
-
-    @Resource
-    private RedisCacheUtil redisCacheUtil;
+    // 缓存暂时禁用
+//    @Resource
+//    private StringRedisTemplate stringRedisTemplate;
+//
+//    @Resource
+//    private RedisCacheUtil redisCacheUtil;
 
     //程序化事务控制
     @Resource
     private TransactionTemplate transactionTemplate;
 
-    private final Cache<String, String> LOCAL_CACHE =
-            Caffeine.newBuilder()
-                    .maximumSize(1000L)
-                    .expireAfterWrite(5L, TimeUnit.MINUTES)
-                    .build();
+    // 本地缓存暂时禁用
+//    private final Cache<String, String> LOCAL_CACHE =
+//            Caffeine.newBuilder()
+//                    .maximumSize(1000L)
+//                    .expireAfterWrite(5L, TimeUnit.MINUTES)
+//                    .build();
 
     //    图片到达后端
 //    -》是否指定spaceId，是则校验当前操作人是否为空间所属人，如果不是则抛出错误；没有指定spaceId——不进行空间校验
@@ -403,70 +405,71 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
      */
     @Override
     public Page<PictureVO> queryPictureListUser(PictureQueryDTO queryDTO) {
-
-        //构造redis Key
-        String key = JSONUtil.toJsonStr(queryDTO);
-        String hashKey = "queryPictureListUser:" + DigestUtils.md5DigestAsHex(key.getBytes());
         Long spaceId = queryDTO.getSpaceId();
         queryDTO.setNullSpaceId(!ObjUtil.isNotEmpty(spaceId));
 
-        int ttlSeconds = 300 + RandomUtil.randomInt(0, 600);
-        String cacheResult = redisCacheUtil.getWithLock(hashKey, ttlSeconds, () -> {
-            QueryWrapper<Picture> queryWrapper = getQueryWrapper(queryDTO);
-            Page<Picture> pictureList = this.page(new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize()), queryWrapper);
-            List<Picture> pictures = pictureList.getRecords();
+        // 缓存暂时禁用，直接查询数据库
+//        String key = JSONUtil.toJsonStr(queryDTO);
+//        String hashKey = "queryPictureListUser:" + DigestUtils.md5DigestAsHex(key.getBytes());
+//        int ttlSeconds = 300 + RandomUtil.randomInt(0, 600);
+//        String cacheResult = redisCacheUtil.getWithLock(hashKey, ttlSeconds, () -> {
 
-            Page<PictureVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize(), pictureList.getTotal());
-            if (ObjUtil.isEmpty(pictures)) {
-                return null;
-            }
-            List<PictureVO> pictureVOList = pictures.stream()
-                    .map(PictureVO::objToVO)
-                    .toList();
+        QueryWrapper<Picture> queryWrapper = getQueryWrapper(queryDTO);
+        Page<Picture> pictureList = this.page(new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize()), queryWrapper);
+        List<Picture> pictures = pictureList.getRecords();
 
-            // 批量填充用户信息
-            Set<Long> userIds = pictureVOList.stream()
-                    .map(PictureVO::getUserId)
-                    .collect(Collectors.toSet());
-            Map<Long, List<User>> userIdUserMapList = userService.listByIds(userIds)
-                    .stream()
-                    .collect(Collectors.groupingBy(User::getId));
-
-            // 批量填充分类名称
-            Set<Long> categoryIds = pictureVOList.stream()
-                    .map(PictureVO::getCategoryId)
-                    .filter(id -> id != null && id > 0)
-                    .collect(Collectors.toSet());
-            Map<Long, Category> categoryMap = categoryIds.isEmpty()
-                    ? Map.of()
-                    : categoryService.listByIds(categoryIds)
-                    .stream()
-                    .collect(Collectors.toMap(Category::getId, c -> c));
-
-            pictureVOList.forEach(pictureVO -> {
-                Long userId = pictureVO.getUserId();
-                User user = null;
-                if (userIdUserMapList.containsKey(userId)) {
-                    user = userIdUserMapList.get(userId).get(0);
-                }
-                UserVO userVO = new UserVO();
-                BeanUtil.copyProperties(user, userVO);
-                pictureVO.setUserVO(userVO);
-
-                Long categoryId = pictureVO.getCategoryId();
-                if (categoryId != null && categoryMap.containsKey(categoryId)) {
-                    pictureVO.setCategoryName(categoryMap.get(categoryId).getName());
-                }
-            });
-            result = result.setRecords(pictureVOList);
-
-            return JSONUtil.toJsonStr(result);
-        });
-
-        if (cacheResult == null) {
-            return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
+        Page<PictureVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize(), pictureList.getTotal());
+        if (ObjUtil.isEmpty(pictures)) {
+            return result;
         }
-        return JSONUtil.toBean(cacheResult, Page.class);
+        List<PictureVO> pictureVOList = pictures.stream()
+                .map(PictureVO::objToVO)
+                .toList();
+
+        // 批量填充用户信息
+        Set<Long> userIds = pictureVOList.stream()
+                .map(PictureVO::getUserId)
+                .collect(Collectors.toSet());
+        Map<Long, List<User>> userIdUserMapList = userService.listByIds(userIds)
+                .stream()
+                .collect(Collectors.groupingBy(User::getId));
+
+        // 批量填充分类名称
+        Set<Long> categoryIds = pictureVOList.stream()
+                .map(PictureVO::getCategoryId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+        Map<Long, Category> categoryMap = categoryIds.isEmpty()
+                ? Map.of()
+                : categoryService.listByIds(categoryIds)
+                .stream()
+                .collect(Collectors.toMap(Category::getId, c -> c));
+
+        pictureVOList.forEach(pictureVO -> {
+            Long userId = pictureVO.getUserId();
+            User user = null;
+            if (userIdUserMapList.containsKey(userId)) {
+                user = userIdUserMapList.get(userId).get(0);
+            }
+            UserVO userVO = new UserVO();
+            BeanUtil.copyProperties(user, userVO);
+            pictureVO.setUserVO(userVO);
+
+            Long categoryId = pictureVO.getCategoryId();
+            if (categoryId != null && categoryMap.containsKey(categoryId)) {
+                pictureVO.setCategoryName(categoryMap.get(categoryId).getName());
+            }
+        });
+        result = result.setRecords(pictureVOList);
+
+//            return JSONUtil.toJsonStr(result);
+//        });
+//
+//        if (cacheResult == null) {
+//            return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
+//        }
+//        return JSONUtil.toBean(cacheResult, Page.class);
+        return result;
     }
 
 
@@ -637,28 +640,29 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         return uploadCount;
     }
 
-    @Override
-    public Page<PictureVO> queryPictureListUserCache(PictureQueryDTO queryDTO) {
-        //构造本地缓存 Key
-        String key = JSONUtil.toJsonStr(queryDTO);
-        String hashKey = "queryPictureListUser:" + DigestUtils.md5DigestAsHex(key.getBytes());
-        //本地缓存查询
-        String cacheValue = LOCAL_CACHE.getIfPresent(hashKey);
-        if (ObjUtil.isNotEmpty(cacheValue)) {
-            Page<PictureVO> cachePage = JSONUtil.toBean(cacheValue, Page.class);
-            return cachePage;
-        }
-
-        //查找数据库数据
-        Page<PictureVO> pictureVOPage = queryPictureListUser(queryDTO);
-        //存入本地缓存
-        cacheValue = JSONUtil.toJsonStr(pictureVOPage);
-
-        LOCAL_CACHE.put(hashKey, cacheValue);
-
-        //返回数据
-        return pictureVOPage;
-    }
+    // 缓存模式暂时禁用
+//    @Override
+//    public Page<PictureVO> queryPictureListUserCache(PictureQueryDTO queryDTO) {
+//        //构造本地缓存 Key
+//        String key = JSONUtil.toJsonStr(queryDTO);
+//        String hashKey = "queryPictureListUser:" + DigestUtils.md5DigestAsHex(key.getBytes());
+//        //本地缓存查询
+//        String cacheValue = LOCAL_CACHE.getIfPresent(hashKey);
+//        if (ObjUtil.isNotEmpty(cacheValue)) {
+//            Page<PictureVO> cachePage = JSONUtil.toBean(cacheValue, Page.class);
+//            return cachePage;
+//        }
+//
+//        //查找数据库数据
+//        Page<PictureVO> pictureVOPage = queryPictureListUser(queryDTO);
+//        //存入本地缓存
+//        cacheValue = JSONUtil.toJsonStr(pictureVOPage);
+//
+//        LOCAL_CACHE.put(hashKey, cacheValue);
+//
+//        //返回数据
+//        return pictureVOPage;
+//    }
 
     /**
      * 验证图片信息是否正常
@@ -709,6 +713,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         String searchText = pictureQueryDTO.getSearchText();
         //审核状态
         Integer reviewStatus = pictureQueryDTO.getReviewStatus();
+        Date startEditTime = pictureQueryDTO.getStartEditTime();
+        Date endEditTime = pictureQueryDTO.getEndEditTime();
 
         QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
 
@@ -739,6 +745,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.eq(ObjUtil.isNotEmpty(picWidth), "picWidth", picWidth);
         queryWrapper.eq(ObjUtil.isNotEmpty(picScale), "picScale", picScale);
         queryWrapper.orderBy(!ObjUtil.isEmpty(pictureQueryDTO.getSortField()), "ascend".equals(pictureQueryDTO.getSortOrder()), pictureQueryDTO.getSortField());
+        queryWrapper.ge(ObjUtil.isNotEmpty(startEditTime), "editTime", startEditTime);
+        queryWrapper.lt(ObjUtil.isNotEmpty(endEditTime), "editTime", endEditTime);
 
         return queryWrapper;
     }

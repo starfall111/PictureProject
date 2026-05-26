@@ -5,6 +5,8 @@ import cn.hutool.core.util.ObjUtil;
 import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.api.imagesearch.ImageSearchApiFacade;
+import org.example.common.api.imagesearch.model.ImageSearchResult;
 import org.example.common.constants.UserConstant;
 import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
@@ -26,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/picture")
@@ -154,15 +157,16 @@ public class PictureController {
         return ResultUtils.success(result);
     }
 
-    @PostMapping("/user/query/cache")
-    public BaseResponse<Page<PictureVO>> queryPictureUserCache(@RequestBody PictureQueryDTO pictureQueryDTO) {
-        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
-        ThrowUtils.throwIf(pictureQueryDTO.getPageSize() > 20,ErrorCode.PARAMS_ERROR);
-        pictureQueryDTO.setReviewStatus(1);
-        Page<PictureVO> result = pictureService.queryPictureListUserCache(pictureQueryDTO);
-
-        return ResultUtils.success(result);
-    }
+    // 缓存接口暂时禁用
+//    @PostMapping("/user/query/cache")
+//    public BaseResponse<Page<PictureVO>> queryPictureUserCache(@RequestBody PictureQueryDTO pictureQueryDTO) {
+//        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
+//        ThrowUtils.throwIf(pictureQueryDTO.getPageSize() > 20,ErrorCode.PARAMS_ERROR);
+//        pictureQueryDTO.setReviewStatus(1);
+//        Page<PictureVO> result = pictureService.queryPictureListUserCache(pictureQueryDTO);
+//
+//        return ResultUtils.success(result);
+//    }
 
     //4.根据id获取图片信息（管理员/普通用户）
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
@@ -206,6 +210,21 @@ public class PictureController {
         int result = pictureService.pictureUploadByBatch(pictureUploadByBatchDTO);
 
         return ResultUtils.success(result);
+    }
+
+
+    /**
+     * 以图搜图
+     */
+    @PostMapping("/search/picture")
+    public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureDTO searchPictureByPictureDTO) {
+        ThrowUtils.throwIf(searchPictureByPictureDTO == null, ErrorCode.PARAMS_ERROR);
+        Long pictureId = searchPictureByPictureDTO.getPictureId();
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        Picture oldPicture = pictureService.getById(pictureId);
+        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(oldPicture.getUrl());
+        return ResultUtils.success(resultList);
     }
 
 }

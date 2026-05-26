@@ -48,8 +48,8 @@ public class TagController {
         boolean result = tagService.save(tag);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
-        // 清除标签缓存
-        tagService.clearTagCache();
+        // 缓存暂时禁用
+//        tagService.clearTagCache();
 
         return ResultUtils.success(tag.getId());
     }
@@ -70,8 +70,8 @@ public class TagController {
         boolean result = tagService.updateById(tag);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
-        // 清除标签缓存
-        tagService.clearTagCache();
+        // 缓存暂时禁用
+//        tagService.clearTagCache();
 
         return ResultUtils.success(true);
     }
@@ -88,8 +88,8 @@ public class TagController {
         boolean result = tagService.removeById(deleteRequest.getId());
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
-        // 清除标签缓存
-        tagService.clearTagCache();
+        // 缓存暂时禁用
+//        tagService.clearTagCache();
 
         return ResultUtils.success(true);
     }

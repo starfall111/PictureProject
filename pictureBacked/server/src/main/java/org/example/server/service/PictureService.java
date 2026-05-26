@@ -66,8 +66,8 @@ public interface PictureService extends IService<Picture> {
     //管理员批量获取图片
     Integer pictureUploadByBatch(PictureUploadByBatchDTO pictureUploadByBatchDTO);
 
-    // todo 用户分页获取图片资源接口进行多级缓存改造
-    Page<PictureVO> queryPictureListUserCache(PictureQueryDTO queryDTO);
+    // todo 用户分页获取图片资源接口进行多级缓存改造（缓存暂时禁用）
+//    Page<PictureVO> queryPictureListUserCache(PictureQueryDTO queryDTO);
 
     // todo 添加管理员缓存清理接口
     // todo 分类和标签接口同理，进行redis缓存和提供管理员刷新缓存接口
