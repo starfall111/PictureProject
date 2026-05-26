@@ -71,6 +71,8 @@ const handleUpload = async ({ file }: any) => {
 
 
 </script>
+
+
 <style scoped>
 .picture-upload :deep(.ant-upload) {  
   width: 100% !important;  

@@ -79,6 +79,70 @@ export async function editPictureUsingPost(
   });
 }
 
+/** toggleFavorite POST /api/picture/favorite/${param0} */
+export async function toggleFavoriteUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.toggleFavoriteUsingPOSTParams,
+  options?: { [key: string]: any }
+) {
+  const { pictureId: param0, ...queryParams } = params;
+  return request<API.BaseResponseToggleFavoriteVO_>(
+    `/api/picture/favorite/${param0}`,
+    {
+      method: "POST",
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  );
+}
+
+/** batchFavoriteStatus POST /api/picture/favorite/status */
+export async function batchFavoriteStatusUsingPost(
+  body: API.BatchStatusQueryDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseMapLongBoolean_>(
+    "/api/picture/favorite/status",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
+/** toggleLike POST /api/picture/like/${param0} */
+export async function toggleLikeUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.toggleLikeUsingPOSTParams,
+  options?: { [key: string]: any }
+) {
+  const { pictureId: param0, ...queryParams } = params;
+  return request<API.BaseResponseToggleLikeVO_>(`/api/picture/like/${param0}`, {
+    method: "POST",
+    params: { ...queryParams },
+    ...(options || {}),
+  });
+}
+
+/** batchLikeStatus POST /api/picture/like/status */
+export async function batchLikeStatusUsingPost(
+  body: API.BatchStatusQueryDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseMapLongBoolean_>("/api/picture/like/status", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** reviewPicture POST /api/picture/review */
 export async function reviewPictureUsingPost(
   body: API.PictureReviewDTO,
@@ -92,6 +156,49 @@ export async function reviewPictureUsingPost(
     data: body,
     ...(options || {}),
   });
+}
+
+/** searchPictureByPicture POST /api/picture/search/picture */
+export async function searchPictureByPictureUsingPost(
+  body: API.SearchPictureByPictureDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseListImageSearchResult_>(
+    "/api/picture/search/picture",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
+/** recordShare POST /api/picture/share/${param0} */
+export async function recordShareUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.recordShareUsingPOSTParams,
+  options?: { [key: string]: any }
+) {
+  const { pictureId: param0, ...queryParams } = params;
+  return request<API.BaseResponseBoolean_>(`/api/picture/share/${param0}`, {
+    method: "POST",
+    params: { ...queryParams },
+    ...(options || {}),
+  });
+}
+
+/** test GET /api/picture/test/pexels */
+export async function testUsingGet(options?: { [key: string]: any }) {
+  return request<API.BaseResponseListPexelsResponse_>(
+    "/api/picture/test/pexels",
+    {
+      method: "GET",
+      ...(options || {}),
+    }
+  );
 }
 
 /** updatePicture POST /api/picture/update */
@@ -210,22 +317,4 @@ export async function queryPictureUserUsingPost(
     data: body,
     ...(options || {}),
   });
-}
-
-/** queryPictureUserCache POST /api/picture/user/query/cache */
-export async function queryPictureUserCacheUsingPost(
-  body: API.PictureQueryDTO,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponsePagePictureVO_>(
-    "/api/picture/user/query/cache",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      data: body,
-      ...(options || {}),
-    }
-  );
 }

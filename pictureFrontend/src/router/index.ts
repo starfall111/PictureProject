@@ -17,6 +17,7 @@ import SpaceManagePage from '@/Page/space/SpaceManagePage.vue'
 import AddSpacePage from '@/Page/space/AddSpacePage.vue'
 import MySpacePage from '@/Page/space/MySpacePage.vue'
 import SpaceDetailPage from '@/Page/space/SpaceDetailPage.vue'
+import PictureSearchPage from '@/Page/picture/PictureSearchPage.vue'
 
 
 const router = createRouter({
@@ -128,6 +129,11 @@ const router = createRouter({
           name: '批量抓图',
           component: PictureUploadByBatchPage,
           props: true,
+        },
+        {
+          path: '/search_picture',
+          name: '图片搜索',
+          component: PictureSearchPage,
         },
         {
           path: '/add_space',

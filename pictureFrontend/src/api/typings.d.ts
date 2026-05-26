@@ -31,6 +31,18 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListImageSearchResult_ = {
+    code?: number;
+    data?: ImageSearchResult[];
+    message?: string;
+  };
+
+  type BaseResponseListPexelsResponse_ = {
+    code?: number;
+    data?: PexelsResponse[];
+    message?: string;
+  };
+
   type BaseResponseListSpaceLevel_ = {
     code?: number;
     data?: SpaceLevel[];
@@ -58,6 +70,12 @@ declare namespace API {
   type BaseResponseLong_ = {
     code?: number;
     data?: number;
+    message?: string;
+  };
+
+  type BaseResponseMapLongBoolean_ = {
+    code?: number;
+    data?: Record<string, any>;
     message?: string;
   };
 
@@ -127,6 +145,18 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseToggleFavoriteVO_ = {
+    code?: number;
+    data?: ToggleFavoriteVO;
+    message?: string;
+  };
+
+  type BaseResponseToggleLikeVO_ = {
+    code?: number;
+    data?: ToggleLikeVO;
+    message?: string;
+  };
+
   type BaseResponseUser_ = {
     code?: number;
     data?: User;
@@ -137,6 +167,10 @@ declare namespace API {
     code?: number;
     data?: UserVO;
     message?: string;
+  };
+
+  type BatchStatusQueryDTO = {
+    pictureIds?: number[];
   };
 
   type Category = {
@@ -179,6 +213,7 @@ declare namespace API {
     categoryId?: number;
     fileUrl?: string;
     id?: number;
+    introduction?: string;
     name?: string;
     spaceId?: number;
     tags?: string;
@@ -219,6 +254,11 @@ declare namespace API {
     id: number;
   };
 
+  type ImageSearchResult = {
+    fromUrl?: string;
+    thumbUrl?: string;
+  };
+
   type LoginUserVO = {
     createTime?: string;
     editTime?: string;
@@ -232,6 +272,8 @@ declare namespace API {
     userProfile?: string;
     userRole?: string;
   };
+
+  type MapLongBoolean_ = true;
 
   type PageCategory_ = {
     current?: number;
@@ -279,6 +321,16 @@ declare namespace API {
     records?: UserVO[];
     size?: number;
     total?: number;
+  };
+
+  type PexelsResponse = {
+    height?: number;
+    name?: string;
+    original?: string;
+    photographer?: string;
+    photographerUrl?: string;
+    url?: string;
+    width?: number;
   };
 
   type Picture = {
@@ -343,6 +395,7 @@ declare namespace API {
   type PictureQueryDTO = {
     categoryId?: number;
     current?: number;
+    endEditTime?: string;
     id?: number;
     introduction?: string;
     name?: string;
@@ -358,6 +411,7 @@ declare namespace API {
     sortField?: string;
     sortOrder?: string;
     spaceId?: number;
+    startEditTime?: string;
     tags?: string[];
     userId?: number;
   };
@@ -366,6 +420,14 @@ declare namespace API {
     id?: number;
     reviewMessage?: string;
     reviewStatus?: number;
+  };
+
+  type PictureSocialVO = {
+    favoriteCount?: number;
+    isFavorited?: boolean;
+    isLiked?: boolean;
+    likeCount?: number;
+    shareCount?: number;
   };
 
   type PictureUpdateDTO = {
@@ -380,6 +442,7 @@ declare namespace API {
     categoryId?: number;
     count?: number;
     profile?: string;
+    searchSource?: string;
     searchText?: string;
     tags?: string[];
   };
@@ -400,11 +463,22 @@ declare namespace API {
     reviewStatus?: number;
     reviewTime?: string;
     reviewerId?: number;
+    socialInfo?: PictureSocialVO;
+    spaceId?: number;
     tags?: string[];
     thumbnailUrl?: string;
     url?: string;
     userId?: number;
     userVO?: UserVO;
+  };
+
+  type recordShareUsingPOSTParams = {
+    /** pictureId */
+    pictureId: number;
+  };
+
+  type SearchPictureByPictureDTO = {
+    pictureId?: number;
   };
 
   type SendVerificationCodeDTO = {
@@ -518,10 +592,31 @@ declare namespace API {
     name?: string;
   };
 
+  type toggleFavoriteUsingPOSTParams = {
+    /** pictureId */
+    pictureId: number;
+  };
+
+  type ToggleFavoriteVO = {
+    favoriteCount?: number;
+    favorited?: boolean;
+  };
+
+  type toggleLikeUsingPOSTParams = {
+    /** pictureId */
+    pictureId: number;
+  };
+
+  type ToggleLikeVO = {
+    likeCount?: number;
+    liked?: boolean;
+  };
+
   type uploadUsingPOST1Params = {
     categoryId?: number;
     fileUrl?: string;
     id?: number;
+    introduction?: string;
     name?: string;
     spaceId?: number;
     tags?: string;

@@ -166,14 +166,23 @@ const doTableChange = (page: any) => {
     fetchData()
 }
 
-const doDelete = async (id: any) => {
-    const res = await deleteSpaceUsingDelete({ id: id })
-    if (res.data.code === 0) {
-        message.success('删除成功')
-        fetchData()
-    } else {
-        message.error('删除失败，' + res.data.message)
-    }
+const doDelete = (id: any) => {
+    Modal.confirm({
+        title: '确认删除',
+        content: '确定要删除该空间吗？此操作不可恢复。',
+        okText: '确定删除',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+            const res = await deleteSpaceUsingDelete({ id: id })
+            if (res.data.code === 0) {
+                message.success('删除成功')
+                fetchData()
+            } else {
+                message.error('删除失败，' + res.data.message)
+            }
+        },
+    })
 }
 
 const categoryOptions = ref<{ value: number; label: string }[]>([])
