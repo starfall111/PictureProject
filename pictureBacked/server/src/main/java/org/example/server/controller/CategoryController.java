@@ -48,8 +48,8 @@ public class CategoryController {
         boolean result = categoryService.save(category);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
-        // 清除分类缓存
-        categoryService.clearCategoryCache();
+        // 缓存暂时禁用
+//        categoryService.clearCategoryCache();
 
         return ResultUtils.success(category.getId());
     }
@@ -70,8 +70,8 @@ public class CategoryController {
         boolean result = categoryService.updateById(category);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
-        // 清除分类缓存
-        categoryService.clearCategoryCache();
+        // 缓存暂时禁用
+//        categoryService.clearCategoryCache();
 
         return ResultUtils.success(true);
     }
@@ -88,8 +88,8 @@ public class CategoryController {
         boolean result = categoryService.removeById(deleteRequest.getId());
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
-        // 清除分类缓存
-        categoryService.clearCategoryCache();
+        // 缓存暂时禁用
+//        categoryService.clearCategoryCache();
 
         return ResultUtils.success(true);
     }

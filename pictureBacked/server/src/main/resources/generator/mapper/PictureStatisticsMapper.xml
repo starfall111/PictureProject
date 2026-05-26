@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.server.mapper.PictureStatisticsMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.pojo.entity.PictureStatistics">
+        <id property="pictureId" column="picture_id"/>
+        <result property="likeCount" column="likeCount"/>
+        <result property="favoriteCount" column="favoriteCount"/>
+        <result property="shareCount" column="shareCount"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        pictureId,likeCount,favoriteCount,shareCount
+    </sql>
+</mapper>
