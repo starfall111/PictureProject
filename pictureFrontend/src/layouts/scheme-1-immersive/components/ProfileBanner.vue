@@ -23,12 +23,24 @@
           <span class="stat-value">{{ favoriteCount }}</span>
           <span class="stat-label">收藏</span>
         </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ viewCount }}</span>
+          <span class="stat-label">浏览</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ shareCount }}</span>
+          <span class="stat-label">分享</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ downloadCount }}</span>
+          <span class="stat-label">下载</span>
+        </div>
       </div>
       <a-button
         v-if="isCurrentUser"
         type="primary"
         ghost
-        @click="$router.push('/user/center')"
+        @click="handleEditProfile"
       >
         编辑资料
       </a-button>
@@ -37,11 +49,18 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
 interface Props {
-  userInfo: API.UserVO
+  userInfo: API.UserVO | API.UserProfileVO
   uploadCount?: number
   likeCount?: number
   favoriteCount?: number
+  viewCount?: number
+  shareCount?: number
+  downloadCount?: number
   isCurrentUser?: boolean
 }
 
@@ -49,8 +68,15 @@ withDefaults(defineProps<Props>(), {
   uploadCount: 0,
   likeCount: 0,
   favoriteCount: 0,
+  viewCount: 0,
+  shareCount: 0,
+  downloadCount: 0,
   isCurrentUser: false,
 })
+
+const handleEditProfile = () => {
+  router.push('/user/center')
+}
 </script>
 
 <style scoped>
@@ -101,8 +127,9 @@ withDefaults(defineProps<Props>(), {
 }
 
 .profile-banner-stats {
-  display: flex;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
 }
 
 .stat-item {
@@ -134,6 +161,17 @@ withDefaults(defineProps<Props>(), {
   .profile-banner-right {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .profile-banner-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-banner-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

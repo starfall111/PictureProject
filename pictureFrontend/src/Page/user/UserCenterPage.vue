@@ -11,9 +11,12 @@
 
         <!-- 统计卡片 -->
         <StatsCard
-          :uploadCount="0"
-          :favoriteCount="0"
-          :viewCount="0"
+          :uploadCount="userStats.uploadCount ?? 0"
+          :likeCount="userStats.totalLikes ?? 0"
+          :favoriteCount="userStats.totalFavorites ?? 0"
+          :viewCount="userStats.totalViews ?? 0"
+          :shareCount="userStats.totalShares ?? 0"
+          :downloadCount="userStats.totalDownloads ?? 0"
         />
 
         <!-- 退出登录 -->
@@ -52,12 +55,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import { LogoutOutlined } from '@ant-design/icons-vue';
 import { useRouter } from 'vue-router';
 import { userLoginUserStore } from '@/stores/user';
-import { logOutUsingPost } from '@/api/userController';
+import { logOutUsingPost, getUserProfileUsingGet } from '@/api/userController';
 import ProfileCard from '@/components/userCenter/ProfileCard.vue';
 import StatsCard from '@/components/userCenter/StatsCard.vue';
 import UserInfoTab from '@/components/userCenter/UserInfoTab.vue';
@@ -67,6 +70,31 @@ const router = useRouter();
 const loginUserStore = userLoginUserStore();
 const activeTab = ref('info');
 
+// 用户统计数据
+const userStats = ref<API.UserProfileVO>({
+  uploadCount: 0,
+  totalLikes: 0,
+  totalFavorites: 0,
+  totalViews: 0,
+  totalShares: 0,
+  totalDownloads: 0,
+});
+
+// 获取用户统计数据
+const fetchUserStats = async () => {
+  const userId = loginUserStore.loginUser.id;
+  if (!userId) return;
+
+  try {
+    const res = await getUserProfileUsingGet({ id: userId });
+    if (res.data.code === 0 && res.data.data) {
+      userStats.value = res.data.data;
+    }
+  } catch {
+    // 静默失败
+  }
+};
+
 /** 页面加载时刷新用户数据 */
 onMounted(async () => {
   if (!loginUserStore.loginUser.id) {
@@ -74,6 +102,7 @@ onMounted(async () => {
     return;
   }
   await loginUserStore.getLoginUser();
+  await fetchUserStats();
 });
 
 /** 头像更新回调 */
@@ -84,6 +113,7 @@ const handleAvatarUpdated = (avatarUrl: string) => {
 /** 信息更新成功回调 */
 const handleUpdateSuccess = async () => {
   await loginUserStore.getLoginUser();
+  await fetchUserStats();
 };
 
 /** 退出登录 */

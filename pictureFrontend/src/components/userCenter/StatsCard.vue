@@ -1,30 +1,54 @@
 <template>
   <a-card :bordered="false" class="stats-card">
-    <a-row :gutter="16">
+    <a-row :gutter="[16, 16]">
       <a-col :span="8" class="stat-item">
-        <div class="stat-value">{{ uploadCount }}</div>
-        <div class="stat-label">上传图片</div>
+        <div class="stat-value">{{ formatCount(uploadCount) }}</div>
+        <div class="stat-label">上传</div>
       </a-col>
       <a-col :span="8" class="stat-item">
-        <div class="stat-value">{{ favoriteCount }}</div>
-        <div class="stat-label">收藏数</div>
+        <div class="stat-value">{{ formatCount(likeCount) }}</div>
+        <div class="stat-label">获赞</div>
       </a-col>
       <a-col :span="8" class="stat-item">
-        <div class="stat-value">{{ viewCount }}</div>
-        <div class="stat-label">浏览数</div>
+        <div class="stat-value">{{ formatCount(favoriteCount) }}</div>
+        <div class="stat-label">收藏</div>
+      </a-col>
+      <a-col :span="8" class="stat-item">
+        <div class="stat-value">{{ formatCount(viewCount) }}</div>
+        <div class="stat-label">浏览</div>
+      </a-col>
+      <a-col :span="8" class="stat-item">
+        <div class="stat-value">{{ formatCount(shareCount) }}</div>
+        <div class="stat-label">分享</div>
+      </a-col>
+      <a-col :span="8" class="stat-item">
+        <div class="stat-value">{{ formatCount(downloadCount) }}</div>
+        <div class="stat-label">下载</div>
       </a-col>
     </a-row>
   </a-card>
 </template>
 
 <script setup lang="ts">
+import { formatCount } from '@/utils/formatCount'
+
 interface Props {
-  uploadCount: number;
-  favoriteCount: number;
-  viewCount: number;
+  uploadCount?: number;
+  likeCount?: number;
+  favoriteCount?: number;
+  viewCount?: number;
+  shareCount?: number;
+  downloadCount?: number;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+  uploadCount: 0,
+  likeCount: 0,
+  favoriteCount: 0,
+  viewCount: 0,
+  shareCount: 0,
+  downloadCount: 0,
+});
 </script>
 
 <style scoped>

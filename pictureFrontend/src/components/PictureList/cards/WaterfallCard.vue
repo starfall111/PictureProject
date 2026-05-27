@@ -10,15 +10,17 @@
       <div class="waterfall-card-hover-bar">
         <div class="hover-bar-name" :title="picture.name">{{ picture.name ?? '未命名' }}</div>
         <div class="hover-bar-row">
-          <div class="hover-bar-left">
+          <div class="hover-bar-left" @click.stop="goUserProfile">
             <a-avatar :size="20" :src="picture.userVO?.userAvatar">
               {{ picture.userVO?.userName?.charAt(0) ?? '?' }}
             </a-avatar>
             <span class="hover-bar-nickname">{{ picture.userVO?.userName ?? '匿名' }}</span>
           </div>
           <div class="hover-bar-right">
+            <EyeOutlined class="hover-bar-icon" />
+            <span class="hover-bar-count">{{ formatCount(picture.socialInfo?.viewCount) }}</span>
             <HeartOutlined class="hover-bar-heart" />
-            <span class="hover-bar-like-count">{{ picture.socialInfo?.likeCount ?? 0 }}</span>
+            <span class="hover-bar-like-count">{{ formatCount(picture.socialInfo?.likeCount) }}</span>
           </div>
         </div>
       </div>
@@ -33,7 +35,8 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { HeartOutlined, StarFilled } from '@ant-design/icons-vue'
+import { HeartOutlined, StarFilled, EyeOutlined } from '@ant-design/icons-vue'
+import { formatCount } from '@/utils/formatCount'
 
 interface Props {
   picture: API.PictureVO
@@ -51,6 +54,12 @@ const onImgError = (e: Event) => {
 
 const doClickPicture = () => {
   router.push({ path: `/picture/${props.picture.id}` })
+}
+
+const goUserProfile = () => {
+  if (props.picture.userVO?.id) {
+    router.push(`/user/${props.picture.userVO.id}`)
+  }
 }
 </script>
 
@@ -139,6 +148,12 @@ const doClickPicture = () => {
   gap: 6px;
   min-width: 0;
   flex: 1;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.hover-bar-left:hover {
+  opacity: 0.75;
 }
 
 .hover-bar-nickname {
@@ -157,6 +172,17 @@ const doClickPicture = () => {
   gap: 4px;
   flex-shrink: 0;
   margin-left: 8px;
+}
+
+.hover-bar-icon {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hover-bar-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1;
 }
 
 .hover-bar-heart {

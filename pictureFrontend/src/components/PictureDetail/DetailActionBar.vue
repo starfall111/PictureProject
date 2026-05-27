@@ -5,18 +5,28 @@
       <span class="action-btn-large" :class="{ active: isLiked }" @click.stop="$emit('toggle-like')">
         <HeartFilled v-if="isLiked" class="action-icon liked" />
         <HeartOutlined v-else class="action-icon" />
-        <span class="action-count">{{ socialInfo?.likeCount ?? 0 }}</span>
+        <span class="action-count">{{ formatCount(socialInfo?.likeCount) }}</span>
       </span>
       <!-- 收藏 -->
       <span class="action-btn-large" :class="{ active: isFavorited }" @click.stop="$emit('toggle-favorite')">
         <StarFilled v-if="isFavorited" class="action-icon favorited" />
         <StarOutlined v-else class="action-icon" />
-        <span class="action-count">{{ socialInfo?.favoriteCount ?? 0 }}</span>
+        <span class="action-count">{{ formatCount(socialInfo?.favoriteCount) }}</span>
       </span>
       <!-- 分享 -->
       <span class="action-btn-large" @click.stop="$emit('share')">
         <ShareAltOutlined class="action-icon" />
-        <span class="action-count">{{ socialInfo?.shareCount ?? 0 }}</span>
+        <span class="action-count">{{ formatCount(socialInfo?.shareCount) }}</span>
+      </span>
+      <!-- 浏览量（只读展示） -->
+      <span class="action-btn-large action-btn-readonly">
+        <EyeOutlined class="action-icon" />
+        <span class="action-count">{{ formatCount(socialInfo?.viewCount) }}</span>
+      </span>
+      <!-- 下载量（只读展示） -->
+      <span class="action-btn-large action-btn-readonly">
+        <DownloadOutlined class="action-icon" />
+        <span class="action-count">{{ formatCount(socialInfo?.downloadCount) }}</span>
       </span>
     </div>
     <div class="action-right">
@@ -54,7 +64,9 @@ import {
   MoreOutlined,
   EditOutlined,
   DeleteOutlined,
+  EyeOutlined,
 } from '@ant-design/icons-vue'
+import { formatCount } from '@/utils/formatCount'
 
 interface Props {
   socialInfo?: API.PictureSocialVO
@@ -102,8 +114,16 @@ defineEmits<{
   user-select: none;
 }
 
+.action-btn-readonly {
+  cursor: default;
+}
+
 .action-btn-large:hover {
   transform: translateY(-2px);
+}
+
+.action-btn-readonly:hover {
+  transform: none;
 }
 
 .action-icon {
