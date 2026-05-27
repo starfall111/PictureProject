@@ -21,8 +21,10 @@ import org.example.common.util.AliOssUtil;
 import org.example.pojo.DeleteRequest;
 import org.example.pojo.dto.picture.*;
 import org.example.pojo.dto.social.BatchStatusQueryDTO;
+import org.example.pojo.dto.social.UserPictureQueryDTO;
 
 import org.example.pojo.entity.Picture;
+import org.example.pojo.vo.PictureBriefVO;
 import org.example.pojo.vo.PictureEntityVO;
 import org.example.pojo.vo.PictureVO;
 import org.example.pojo.vo.ToggleFavoriteVO;
@@ -321,6 +323,32 @@ public class PictureController {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         socialService.incrementDownloadCount(pictureId);
         return ResultUtils.success(true);
+    }
+
+    /**
+     * 获取用户点赞的图片列表（支持筛选）
+     */
+    @PostMapping("/liked/user/{userId}/query")
+    public BaseResponse<Page<PictureBriefVO>> getUserLikedPictures(
+            @PathVariable Long userId,
+            @RequestBody UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        Page<PictureBriefVO> result = socialService.getUserLikedPictures(userId, queryDTO);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 获取用户收藏的图片列表（支持筛选）
+     */
+    @PostMapping("/favorited/user/{userId}/query")
+    public BaseResponse<Page<PictureBriefVO>> getUserFavoritedPictures(
+            @PathVariable Long userId,
+            @RequestBody UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        Page<PictureBriefVO> result = socialService.getUserFavoritedPictures(userId, queryDTO);
+        return ResultUtils.success(result);
     }
 
 }

@@ -1,13 +1,17 @@
 package org.example.server.service.impl;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
+import org.example.pojo.dto.social.UserPictureQueryDTO;
 import org.example.pojo.entity.Picture;
 import org.example.pojo.entity.PictureFavorite;
 import org.example.pojo.entity.PictureLike;
 import org.example.pojo.entity.PictureStatistics;
+import org.example.pojo.vo.PictureBriefVO;
 import org.example.pojo.vo.PictureStatisticsVO;
 import org.example.pojo.vo.ToggleFavoriteVO;
 import org.example.pojo.vo.ToggleLikeVO;
@@ -291,5 +295,73 @@ public class SocialServiceImpl implements SocialService {
         vo.setViewCount(0);
         vo.setDownloadCount(0);
         return vo;
+    }
+
+    @Override
+    public Page<PictureBriefVO> getUserLikedPictures(Long userId, UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+
+        Integer current = queryDTO.getCurrent();
+        Integer pageSize = queryDTO.getPageSize();
+        Integer offset = (current - 1) * pageSize;
+
+        // 查询列表
+        List<PictureBriefVO> records = pictureLikeMapper.selectUserLikedPictures(userId, queryDTO, offset, pageSize);
+        // 解析 tags JSON 字符串
+        records.forEach(vo -> {
+            if (vo.getTags() != null) {
+                // MyBatis 返回的是 String 类型，需要解析为 List
+                String tagsStr = vo.getTags().toString();
+                if (tagsStr.startsWith("[")) {
+                    vo.setTags(JSONUtil.toList(tagsStr, String.class));
+                } else {
+                    vo.setTags(Collections.singletonList(tagsStr));
+                }
+            }
+        });
+
+        // 查询总数
+        Long total = pictureLikeMapper.countUserLikedPictures(userId, queryDTO);
+
+        // 组装分页结果
+        Page<PictureBriefVO> page = new Page<>(current, pageSize);
+        page.setRecords(records);
+        page.setTotal(total);
+        return page;
+    }
+
+    @Override
+    public Page<PictureBriefVO> getUserFavoritedPictures(Long userId, UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+
+        Integer current = queryDTO.getCurrent();
+        Integer pageSize = queryDTO.getPageSize();
+        Integer offset = (current - 1) * pageSize;
+
+        // 查询列表
+        List<PictureBriefVO> records = pictureFavoriteMapper.selectUserFavoritedPictures(userId, queryDTO, offset, pageSize);
+        // 解析 tags JSON 字符串
+        records.forEach(vo -> {
+            if (vo.getTags() != null) {
+                // MyBatis 返回的是 String 类型，需要解析为 List
+                String tagsStr = vo.getTags().toString();
+                if (tagsStr.startsWith("[")) {
+                    vo.setTags(JSONUtil.toList(tagsStr, String.class));
+                } else {
+                    vo.setTags(Collections.singletonList(tagsStr));
+                }
+            }
+        });
+
+        // 查询总数
+        Long total = pictureFavoriteMapper.countUserFavoritedPictures(userId, queryDTO);
+
+        // 组装分页结果
+        Page<PictureBriefVO> page = new Page<>(current, pageSize);
+        page.setRecords(records);
+        page.setTotal(total);
+        return page;
     }
 }

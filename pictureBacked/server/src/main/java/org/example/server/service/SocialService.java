@@ -1,5 +1,8 @@
 package org.example.server.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.example.pojo.dto.social.UserPictureQueryDTO;
+import org.example.pojo.vo.PictureBriefVO;
 import org.example.pojo.vo.PictureStatisticsVO;
 import org.example.pojo.vo.ToggleFavoriteVO;
 import org.example.pojo.vo.ToggleLikeVO;
@@ -79,4 +82,22 @@ public interface SocialService {
      * @return pictureId -> 统计数据
      */
     Map<Long, PictureStatisticsVO> batchStatistics(List<Long> pictureIds);
+
+    /**
+     * 获取用户点赞的图片列表（分页 + 筛选）
+     *
+     * @param userId   目标用户 id
+     * @param queryDTO 查询条件（分页、筛选、排序）
+     * @return 分页结果
+     */
+    Page<PictureBriefVO> getUserLikedPictures(Long userId, UserPictureQueryDTO queryDTO);
+
+    /**
+     * 获取用户收藏的图片列表（分页 + 筛选）
+     *
+     * @param userId   目标用户 id
+     * @param queryDTO 查询条件（分页、筛选、排序）
+     * @return 分页结果
+     */
+    Page<PictureBriefVO> getUserFavoritedPictures(Long userId, UserPictureQueryDTO queryDTO);
 }
