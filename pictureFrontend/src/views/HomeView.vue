@@ -406,6 +406,10 @@ onUnmounted(() => {
   transition: all 0.2s;
 }
 
+#home .sort-bar .ant-radio-button-wrapper::before {
+  display: none;
+}
+
 #home .sort-bar .ant-radio-button-wrapper:first-child {
   border-radius: 20px 0 0 20px;
 }

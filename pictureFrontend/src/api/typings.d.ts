@@ -37,12 +37,6 @@ declare namespace API {
     message?: string;
   };
 
-  type BaseResponseListPexelsResponse_ = {
-    code?: number;
-    data?: PexelsResponse[];
-    message?: string;
-  };
-
   type BaseResponseListSpaceLevel_ = {
     code?: number;
     data?: SpaceLevel[];
@@ -163,6 +157,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseUserProfileVO_ = {
+    code?: number;
+    data?: UserProfileVO;
+    message?: string;
+  };
+
   type BaseResponseUserVO_ = {
     code?: number;
     data?: UserVO;
@@ -184,6 +184,11 @@ declare namespace API {
   };
 
   type CategoryAddDTO = {
+    name?: string;
+  };
+
+  type CategoryBriefVO = {
+    id?: number;
     name?: string;
   };
 
@@ -250,6 +255,11 @@ declare namespace API {
   };
 
   type getUserInfoUsingGETParams = {
+    /** id */
+    id: number;
+  };
+
+  type getUserProfileUsingGETParams = {
     /** id */
     id: number;
   };
@@ -321,16 +331,6 @@ declare namespace API {
     records?: UserVO[];
     size?: number;
     total?: number;
-  };
-
-  type PexelsResponse = {
-    height?: number;
-    name?: string;
-    original?: string;
-    photographer?: string;
-    photographerUrl?: string;
-    url?: string;
-    width?: number;
   };
 
   type Picture = {
@@ -423,11 +423,13 @@ declare namespace API {
   };
 
   type PictureSocialVO = {
+    downloadCount?: number;
     favoriteCount?: number;
     isFavorited?: boolean;
     isLiked?: boolean;
     likeCount?: number;
     shareCount?: number;
+    viewCount?: number;
   };
 
   type PictureUpdateDTO = {
@@ -472,7 +474,17 @@ declare namespace API {
     userVO?: UserVO;
   };
 
+  type recordDownloadCountUsingPOSTParams = {
+    /** pictureId */
+    pictureId: number;
+  };
+
   type recordShareUsingPOSTParams = {
+    /** pictureId */
+    pictureId: number;
+  };
+
+  type recordViewUsingPOSTParams = {
     /** pictureId */
     pictureId: number;
   };
@@ -660,6 +672,22 @@ declare namespace API {
     verityCode?: string;
   };
 
+  type UserProfileVO = {
+    categories?: CategoryBriefVO[];
+    createTime?: string;
+    id?: number;
+    totalDownloads?: number;
+    totalFavorites?: number;
+    totalLikes?: number;
+    totalShares?: number;
+    totalViews?: number;
+    uploadCount?: number;
+    userAvatar?: string;
+    userName?: string;
+    userProfile?: string;
+    userRole?: string;
+  };
+
   type UserQueryDTO = {
     current?: number;
     id?: number;
@@ -679,12 +707,6 @@ declare namespace API {
     password?: string;
     type?: number;
     verityCode?: string;
-  };
-
-  type UserUpdateDTO = {
-    userAvatar?: string;
-    userName?: string;
-    userProfile?: string;
   };
 
   type UserVO = {

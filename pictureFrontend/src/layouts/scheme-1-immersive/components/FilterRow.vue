@@ -2,8 +2,8 @@
   <div class="filter-row">
     <div class="filter-tags">
       <a-checkable-tag
-        :checked="!selectedTag"
-        @change="$emit('update:selectedTag', undefined)"
+        :checked="!selectedTag && !selectedCategory"
+        @change="handleClearAll"
         class="filter-tag"
       >
         全部
@@ -12,10 +12,20 @@
         v-for="tag in tagList"
         :key="tag"
         :checked="selectedTag === tag"
-        @change="$emit('update:selectedTag', tag)"
+        @change="handleTagChange(tag)"
         class="filter-tag"
       >
         {{ tag }}
+      </a-checkable-tag>
+      <a-divider v-if="categoryList.length > 0" type="vertical" />
+      <a-checkable-tag
+        v-for="category in categoryList"
+        :key="category.id"
+        :checked="selectedCategory === category.id"
+        @change="handleCategoryChange(category.id)"
+        class="filter-tag"
+      >
+        {{ category.name }}
       </a-checkable-tag>
     </div>
     <div class="filter-sort">
@@ -36,19 +46,40 @@
 <script setup lang="ts">
 interface Props {
   tagList: string[]
+  categoryList?: API.CategoryBriefVO[]
   selectedTag?: string
   sortOrder?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   tagList: () => [],
+  categoryList: () => [],
   sortOrder: 'newest',
 })
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'update:selectedTag', value: string | undefined): void
   (e: 'update:sortOrder', value: string): void
 }>()
+
+// 新增 v-model 绑定
+const selectedCategory = defineModel<number | undefined>('selectedCategory')
+
+const handleClearAll = () => {
+  emit('update:selectedTag', undefined)
+  selectedCategory.value = undefined
+}
+
+const handleTagChange = (tag: string) => {
+  emit('update:selectedTag', props.selectedTag === tag ? undefined : tag)
+  selectedCategory.value = undefined
+}
+
+const handleCategoryChange = (categoryId: number) => {
+  const current = selectedCategory.value
+  selectedCategory.value = current === categoryId ? undefined : categoryId
+  emit('update:selectedTag', undefined)
+}
 </script>
 
 <style scoped>

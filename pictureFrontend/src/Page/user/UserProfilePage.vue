@@ -2,16 +2,21 @@
   <div id="userProfilePage">
     <ProfileBanner
       :userInfo="userInfo"
-      :uploadCount="total"
-      :likeCount="totalLikes"
-      :favoriteCount="totalFavorites"
+      :uploadCount="userInfo.uploadCount ?? 0"
+      :likeCount="userInfo.totalLikes ?? 0"
+      :favoriteCount="userInfo.totalFavorites ?? 0"
+      :viewCount="userInfo.totalViews ?? 0"
+      :shareCount="userInfo.totalShares ?? 0"
+      :downloadCount="userInfo.totalDownloads ?? 0"
       :isCurrentUser="isCurrentUser"
     />
 
     <FilterRow
       v-model:selectedTag="selectedTag"
+      v-model:selectedCategory="selectedCategory"
       v-model:sortOrder="sortOrder"
       :tagList="tagList"
+      :categoryList="categoryList"
     />
 
     <PictureList
@@ -32,8 +37,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-// TODO: 后端添加 getUserById 接口后启用
-// import { getUserByIdUsingGet } from '@/api/userController'
+import { getUserProfileUsingGet } from '@/api/userController'
 import { queryPictureUserUsingPost } from '@/api/pictureController'
 import { userLoginUserStore } from '@/stores/user'
 import ProfileBanner from '@/layouts/scheme-1-immersive/components/ProfileBanner.vue'
@@ -50,24 +54,24 @@ const route = useRoute()
 const loginUserStore = userLoginUserStore()
 
 // 用户信息
-const userInfo = ref<API.UserVO>({})
+const userInfo = ref<API.UserProfileVO>({})
 const isCurrentUser = computed(() => {
   return String(loginUserStore.loginUser.id) === String(props.id)
 })
 
-// TODO: 后端添加 getUserById 接口后启用
-// const fetchUserInfo = async () => {
-//   try {
-//     const res = await getUserByIdUsingGet({ id: props.id })
-//     if (res.data.code === 0 && res.data.data) {
-//       userInfo.value = res.data.data
-//     } else {
-//       message.error('获取用户信息失败')
-//     }
-//   } catch {
-//     message.error('获取用户信息失败')
-//   }
-// }
+// 获取用户资料（包含聚合统计）
+const fetchUserInfo = async () => {
+  try {
+    const res = await getUserProfileUsingGet({ id: props.id })
+    if (res.data.code === 0 && res.data.data) {
+      userInfo.value = res.data.data
+    } else {
+      message.error('获取用户信息失败')
+    }
+  } catch {
+    message.error('获取用户信息失败')
+  }
+}
 
 // 图片列表（无限滚动）
 const allPictures = ref<API.PictureVO[]>([])
@@ -80,7 +84,11 @@ const totalLikes = ref(0)
 const totalFavorites = ref(0)
 
 const selectedTag = ref<string | undefined>(undefined)
+const selectedCategory = ref<number | undefined>(undefined)
 const sortOrder = ref('newest')
+
+// 分类列表
+const categoryList = computed(() => userInfo.value.categories ?? [])
 
 const fetchData = async (reset = false) => {
   if (isLoading.value) return
@@ -106,6 +114,9 @@ const fetchData = async (reset = false) => {
   }
   if (selectedTag.value) {
     params.tags = [selectedTag.value]
+  }
+  if (selectedCategory.value) {
+    params.categoryId = selectedCategory.value
   }
 
   try {
@@ -157,7 +168,7 @@ const doSearch = () => {
 
 // 监听筛选变化
 import { watch } from 'vue'
-watch([selectedTag, sortOrder], () => {
+watch([selectedTag, selectedCategory, sortOrder], () => {
   doSearch()
 })
 
@@ -191,8 +202,7 @@ const setupObserver = () => {
 }
 
 onMounted(async () => {
-  // TODO: 后端添加 getUserById 接口后启用
-  // await fetchUserInfo()
+  await fetchUserInfo()
   await fetchData(true)
   setupObserver()
 })

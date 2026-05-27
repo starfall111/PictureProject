@@ -64,6 +64,23 @@ export async function downloadUsingGet(
   });
 }
 
+/** recordDownloadCount POST /api/picture/download/count/${param0} */
+export async function recordDownloadCountUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.recordDownloadCountUsingPOSTParams,
+  options?: { [key: string]: any }
+) {
+  const { pictureId: param0, ...queryParams } = params;
+  return request<API.BaseResponseBoolean_>(
+    `/api/picture/download/count/${param0}`,
+    {
+      method: "POST",
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  );
+}
+
 /** editPicture POST /api/picture/edit */
 export async function editPictureUsingPost(
   body: API.PictureEditDTO,
@@ -190,17 +207,6 @@ export async function recordShareUsingPost(
   });
 }
 
-/** test GET /api/picture/test/pexels */
-export async function testUsingGet(options?: { [key: string]: any }) {
-  return request<API.BaseResponseListPexelsResponse_>(
-    "/api/picture/test/pexels",
-    {
-      method: "GET",
-      ...(options || {}),
-    }
-  );
-}
-
 /** updatePicture POST /api/picture/update */
 export async function updatePictureUsingPost(
   body: API.PictureUpdateDTO,
@@ -315,6 +321,20 @@ export async function queryPictureUserUsingPost(
       "Content-Type": "application/json",
     },
     data: body,
+    ...(options || {}),
+  });
+}
+
+/** recordView POST /api/picture/view/${param0} */
+export async function recordViewUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.recordViewUsingPOSTParams,
+  options?: { [key: string]: any }
+) {
+  const { pictureId: param0, ...queryParams } = params;
+  return request<API.BaseResponseBoolean_>(`/api/picture/view/${param0}`, {
+    method: "POST",
+    params: { ...queryParams },
     ...(options || {}),
   });
 }

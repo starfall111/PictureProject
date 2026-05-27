@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { deletePictureUsingDelete, getPictureByIdUserUsingGet, toggleLikeUsingPost, toggleFavoriteUsingPost, recordShareUsingPost } from '@/api/pictureController';
+import { deletePictureUsingDelete, getPictureByIdUserUsingGet, toggleLikeUsingPost, toggleFavoriteUsingPost, recordShareUsingPost, recordViewUsingPost, recordDownloadCountUsingPost } from '@/api/pictureController';
 import router from '@/router';
 import { userLoginUserStore } from '@/stores/user';
 import { downloadImage } from '@/util/download';
@@ -73,6 +73,15 @@ const fetchPictureDetail = async () => {
       picture.value = res.data.data
       detailIsLiked.value = res.data.data.socialInfo?.isLiked ?? false
       detailIsFavorited.value = res.data.data.socialInfo?.isFavorited ?? false
+      // 记录浏览量
+      try {
+        await recordViewUsingPost({ pictureId: props.id })
+        if (picture.value.socialInfo) {
+          picture.value.socialInfo.viewCount = (picture.value.socialInfo.viewCount ?? 0) + 1
+        }
+      } catch {
+        // 静默失败
+      }
     } else {
       message.error('获取图片详情失败，' + res.data.message)
     }
@@ -168,8 +177,17 @@ const doDelete = () => {
 }
 
 // 处理下载
-const doDownload = () => {
+const doDownload = async () => {
   downloadImage(picture.value.originUrl)
+  // 记录下载量
+  try {
+    await recordDownloadCountUsingPost({ pictureId: props.id })
+    if (picture.value.socialInfo) {
+      picture.value.socialInfo.downloadCount = (picture.value.socialInfo.downloadCount ?? 0) + 1
+    }
+  } catch {
+    // 静默失败
+  }
 }
 
 onMounted(() => {

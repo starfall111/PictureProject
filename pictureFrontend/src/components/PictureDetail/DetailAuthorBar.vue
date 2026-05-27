@@ -1,5 +1,5 @@
 <template>
-  <div class="author-bar">
+  <div class="author-bar" @click="goUserProfile">
     <a-avatar :size="40" :src="userVO?.userAvatar">
       {{ userVO?.userName?.charAt(0) ?? '?' }}
     </a-avatar>
@@ -15,16 +15,26 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+
 interface Props {
   userVO?: API.UserVO
   categoryName?: string
   introduction?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   categoryName: '',
   introduction: '',
 })
+
+const router = useRouter()
+
+const goUserProfile = () => {
+  if (props.userVO?.id) {
+    router.push(`/user/${props.userVO.id}`)
+  }
+}
 </script>
 
 <style scoped>
@@ -33,6 +43,12 @@ withDefaults(defineProps<Props>(), {
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 24px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.author-bar:hover {
+  opacity: 0.75;
 }
 
 .author-text {

@@ -169,6 +169,23 @@ export async function listUserVoByQueryUsingPost(
   });
 }
 
+/** getUserProfile GET /api/user/profile/${param0} */
+export async function getUserProfileUsingGet(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getUserProfileUsingGETParams,
+  options?: { [key: string]: any }
+) {
+  const { id: param0, ...queryParams } = params;
+  return request<API.BaseResponseUserProfileVO_>(
+    `/api/user/profile/${param0}`,
+    {
+      method: "GET",
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  );
+}
+
 /** register POST /api/user/register */
 export async function registerUsingPost(
   body: API.UserRegisterDTO,
@@ -186,7 +203,7 @@ export async function registerUsingPost(
 
 /** updateUser POST /api/user/update */
 export async function updateUserUsingPost1(
-  body: API.UserUpdateDTO,
+  body: API.AdminUpdateDTO,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseBoolean_>("/api/user/update", {
