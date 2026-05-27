@@ -303,4 +303,24 @@ public class PictureController {
         return ResultUtils.success(true);
     }
 
+    /**
+     * 记录浏览行为
+     */
+    @PostMapping("/view/{pictureId}")
+    public BaseResponse<Boolean> recordView(@PathVariable Long pictureId) {
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        socialService.incrementViewCount(pictureId);
+        return ResultUtils.success(true);
+    }
+
+    /**
+     * 记录下载行为
+     */
+    @PostMapping("/download/count/{pictureId}")
+    public BaseResponse<Boolean> recordDownloadCount(@PathVariable Long pictureId) {
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        socialService.incrementDownloadCount(pictureId);
+        return ResultUtils.success(true);
+    }
+
 }

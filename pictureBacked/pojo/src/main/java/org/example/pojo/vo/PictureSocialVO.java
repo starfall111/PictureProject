@@ -29,6 +29,16 @@ public class PictureSocialVO implements Serializable {
     private Integer shareCount;
 
     /**
+     * 浏览数
+     */
+    private Integer viewCount;
+
+    /**
+     * 下载次数
+     */
+    private Integer downloadCount;
+
+    /**
      * 当前用户是否已点赞
      */
     private Boolean isLiked;

@@ -26,6 +26,16 @@ public class PictureStatisticsVO implements Serializable {
      */
     private Integer shareCount;
 
+    /**
+     * 浏览数
+     */
+    private Integer viewCount;
+
+    /**
+     * 下载次数
+     */
+    private Integer downloadCount;
+
     @Serial
     private static final long serialVersionUID = 1L;
 }

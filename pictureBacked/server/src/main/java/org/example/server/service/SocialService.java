@@ -59,7 +59,21 @@ public interface SocialService {
     void recordShare(Long pictureId);
 
     /**
-     * 批量获取统计数据（likeCount, favoriteCount, shareCount）
+     * 记录浏览行为（仅增加浏览计数）
+     *
+     * @param pictureId 图片 id
+     */
+    void incrementViewCount(Long pictureId);
+
+    /**
+     * 记录下载行为（仅增加下载计数）
+     *
+     * @param pictureId 图片 id
+     */
+    void incrementDownloadCount(Long pictureId);
+
+    /**
+     * 批量获取统计数据（likeCount, favoriteCount, shareCount, viewCount, downloadCount）
      *
      * @param pictureIds 图片 id 列表
      * @return pictureId -> 统计数据

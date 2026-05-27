@@ -152,6 +152,42 @@ public class SocialServiceImpl implements SocialService {
     }
 
     @Override
+    public void incrementViewCount(Long pictureId) {
+        PictureStatistics stat = pictureStatisticsMapper.selectById(pictureId);
+        if (stat == null) {
+            stat = new PictureStatistics();
+            stat.setPictureId(pictureId);
+            stat.setLikeCount(0);
+            stat.setFavoriteCount(0);
+            stat.setShareCount(0);
+            stat.setViewCount(1);
+            stat.setDownloadCount(0);
+            pictureStatisticsMapper.insert(stat);
+        } else {
+            stat.setViewCount((stat.getViewCount() != null ? stat.getViewCount() : 0) + 1);
+            pictureStatisticsMapper.updateById(stat);
+        }
+    }
+
+    @Override
+    public void incrementDownloadCount(Long pictureId) {
+        PictureStatistics stat = pictureStatisticsMapper.selectById(pictureId);
+        if (stat == null) {
+            stat = new PictureStatistics();
+            stat.setPictureId(pictureId);
+            stat.setLikeCount(0);
+            stat.setFavoriteCount(0);
+            stat.setShareCount(0);
+            stat.setViewCount(0);
+            stat.setDownloadCount(1);
+            pictureStatisticsMapper.insert(stat);
+        } else {
+            stat.setDownloadCount((stat.getDownloadCount() != null ? stat.getDownloadCount() : 0) + 1);
+            pictureStatisticsMapper.updateById(stat);
+        }
+    }
+
+    @Override
     public Map<Long, PictureStatisticsVO> batchStatistics(List<Long> pictureIds) {
         if (pictureIds == null || pictureIds.isEmpty()) {
             return Collections.emptyMap();
@@ -170,6 +206,8 @@ public class SocialServiceImpl implements SocialService {
             vo.setLikeCount(stat.getLikeCount() != null ? stat.getLikeCount() : 0);
             vo.setFavoriteCount(stat.getFavoriteCount() != null ? stat.getFavoriteCount() : 0);
             vo.setShareCount(stat.getShareCount() != null ? stat.getShareCount() : 0);
+            vo.setViewCount(stat.getViewCount() != null ? stat.getViewCount() : 0);
+            vo.setDownloadCount(stat.getDownloadCount() != null ? stat.getDownloadCount() : 0);
             result.put(stat.getPictureId(), vo);
         }
         return result;
@@ -196,6 +234,8 @@ public class SocialServiceImpl implements SocialService {
             stat.setLikeCount(likeCount);
             stat.setFavoriteCount(0);
             stat.setShareCount(0);
+            stat.setViewCount(0);
+            stat.setDownloadCount(0);
             pictureStatisticsMapper.insert(stat);
         } else {
             stat.setLikeCount(likeCount);
@@ -216,6 +256,8 @@ public class SocialServiceImpl implements SocialService {
             stat.setLikeCount(0);
             stat.setFavoriteCount(favoriteCount);
             stat.setShareCount(0);
+            stat.setViewCount(0);
+            stat.setDownloadCount(0);
             pictureStatisticsMapper.insert(stat);
         } else {
             stat.setFavoriteCount(favoriteCount);
@@ -232,6 +274,8 @@ public class SocialServiceImpl implements SocialService {
             stat.setLikeCount(0);
             stat.setFavoriteCount(0);
             stat.setShareCount(1);
+            stat.setViewCount(0);
+            stat.setDownloadCount(0);
             pictureStatisticsMapper.insert(stat);
         } else {
             stat.setShareCount((stat.getShareCount() != null ? stat.getShareCount() : 0) + 1);
@@ -244,6 +288,8 @@ public class SocialServiceImpl implements SocialService {
         vo.setLikeCount(0);
         vo.setFavoriteCount(0);
         vo.setShareCount(0);
+        vo.setViewCount(0);
+        vo.setDownloadCount(0);
         return vo;
     }
 }

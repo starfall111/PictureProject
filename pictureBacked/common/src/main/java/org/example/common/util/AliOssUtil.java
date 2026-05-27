@@ -91,7 +91,7 @@ public class AliOssUtil {
         }
 
 
-        return endpoint.split("//")[0] + "//" + cdn + "/" + FileName;
+        return endpoint.split("//")[0] + "//" + bucketName + "." + endpoint.split("//")[1] + "/" + FileName;
     }
 
     public String processPicture(String styleType, String sourceImage) throws com.aliyuncs.exceptions.ClientException {
@@ -115,7 +115,7 @@ public class AliOssUtil {
         String targetImage = dir + "/" + newFileName;
 
         // 从 URL 中提取 object key: https://bucket.endpoint/path → path
-        String domain = cdn;
+        String domain = bucketName + "." + endpoint.split("//")[1];
         int domainIndex = sourceImage.indexOf(domain);
         if (domainIndex < 0) {
             log.warn("无法从 URL 提取 object key: {}", sourceImage);
