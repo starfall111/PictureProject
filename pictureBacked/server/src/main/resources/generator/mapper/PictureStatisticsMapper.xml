@@ -9,9 +9,11 @@
         <result property="likeCount" column="likeCount"/>
         <result property="favoriteCount" column="favoriteCount"/>
         <result property="shareCount" column="shareCount"/>
+        <result property="viewCount" column="viewCount"/>
+        <result property="downloadCount" column="downloadCount"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        pictureId,likeCount,favoriteCount,shareCount
+        pictureId,likeCount,favoriteCount,shareCount,viewCount,downloadCount
     </sql>
 </mapper>

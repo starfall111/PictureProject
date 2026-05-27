@@ -261,7 +261,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     public byte[] download(Picture picture) throws ClientException, FileNotFoundException {
         //判空留给controller
         //拿到url，下载文件至本地
-        String url = picture.getUrl();
+        String url = picture.getOriginUrl();
         String name = picture.getName();
         Long id = UserContext.get().getId();
         aliOssUtils.download(url, name, id);
@@ -540,6 +540,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             socialVO.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
             socialVO.setFavoriteCount(stats.getFavoriteCount() != null ? stats.getFavoriteCount() : 0);
             socialVO.setShareCount(stats.getShareCount() != null ? stats.getShareCount() : 0);
+            socialVO.setViewCount(stats.getViewCount() != null ? stats.getViewCount() : 0);
+            socialVO.setDownloadCount(stats.getDownloadCount() != null ? stats.getDownloadCount() : 0);
             if (currentUserId != null) {
                 Map<Long, Boolean> likeStatus = socialService.batchLikeStatus(ids, currentUserId);
                 Map<Long, Boolean> favStatus = socialService.batchFavoriteStatus(ids, currentUserId);
@@ -801,6 +803,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             socialVO.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
             socialVO.setFavoriteCount(stats.getFavoriteCount() != null ? stats.getFavoriteCount() : 0);
             socialVO.setShareCount(stats.getShareCount() != null ? stats.getShareCount() : 0);
+            socialVO.setViewCount(stats.getViewCount() != null ? stats.getViewCount() : 0);
+            socialVO.setDownloadCount(stats.getDownloadCount() != null ? stats.getDownloadCount() : 0);
             socialVO.setIsLiked(likeStatusMap.getOrDefault(picId, false));
             socialVO.setIsFavorited(favStatusMap.getOrDefault(picId, false));
             vo.setSocialInfo(socialVO);

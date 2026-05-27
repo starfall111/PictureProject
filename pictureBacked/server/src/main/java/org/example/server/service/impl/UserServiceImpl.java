@@ -9,6 +9,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.common.constants.PictureConstant;
 import org.example.common.constants.UserConstant;
 import org.example.pojo.dto.user.*;
+import org.example.pojo.entity.Category;
+import org.example.pojo.entity.Picture;
 import org.example.pojo.entity.User;
 import org.example.common.context.UserContext;
 import org.example.common.enums.UserEnum;
@@ -16,10 +18,16 @@ import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.example.common.util.AliOssUtil;
+import org.example.pojo.entity.PictureStatistics;
+import org.example.pojo.vo.CategoryBriefVO;
+import org.example.pojo.vo.UserProfileVO;
 import org.example.pojo.vo.UserVO;
-import org.example.server.service.UserService;
+import org.example.server.mapper.PictureMapper;
+import org.example.server.mapper.PictureStatisticsMapper;
 import org.example.server.mapper.UserMapper;
+import org.example.server.service.CategoryService;
 import org.example.server.service.NoticeService;
+import org.example.server.service.UserService;
 import org.example.server.template.user.login.AccountLoginUser;
 import org.example.server.template.user.login.EmailLoginUser;
 import org.example.server.template.user.login.PhoneLoginUser;
@@ -74,6 +82,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Resource
     private PhoneLoginUser phoneLoginUser;
+
+    @Resource
+    private PictureMapper pictureMapper;
+
+    @Resource
+    private PictureStatisticsMapper pictureStatisticsMapper;
+
+    @Resource
+    private CategoryService categoryService;
 
     @Override
     public long userRegister(UserRegisterDTO userRegisterDTO) {
@@ -354,5 +371,105 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return userList.stream()
                 .map(this::getUserVO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserProfileVO getUserProfile(Long userId) {
+        // 1. 查询用户基本信息
+        User user = this.getById(userId);
+        ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.NOT_FOUND_ERROR, "用户不存在");
+
+        UserProfileVO profile = new UserProfileVO();
+        profile.setId(user.getId());
+        profile.setUserName(user.getUserName());
+        profile.setUserAvatar(user.getUserAvatar());
+        profile.setUserProfile(user.getUserProfile());
+        profile.setUserRole(user.getUserRole());
+        profile.setCreateTime(user.getCreateTime());
+
+        // 2. 统计公共图库上传数量
+        QueryWrapper<Picture> pictureQw = new QueryWrapper<>();
+        pictureQw.eq("userId", userId)
+                .isNull("spaceId")
+                .eq("reviewStatus", 1);
+        Integer uploadCount = pictureMapper.selectCount(pictureQw).intValue();
+        profile.setUploadCount(uploadCount);
+
+        // 3. 如果没有公共图片，返回零统计数据
+        if (uploadCount == 0) {
+            profile.setTotalLikes(0);
+            profile.setTotalFavorites(0);
+            profile.setTotalViews(0);
+            profile.setTotalShares(0);
+            profile.setTotalDownloads(0);
+            profile.setCategories(new ArrayList<>());
+            return profile;
+        }
+
+        // 4. 获取用户所有公共图片 ID 列表
+        List<Picture> pictures = pictureMapper.selectList(pictureQw);
+        List<Long> pictureIds = pictures.stream()
+                .map(Picture::getId)
+                .collect(Collectors.toList());
+
+        // 5. 查询这些图片的统计数据并聚合
+        QueryWrapper<PictureStatistics> statsQw = new QueryWrapper<>();
+        statsQw.in("pictureId", pictureIds);
+        List<PictureStatistics> statisticsList = pictureStatisticsMapper.selectList(statsQw);
+
+        int totalLikes = 0;
+        int totalFavorites = 0;
+        int totalViews = 0;
+        int totalShares = 0;
+        int totalDownloads = 0;
+
+        for (PictureStatistics stat : statisticsList) {
+            totalLikes += stat.getLikeCount() != null ? stat.getLikeCount() : 0;
+            totalFavorites += stat.getFavoriteCount() != null ? stat.getFavoriteCount() : 0;
+            totalViews += stat.getViewCount() != null ? stat.getViewCount() : 0;
+            totalShares += stat.getShareCount() != null ? stat.getShareCount() : 0;
+            totalDownloads += stat.getDownloadCount() != null ? stat.getDownloadCount() : 0;
+        }
+
+        profile.setTotalLikes(totalLikes);
+        profile.setTotalFavorites(totalFavorites);
+        profile.setTotalViews(totalViews);
+        profile.setTotalShares(totalShares);
+        profile.setTotalDownloads(totalDownloads);
+
+        // 6. 查询用户图片涉及的分类
+        QueryWrapper<Picture> categoryQw = new QueryWrapper<>();
+        categoryQw.select("DISTINCT categoryId")
+                .eq("userId", userId)
+                .isNull("spaceId")
+                .eq("reviewStatus", 1)
+                .isNotNull("categoryId");
+        List<Picture> categoryPictures = pictureMapper.selectList(categoryQw);
+
+        List<Long> categoryIds = categoryPictures.stream()
+                .map(Picture::getCategoryId)
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (categoryIds.isEmpty()) {
+            profile.setCategories(new ArrayList<>());
+            return profile;
+        }
+
+        // 批量获取分类信息
+        List<Category> categories = categoryService.listByIds(categoryIds);
+        List<CategoryBriefVO> categoryVOList = categories.stream()
+                .map(cat -> {
+                    CategoryBriefVO vo = new CategoryBriefVO();
+                    vo.setId(cat.getId());
+                    vo.setName(cat.getName());
+                    return vo;
+                })
+                .collect(Collectors.toList());
+
+        profile.setCategories(categoryVOList);
+
+        return profile;
     }
 }

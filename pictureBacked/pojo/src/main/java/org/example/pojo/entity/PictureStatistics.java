@@ -26,6 +26,10 @@ public class PictureStatistics implements Serializable {
 
     private Integer shareCount;
 
+    private Integer viewCount;
+
+    private Integer downloadCount;
+
     @Serial
     private static final long serialVersionUID = 1L;
 }

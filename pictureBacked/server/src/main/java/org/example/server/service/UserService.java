@@ -5,6 +5,7 @@ import org.example.pojo.dto.user.*;
 import org.example.pojo.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.example.pojo.vo.LoginUserVO;
+import org.example.pojo.vo.UserProfileVO;
 import org.example.pojo.vo.UserVO;
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,5 +58,12 @@ public interface UserService extends IService<User> {
      * */
     String uploadAvatar(org.springframework.web.multipart.MultipartFile file) throws Exception;
 
+    /**
+     * 获取用户档案（含统计数据）
+     *
+     * @param userId 用户 ID
+     * @return 用户档案 VO
+     */
+    UserProfileVO getUserProfile(Long userId);
 
 }

@@ -13,6 +13,7 @@ import org.example.common.constants.UserConstant;
 import org.example.common.context.UserContext;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
+import org.example.pojo.vo.UserProfileVO;
 import org.example.pojo.vo.UserVO;
 import org.example.server.service.UserService;
 import org.springframework.web.bind.annotation.*;
@@ -168,6 +169,16 @@ public class UserController {
         BeanUtil.copyProperties(user,userVO);
 
         return ResultUtils.success(userVO);
+    }
+
+    /**
+     * 获取用户档案（含统计数据）
+     */
+    @GetMapping("/profile/{id}")
+    public BaseResponse<UserProfileVO> getUserProfile(@PathVariable Long id) {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
+        UserProfileVO profile = userService.getUserProfile(id);
+        return ResultUtils.success(profile);
     }
 
 }

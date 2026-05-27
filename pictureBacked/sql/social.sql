@@ -42,6 +42,13 @@ CREATE TABLE IF NOT EXISTS picture_statistics
     like_count     INT DEFAULT 0,
     favorite_count INT DEFAULT 0,
     share_count    INT DEFAULT 0,
+    view_count     INT DEFAULT 0,
+    download_count INT DEFAULT 0,
     KEY idx_like_count (like_count),
     KEY idx_favorite_count (favorite_count)
 ) COMMENT '图片统计' COLLATE = utf8mb4_unicode_ci;
+
+-- 迁移：添加浏览和下载计数列
+ALTER TABLE picture_statistics
+    ADD COLUMN viewCount     INT DEFAULT 0 AFTER shareCount,
+    ADD COLUMN downloadCount INT DEFAULT 0 AFTER viewCount;
