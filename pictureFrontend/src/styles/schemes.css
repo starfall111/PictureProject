@@ -1,0 +1,100 @@
+/* ========================================================
+   Scheme CSS Variables (Layer 2)
+   Each scheme defines its own visual tokens.
+   Switch by setting data-scheme attribute on <html>.
+   ======================================================== */
+
+/* --------------------------------------------------------
+   Default scheme (original layout)
+   -------------------------------------------------------- */
+[data-scheme="default"],
+:root {
+  --accent: #1677ff;
+  --accent-light: #e6f4ff;
+  --fg-primary: #1a1a1a;
+  --fg-secondary: #4b5563;
+  --fg-muted: #9ca3af;
+  --fg-inverse: #ffffff;
+  --surface-primary: #ffffff;
+  --surface-secondary: #fefefe;
+  --bg-content: linear-gradient(to right, #fefefe, #fff);
+  --border-color: #eeeeee;
+  --radius-card: 8px;
+  --radius-sm: 8px;
+  --shadow-sm: none;
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  --header-bg: white;
+  --sider-bg: #fff;
+  --sider-border: 0.5px solid #eee;
+  --footer-bg: #efefef;
+  --content-bg: linear-gradient(to right, #fefefe, #fff);
+  --content-padding: 28px;
+  --content-margin-bottom: 28px;
+}
+
+/* --------------------------------------------------------
+   Scheme-1: Immersive Gallery (沉浸式画廊)
+   -------------------------------------------------------- */
+[data-scheme="scheme-1-immersive"] {
+  --accent: #33A1C9;
+  --accent-light: #E6F4FA;
+  --fg-primary: #1A1A1A;
+  --fg-secondary: #4B5563;
+  --fg-muted: #9CA3AF;
+  --fg-inverse: #FFFFFF;
+  --surface-primary: #FFFFFF;
+  --surface-secondary: #F7F8FA;
+  --bg-content: #F3F4F6;
+  --border-color: #E5E7EB;
+  --radius-card: 12px;
+  --radius-sm: 8px;
+  --radius-pill: 9999px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  --header-bg: #FFFFFF;
+  --sider-bg: transparent;
+  --sider-border: none;
+  --footer-bg: transparent;
+  --content-bg: #F3F4F6;
+  --content-padding: 24px;
+  --content-margin-bottom: 0;
+
+  --search-box-width: 360px;
+  --search-box-height: 36px;
+  --banner-height: 110px;
+
+  /* ---- 悬浮侧边栏 Token ---- */
+  --sidebar-collapsed-width: 56px;
+  --sidebar-expanded-width: 220px;
+  --sidebar-top-offset: 68px;
+  --sidebar-left-offset: 12px;
+  --sidebar-bottom-offset: 24px;
+  --sidebar-radius: 16px;
+  --sidebar-item-height: 44px;
+  --sidebar-item-radius: 10px;
+  --sidebar-item-gap: 2px;
+
+  --sidebar-bg: rgba(255, 255, 255, 0.92);
+  --sidebar-border: rgba(0, 0, 0, 0.06);
+  --sidebar-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --sidebar-blur: 20px;
+
+  --sidebar-item-icon-default: var(--fg-secondary);
+  --sidebar-item-text-default: var(--fg-secondary);
+  --sidebar-item-bg-hover: rgba(51, 161, 201, 0.08);
+  --sidebar-item-bg-active: rgba(51, 161, 201, 0.12);
+  --sidebar-item-accent: var(--accent);
+  --sidebar-item-indicator-width: 3px;
+
+  --sidebar-admin-divider-color: rgba(0, 0, 0, 0.08);
+  --sidebar-admin-label-size: 11px;
+  --sidebar-admin-label-color: var(--fg-muted);
+  --sidebar-admin-indent: 8px;
+
+  --sidebar-expand-duration: 200ms;
+  --sidebar-expand-easing: ease-out;
+  --sidebar-hover-delay: 120ms;
+  --sidebar-leave-delay: 300ms;
+}

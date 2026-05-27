@@ -7,7 +7,7 @@
       <a-layout>
         <GlobalSider class="sider" />
         <a-layout-content class="content">
-          <router-view />
+          <slot />
         </a-layout-content>
       </a-layout>
 
@@ -46,22 +46,14 @@ healthUsingGet().then(res => {
 #basicLayout .content {
   background: linear-gradient(to right, #fefefe, #fff);
   margin-bottom: 28px;
-  padding: 20px;
+  padding: 28px;
 }
 
 #basicLayout .header {
   padding-inline: 20px;
-  margin-bottom: 16px;
+  margin-bottom: 1px;
   color: unset;
   background: white;
-}
-
-#basicLayout .header {
-  margin-bottom: 1px;
-}
-
-#basicLayout .content {
-  padding: 28px;
 }
 
 #basicLayout .sider {
@@ -74,5 +66,4 @@ healthUsingGet().then(res => {
   border-bottom: none !important;
   border-inline-end: none !important;
 }
-
 </style>
