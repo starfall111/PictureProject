@@ -1,0 +1,28 @@
+/* ========================================================
+   Scheme-1 Immersive Gallery - Specific overrides
+   Structural styles beyond what CSS variables can handle.
+   ======================================================== */
+
+/* Scheme-1 search capsule in header */
+[data-scheme="scheme-1-immersive"] .header-search-box {
+  width: var(--search-box-width, 360px);
+  height: var(--search-box-height, 36px);
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid var(--border-color, #E5E7EB);
+  padding: 0 var(--space-4, 16px);
+  font-size: 14px;
+  outline: none;
+  background: var(--surface-secondary, #F7F8FA);
+  transition: border-color var(--transition-fast, 150ms ease),
+    box-shadow var(--transition-fast, 150ms ease);
+}
+
+[data-scheme="scheme-1-immersive"] .header-search-box:focus {
+  border-color: var(--accent, #635BFF);
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.04));
+}
+
+/* Hide footer in scheme-1 */
+[data-scheme="scheme-1-immersive"] #basicLayout .footer {
+  display: none;
+}

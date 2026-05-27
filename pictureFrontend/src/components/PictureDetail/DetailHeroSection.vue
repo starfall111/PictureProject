@@ -33,8 +33,6 @@ const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ
 .detail-hero {
   background: #1a1a1a;
   padding: 24px;
-  margin: -28px;
-  margin-bottom: 0;
 }
 
 .hero-image-container {
@@ -86,8 +84,6 @@ const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ
 
 @media (max-width: 767px) {
   .detail-hero {
-    margin: -12px;
-    margin-bottom: 0;
     padding: 16px;
   }
 

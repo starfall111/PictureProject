@@ -1,8 +1,15 @@
 ﻿<template>
 
   <div id="SpaceDetailPage">
-    <!-- 空间信息 -->
-    <a-flex justify="space-between">
+    <!-- 沉浸式：SpaceBanner -->
+    <SpaceBanner
+      v-if="isImmersive"
+      :space="space"
+      :spaceId="id"
+      :totalCount="total"
+    />
+    <!-- 默认布局：原始头部 -->
+    <a-flex v-else justify="space-between">
       <h2>{{ space.spaceName }}（私有空间）</h2>
       <a-space size="middle">
         <a-button type="primary" :href="`/add_picture?spaceId=${id}`" target="_blank">
@@ -35,9 +42,14 @@ import { queryPictureUserUsingPost } from '@/api/pictureController';
 import { getSpaceByIdUsingGet } from '@/api/spaceController';
 import { formatSize } from '@/util/format';
 import { message } from 'ant-design-vue';
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import PictureList from '@/components/PictureList/index.vue';
 import PictureSearchForm from '@/components/PictureSearchForm.vue';
+import { useLayoutScheme } from '@/composables/useLayoutScheme';
+import SpaceBanner from '@/layouts/scheme-1-immersive/components/SpaceBanner.vue';
+
+const { activeSchemeId } = useLayoutScheme();
+const isImmersive = computed(() => activeSchemeId.value === 'scheme-1-immersive');
 
 const props = defineProps<{
   id: string | number
@@ -97,19 +109,24 @@ const onSearch = (newSearchParams: API.PictureQueryDTO) => {
 // 获取数据
 const fetchData = async () => {
   loading.value = true
-  // 转换搜索参数
-  const params = {
-    spaceId: props.id,
-    ...searchParams.value,
+  try {
+    // 转换搜索参数
+    const params = {
+      spaceId: props.id,
+      ...searchParams.value,
+    }
+    const res = await queryPictureUserUsingPost(params)
+    if (res.data.data) {
+      dataList.value = res.data.data.records ?? []
+      total.value = res.data.data.total ?? 0
+    } else {
+      message.error('获取数据失败，' + res.data.message)
+    }
+  } catch (e: any) {
+    message.error('获取数据失败：' + e.message)
+  } finally {
+    loading.value = false
   }
-  const res = await queryPictureUserUsingPost(params)
-  if (res.data.data) {
-    dataList.value = res.data.data.records ?? []
-    total.value = res.data.data.total ?? 0
-  } else {
-    message.error('获取数据失败，' + res.data.message)
-  }
-  loading.value = false
 }
 
 

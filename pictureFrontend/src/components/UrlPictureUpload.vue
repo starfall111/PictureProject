@@ -4,7 +4,7 @@
             <a-input v-model:value="fileUrl" style="width: calc(100% - 120px)" placeholder="请输入图片 URL" />
             <a-button type="primary" :loading="loading" @click="handleUpload" style="width: 120px">提交</a-button>
         </a-input-group>
-        <img v-if="picture?.url" :src="picture?.url" alt="avatar" />
+        <img v-if="picture?.url" :src="picture?.url" alt="avatar" style="max-width: 100%; max-height: 400px; object-fit: contain; display: block; margin: 0 auto;" />
     </div>
 </template>
 

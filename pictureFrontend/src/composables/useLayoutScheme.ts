@@ -1,0 +1,91 @@
+import { ref, computed, readonly, defineAsyncComponent } from 'vue'
+import type { Component } from 'vue'
+
+/**
+ * Layout scheme configuration.
+ * Each scheme maps to a completely independent layout component.
+ */
+export interface SchemeConfig {
+  /** Unique scheme identifier, e.g. 'scheme-1-immersive' */
+  id: string
+  /** Display name */
+  name: string
+  /** Short description */
+  description: string
+  /** Layout component to render (each scheme has its own layout structure) */
+  layoutComponent: Component
+  /** Ant Design Vue theme token overrides */
+  antThemeOverrides?: Record<string, any>
+}
+
+const STORAGE_KEY = 'layoutScheme'
+const DEFAULT_SCHEME = 'default'
+
+// Built-in default scheme (always available as fallback)
+// Uses defineAsyncComponent to break circular dependency:
+// useLayoutScheme -> BasicLayout -> GlobalHeader -> SchemeSwitcher -> useLayoutScheme
+const defaultScheme: SchemeConfig = {
+  id: 'default',
+  name: '默认布局',
+  description: '原始布局，Header + Sider + Content + Footer',
+  layoutComponent: defineAsyncComponent(() => import('@/layouts/BasicLayout.vue')),
+}
+
+// Registered schemes registry (pre-seeded with default)
+const schemes = new Map<string, SchemeConfig>([[DEFAULT_SCHEME, defaultScheme]])
+
+// Reactive active scheme id
+const activeSchemeId = ref<string>(
+  localStorage.getItem(STORAGE_KEY) || DEFAULT_SCHEME
+)
+
+/**
+ * Register a layout scheme
+ */
+export function registerScheme(config: SchemeConfig) {
+  schemes.set(config.id, config)
+}
+
+/**
+ * Get all registered schemes
+ */
+export function getSchemes(): Map<string, SchemeConfig> {
+  return schemes
+}
+
+/**
+ * Layout scheme composable
+ */
+export function useLayoutScheme() {
+  const currentScheme = computed<SchemeConfig>(
+    () => schemes.get(activeSchemeId.value) || schemes.get(DEFAULT_SCHEME)!
+  )
+
+  /**
+   * Switch to a different layout scheme
+   */
+  function switchScheme(schemeId: string) {
+    if (!schemes.has(schemeId)) {
+      console.warn(`[useLayoutScheme] Unknown scheme: ${schemeId}`)
+      return
+    }
+    activeSchemeId.value = schemeId
+    localStorage.setItem(STORAGE_KEY, schemeId)
+    document.documentElement.setAttribute('data-scheme', schemeId)
+  }
+
+  /**
+   * Initialize the scheme system.
+   * Should be called once in main.ts before app.mount()
+   */
+  function initialize() {
+    document.documentElement.setAttribute('data-scheme', activeSchemeId.value)
+  }
+
+  return {
+    activeSchemeId: readonly(activeSchemeId),
+    currentScheme,
+    switchScheme,
+    initialize,
+  }
+}

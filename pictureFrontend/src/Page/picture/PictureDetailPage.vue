@@ -181,6 +181,7 @@ onMounted(() => {
 .detail-page {
   min-height: 100vh;
   background: #fafafa;
+  margin: -28px;
 }
 
 .detail-content {
@@ -197,6 +198,10 @@ onMounted(() => {
 }
 
 @media (max-width: 767px) {
+  .detail-page {
+    margin: -12px;
+  }
+
   .detail-content {
     max-width: 100%;
     padding: 16px 12px;

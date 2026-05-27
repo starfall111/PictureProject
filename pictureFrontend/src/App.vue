@@ -1,14 +1,23 @@
 <script setup lang="ts">
-import BasicLayout from './layouts/BasicLayout.vue';
+import { computed } from 'vue'
+import { useLayoutScheme } from '@/composables/useLayoutScheme'
+
+const { currentScheme } = useLayoutScheme()
+
+const antdTheme = computed(() => {
+  const overrides = currentScheme.value?.antThemeOverrides
+  if (!overrides) return {}
+  return overrides
+})
 </script>
 
 <template>
-  <div id="app">
-    <router-view></router-view>
-    <!-- <BasicLayout/> -->
-  </div>
+  <a-config-provider :theme="antdTheme">
+    <div id="app">
+      <router-view></router-view>
+    </div>
+  </a-config-provider>
 </template>
 
 <style scoped>
-
 </style>

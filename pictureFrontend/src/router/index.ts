@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import LoginPage from '@/Page/user/loginPage.vue'
-import BasicLayout from '@/layouts/BasicLayout.vue'
+import LayoutSwitcher from '@/layouts/LayoutSwitcher.vue'
 import RegisterPage from '@/Page/user/RegisterPage.vue'
 import UserManagePage from '@/Page/user/UserManagePage.vue'
 import UserCenterPage from '@/Page/user/UserCenterPage.vue'
@@ -18,6 +18,7 @@ import AddSpacePage from '@/Page/space/AddSpacePage.vue'
 import MySpacePage from '@/Page/space/MySpacePage.vue'
 import SpaceDetailPage from '@/Page/space/SpaceDetailPage.vue'
 import PictureSearchPage from '@/Page/picture/PictureSearchPage.vue'
+import UserProfilePage from '@/Page/user/UserProfilePage.vue'
 
 
 const router = createRouter({
@@ -45,7 +46,7 @@ const router = createRouter({
     // 其他页面 —— 带 BasicLayout 框架（Header + Footer）
     {
       path: '/',
-      component: BasicLayout,
+      component: LayoutSwitcher,
       redirect: '/home',
       children: [
         {
@@ -137,6 +138,12 @@ const router = createRouter({
           path: '/search_picture',
           name: '图片搜索',
           component: PictureSearchPage,
+        },
+        {
+          path: '/user/:id',
+          name: '用户主页',
+          component: UserProfilePage,
+          props: true,
         },
         {
           path: '/add_space',

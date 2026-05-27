@@ -1,106 +1,93 @@
-﻿<template>
+<template>
   <div id="home">
 
     <!-- 搜索框 -->
-    <div class="search-bar">
+    <div v-if="!isImmersive" class="search-bar">
       <a-input-search placeholder="从海量图片中搜索" v-model:value="searchParams.searchText" enter-button="搜索" size="large"
         @search="doSearch" />
     </div>
 
-    <!-- 分类栏 -->
-    <div class="category-bar">
-      <!-- 收起态 -->
-      <div v-if="!categoryExpanded" class="category-bar-inline">
-        <span class="category-label">分类：</span>
-        <div class="category-bar-content">
+    <!-- 筛选区域 -->
+    <div class="filter-section">
+
+      <!-- 排序按钮组 -->
+      <div class="sort-bar">
+        <a-radio-group v-model:value="currentSort" button-style="solid" size="middle" @change="onSortChange">
+          <a-radio-button value="">
+            <FireOutlined /> 推荐
+          </a-radio-button>
+          <a-radio-button value="createTime">
+            <ClockCircleOutlined /> 最新
+          </a-radio-button>
+          <a-radio-button value="thumbCount">
+            <StarOutlined /> 精选
+          </a-radio-button>
+        </a-radio-group>
+      </div>
+
+      <!-- 分类直接展示 -->
+      <div class="category-bar">
+        <div class="category-inline">
           <a-checkable-tag :checked="selectedCategory === 0" @change="selectedCategory = 0; doSearch()"
             class="category-item">
             全部
           </a-checkable-tag>
-          <a-checkable-tag v-for="category in visibleCategoryList" :key="category.value"
-            :checked="selectedCategory === category.value" @change="selectedCategory = category.value; doSearch()"
+          <a-checkable-tag v-for="category in visibleCategoryListLimited" :key="category.value"
+            :checked="selectedCategory === category.value"
+            @change="selectedCategory = category.value; doSearch()"
             class="category-item">
             {{ category.label }}
           </a-checkable-tag>
+          <a-popover v-model:open="categoryPopoverOpen" trigger="click" placement="bottomLeft"
+            overlay-class-name="category-popover-overlay">
+            <template #content>
+              <div class="category-popover-content">
+                <a-input-search v-model:value="categorySearchText" placeholder="搜索分类" size="small" allow-clear
+                  style="margin-bottom: 12px; width: 100%" />
+                <div class="category-popover-list">
+                  <a-checkable-tag :checked="selectedCategory === 0"
+                    @change="selectedCategory = 0; doSearch(); categoryPopoverOpen = false"
+                    class="category-popover-item">
+                    全部
+                  </a-checkable-tag>
+                  <a-checkable-tag v-for="category in filteredCategoryList" :key="category.value"
+                    :checked="selectedCategory === category.value"
+                    @change="selectedCategory = category.value; doSearch(); categoryPopoverOpen = false"
+                    class="category-popover-item">
+                    {{ category.label }}
+                  </a-checkable-tag>
+                </div>
+              </div>
+            </template>
+            <a-button v-if="categoryList.length > CATEGORY_VISIBLE_COUNT" type="link" size="small" class="more-category-btn">
+              全部分类 <RightOutlined />
+            </a-button>
+          </a-popover>
         </div>
-        <a-button v-if="showCategoryExpandBtn" type="link" size="small" @click="categoryExpanded = true">
-          更多
-        </a-button>
       </div>
-      <!-- 展开态 -->
-      <template v-else>
-        <div class="category-bar-header">
-          <span class="category-label">分类：</span>
-          <a-input-search v-model:value="categorySearchText" placeholder="搜索分类" size="small"
-            style="width: 160px; margin-right: 8px" allow-clear />
-          <a-button type="link" size="small" @click="categoryExpanded = false; categorySearchText = ''">
-            收起
-          </a-button>
-        </div>
-        <div class="category-bar-content expanded">
-          <a-checkable-tag :checked="selectedCategory === 0" @change="selectedCategory = 0; doSearch()"
-            class="category-item">
-            全部
-          </a-checkable-tag>
-          <a-checkable-tag v-for="category in visibleCategoryList" :key="category.value"
-            :checked="selectedCategory === category.value" @change="selectedCategory = category.value; doSearch()"
-            class="category-item">
-            {{ category.label }}
-          </a-checkable-tag>
-        </div>
-      </template>
-    </div>
-    <!-- 已选筛选条件 -->
-    <div class="selected-filter-bar" v-if="selectedTagList.length > 0">
-      <span class="filter-label">已选：</span>
-      <a-tag v-for="tag in selectedTagList" :key="tag" closable @close="removeTag(tag)" color="blue">
-        {{ tag }}
-      </a-tag>
-      <a-button type="link" size="small" @click="clearAllTags">清除全部</a-button>
-    </div>
 
-    <!-- 标签选择 -->
-    <div class="tag-bar">
-      <!-- 收起态：标签和展开按钮同一行 -->
-      <div v-if="!tagExpanded" class="tag-bar-inline">
-        <span class="tag-label">标签：</span>
-        <div class="tag-bar-content">
-          <a-checkable-tag v-for="tag in visibleTagList" :key="tag.name" :checked="selectedTagList.includes(tag.name)"
-            @change="toggleTag(tag.name)" class="tag-item">
-            {{ tag.name }}
-          </a-checkable-tag>
-        </div>
-        <a-button v-if="showExpandBtn" type="link" size="small" @click="tagExpanded = true">
-          展开
-        </a-button>
+      <!-- 已选条件汇总 -->
+      <div class="active-filters" v-if="selectedTagList.length > 0 || selectedCategory !== 0">
+        <a-tag v-if="selectedCategory !== 0" closable @close="selectedCategory = 0; doSearch()" color="blue">
+          {{ currentCategoryLabel }}
+        </a-tag>
+        <a-tag v-for="tag in selectedTagList" :key="tag" closable @close="removeTag(tag)" color="blue">
+          {{ tag }}
+        </a-tag>
+        <a-button type="link" size="small" @click="clearAllFilters" class="clear-all-btn">清除全部</a-button>
       </div>
-      <!-- 展开态：header + content 上下结构 -->
-      <template v-else>
-        <div class="tag-bar-header">
-          <span class="tag-label">标签：</span>
-          <a-input-search v-model:value="tagSearchText" placeholder="搜索标签" size="small"
-            style="width: 160px; margin-right: 8px" allow-clear />
-          <a-button type="link" size="small" @click="tagExpanded = false; tagSearchText = ''">收起</a-button>
-        </div>
-        <div class="tag-bar-content expanded">
-          <a-checkable-tag v-for="tag in visibleTagList" :key="tag.name" :checked="selectedTagList.includes(tag.name)"
-            @change="toggleTag(tag.name)" class="tag-item">
-            {{ tag.name }}
-          </a-checkable-tag>
-        </div>
-      </template>
-    </div>
 
-    <!-- 布局切换 -->
-    <div class="layout-bar">
-      <a-radio-group v-model:value="currentLayoutMode" button-style="solid" size="small" @change="onLayoutChange">
-        <a-radio-button value="waterfall">
-          <AppstoreOutlined /> 瀑布流
-        </a-radio-button>
-        <a-radio-button value="grid">
-          <TableOutlined /> 网格
-        </a-radio-button>
-      </a-radio-group>
+      <!-- 布局切换 -->
+      <div v-if="!isImmersive" class="layout-bar">
+        <a-radio-group v-model:value="currentLayoutMode" button-style="solid" size="small" @change="onLayoutChange">
+          <a-radio-button value="waterfall">
+            <AppstoreOutlined /> 瀑布流
+          </a-radio-button>
+          <a-radio-button value="grid">
+            <TableOutlined /> 网格
+          </a-radio-button>
+        </a-radio-group>
+      </div>
     </div>
 
     <!-- 图片列表 -->
@@ -117,8 +104,6 @@
     <!-- 分享弹窗 -->
     <ShareModal v-model:open="shareModalOpen" :picture="sharePicture" />
   </div>
-
-
 </template>
 
 
@@ -127,19 +112,32 @@ import { listCategoryUsingGet } from '@/api/categoryController'
 import { queryPictureUserUsingPost } from '@/api/pictureController'
 import { listTagUsingGet } from '@/api/tagController'
 import { message } from 'ant-design-vue'
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PictureList from '@/components/PictureList/index.vue'
 import ShareModal from '@/components/ShareModal.vue'
 import { useLayoutPreferenceStore } from '@/stores/layoutPreference'
-import { AppstoreOutlined, TableOutlined } from '@ant-design/icons-vue'
+import { useLayoutScheme } from '@/composables/useLayoutScheme'
+import {
+  AppstoreOutlined,
+  TableOutlined,
+  FireOutlined,
+  ClockCircleOutlined,
+  StarOutlined,
+  FolderOutlined,
+  DownOutlined,
+  RightOutlined
+} from '@ant-design/icons-vue'
 
 const layoutStore = useLayoutPreferenceStore()
+const { activeSchemeId } = useLayoutScheme()
 const currentLayoutMode = ref<'waterfall' | 'grid'>(layoutStore.layoutMode)
 
 const onLayoutChange = () => {
   layoutStore.setLayoutMode(currentLayoutMode.value)
 }
+
+const isImmersive = computed(() => activeSchemeId.value === 'scheme-1-immersive')
 
 // ==================== 无限滚动数据 ====================
 
@@ -253,7 +251,6 @@ const setupObserver = () => {
 
 // 首次加载后判断是否需要自动填充
 const ensureFullPage = async () => {
-  // 如果首屏数据不足以填满视口，继续加载
   if (hasMore.value && allPictures.value.length < pageSize) {
     await fetchData(false)
   }
@@ -268,36 +265,46 @@ const categoryList = ref<{ value: number; label: string }[]>([])
 const tagList = ref<{ name: string; count: number }[]>([])
 const selectedCategory = ref(0)
 const selectedTagList = ref<string[]>([])
-const categoryExpanded = ref(false)
-const tagExpanded = ref(false)
 const categorySearchText = ref('')
 const tagSearchText = ref('')
 
-const VISIBLE_COUNT = 10
+// 气泡卡片控制
+const categoryPopoverOpen = ref(false)
+const tagPopoverOpen = ref(false)
 
-const visibleCategoryList = computed(() => {
+// 排序
+const currentSort = ref('createTime')
+
+const onSortChange = () => {
+  searchParams.sortField = currentSort.value || undefined
+  searchParams.sortOrder = 'descend'
+  doSearch()
+}
+
+// 分类可见数量
+const CATEGORY_VISIBLE_COUNT = 20
+
+const visibleCategoryListLimited = computed(() => {
+  return categoryList.value.slice(0, CATEGORY_VISIBLE_COUNT)
+})
+
+const filteredCategoryList = computed(() => {
   const keyword = categorySearchText.value.trim().toLowerCase()
-  if (!keyword) return categoryList.value.slice(0, VISIBLE_COUNT)
+  if (!keyword) return categoryList.value
   return categoryList.value.filter(c => c.label.toLowerCase().includes(keyword))
 })
 
-const showCategoryExpandBtn = computed(() => {
-  const keyword = categorySearchText.value.trim().toLowerCase()
-  const list = keyword
-    ? categoryList.value.filter(c => c.label.toLowerCase().includes(keyword))
-    : categoryList.value
-  return list.length > VISIBLE_COUNT
-})
-
-const visibleTagList = computed(() => {
+const filteredTagList = computed(() => {
   const keyword = tagSearchText.value.trim().toLowerCase()
-  const filtered = keyword
-    ? tagList.value.filter(t => t.name.toLowerCase().includes(keyword))
-    : tagList.value
-  return filtered
+  if (!keyword) return tagList.value
+  return tagList.value.filter(t => t.name.toLowerCase().includes(keyword))
 })
 
-const showExpandBtn = computed(() => tagList.value.length > 8)
+const currentCategoryLabel = computed(() => {
+  if (selectedCategory.value === 0) return '全部分类'
+  const found = categoryList.value.find(c => c.value === selectedCategory.value)
+  return found?.label ?? '全部分类'
+})
 
 const toggleTag = (tagName: string) => {
   const index = selectedTagList.value.indexOf(tagName)
@@ -317,7 +324,8 @@ const removeTag = (tagName: string) => {
   doSearch()
 }
 
-const clearAllTags = () => {
+const clearAllFilters = () => {
+  selectedCategory.value = 0
   selectedTagList.value = []
   doSearch()
 }
@@ -359,154 +367,266 @@ onUnmounted(() => {
     observer = null
   }
 })
-
-// watch(currentLayoutMode, (newMode) => {
-//   nextTick(() => {
-//     setupObserver()
-//   })
-// })
 </script>
 
 <style>
-/* ===== 布局切换 ===== */
-#home .layout-bar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
+
+#home {
+  /* margin: 0 32px; */
 }
 
-/* ===== 分类栏 ===== */
-#home .category-bar {
-  margin-bottom: 16px;
-}
-
-#home .category-bar-inline {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-#home .category-bar-inline .category-bar-content {
-  display: flex;
-  flex-wrap: nowrap;
-  overflow: hidden;
-  gap: 6px;
-  max-width: calc(100% - 80px);
-}
-
-#home .category-label {
-  font-size: 14px;
-  color: #666;
-  flex-shrink: 0;
-  font-weight: 500;
-  margin-right: 4px;
-}
-
-#home .category-bar-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-#home .category-bar-content.expanded {
-  max-height: 120px;
-  overflow-y: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-#home .category-bar-content.expanded::-webkit-scrollbar {
-  width: 4px;
-}
-
-#home .category-bar-content.expanded::-webkit-scrollbar-thumb {
-  background: #d9d9d9;
-  border-radius: 2px;
-}
-
-#home .category-item {
-  font-size: 18px !important;
-  padding: 4px 12px !important;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-/* ===== 标签栏 ===== */
-
+/* ===== 搜索框 ===== */
 #home .search-bar {
   max-width: 480px;
   margin: 0 auto 16px;
   font-size: 16px;
 }
 
-#home .tag-bar {
-  margin-bottom: 16px;
+/* ===== 筛选区域 ===== */
+#home .filter-section {
+  margin-bottom: 20px;
 }
 
-#home .tag-bar-inline {
+/* ===== 排序按钮组 ===== */
+#home .sort-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  margin-bottom: 14px;
 }
 
-#home .tag-bar-inline .tag-bar-content {
-  display: flex;
-  flex-wrap: nowrap;
-  overflow: hidden;
-  gap: 4px;
-  max-width: calc(100% - 80px);
-}
-
-#home .tag-bar-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-#home .tag-label {
-  margin-right: 8px;
+#home .sort-bar .ant-radio-button-wrapper {
+  border-radius: 20px;
+  border: none;
+  padding: 0 22px;
+  height: 36px;
+  line-height: 36px;
   font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+#home .sort-bar .ant-radio-button-wrapper:first-child {
+  border-radius: 20px 0 0 20px;
+}
+
+#home .sort-bar .ant-radio-button-wrapper:last-child {
+  border-radius: 0 20px 20px 0;
+}
+
+#home .sort-bar .ant-radio-button-wrapper-checked {
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.3);
+}
+
+/* ===== 标签云 ===== */
+#home .tag-cloud-bar {
+  margin-bottom: 12px;
+}
+
+#home .tag-cloud-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 76px;
+  overflow: hidden;
+  align-items: center;
+}
+
+#home .tag-cloud-item {
+  font-size: 14px !important;
+  padding: 4px 14px !important;
+  border-radius: 16px !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none !important;
+}
+
+#home .tag-cloud-item:hover {
+  background: #e8f0fe;
+  transform: translateY(-1px);
+}
+
+#home .tag-cloud-item.ant-tag-checkable-checked {
+  background: #1677ff !important;
+  color: #fff !important;
+}
+
+#home .tag-count {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-left: 4px;
+}
+
+#home .tag-cloud-item.ant-tag-checkable-checked .tag-count {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+#home .more-tags-btn {
+  color: #1677ff;
+  font-size: 13px;
+  height: 28px;
+  line-height: 28px;
+  padding: 0 8px;
   flex-shrink: 0;
 }
 
-#home .tag-bar-content.expanded {
-  max-height: 220px;
-  overflow-y: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+/* 标签气泡卡片内容 */
+.tag-popover-overlay .ant-popover-inner {
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
-#home .tag-bar-content.expanded::-webkit-scrollbar {
+.tag-popover-content {
+  width: 400px;
+  max-height: 360px;
+}
+
+.tag-popover-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.tag-popover-list::-webkit-scrollbar {
   width: 4px;
 }
 
-#home .tag-bar-content.expanded::-webkit-scrollbar-thumb {
+.tag-popover-list::-webkit-scrollbar-thumb {
   background: #d9d9d9;
   border-radius: 2px;
 }
 
-#home .tag-item {
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.tag-popover-item {
+  font-size: 14px !important;
+  padding: 4px 14px !important;
+  border-radius: 16px !important;
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none !important;
 }
 
-#home .selected-filter-bar {
+.tag-popover-item.ant-tag-checkable-checked {
+  background: #1677ff !important;
+  color: #fff !important;
+}
+
+/* ===== 分类直接展示 ===== */
+#home .category-bar {
+  margin-bottom: 12px;
+}
+
+#home .category-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 76px;
+  overflow: hidden;
+  align-items: center;
+}
+
+#home .category-item {
+  font-size: 14px !important;
+  padding: 4px 14px !important;
+  border-radius: 16px !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none !important;
+}
+
+#home .category-item:hover {
+  background: #e8f0fe;
+  transform: translateY(-1px);
+}
+
+#home .category-item.ant-tag-checkable-checked {
+  background: #1677ff !important;
+  color: #fff !important;
+}
+
+#home .more-category-btn {
+  color: #1677ff;
+  font-size: 13px;
+  height: 28px;
+  line-height: 28px;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+/* 分类气泡卡片内容（全部分类弹窗） */
+.category-popover-overlay .ant-popover-inner {
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.category-popover-content {
+  width: 320px;
+  max-height: 360px;
+}
+
+.category-popover-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.category-popover-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.category-popover-list::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 2px;
+}
+
+.category-popover-item {
+  font-size: 14px !important;
+  padding: 4px 14px !important;
+  border-radius: 16px !important;
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none !important;
+}
+
+.category-popover-item.ant-tag-checkable-checked {
+  background: #1677ff !important;
+  color: #fff !important;
+}
+
+/* ===== 已选条件汇总 ===== */
+#home .active-filters {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
   margin-bottom: 12px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   background: #f6f8fa;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
-#home .filter-label {
-  color: #666;
-  font-size: 14px;
-  margin-right: 4px;
+#home .clear-all-btn {
+  color: #999;
+  font-size: 13px;
+}
+
+#home .clear-all-btn:hover {
+  color: #ff4d4f;
+}
+
+/* ===== 布局切换 ===== */
+#home .layout-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
 }
 </style>

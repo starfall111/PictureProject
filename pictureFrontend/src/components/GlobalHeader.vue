@@ -1,6 +1,6 @@
 <template>
     <div>
-        <a-row :warp="false">
+        <a-row :warp="false" align="middle">
             <a-col flex="200px">
                 <router-link to="/">
                     <div class="title-bar">
@@ -14,40 +14,38 @@
             </a-col>
             <a-col flex="120px">
                 <div class="user-login-status">
-                    <div v-if="loginUserStore.loginUser.id">
-                        <a-dropdown>
-                            <a-space>
-                                <a-avatar :src="loginUserStore.loginUser.userAvatar"></a-avatar>
-                                {{ loginUserStore.loginUser.userName ?? '无名' }}
-                            </a-space>
-                            <template #overlay>
-                                <a-menu>
-                                    <a-menu-item @click="router.push('/user/center')">
-                                        <UserOutlined />
-                                        个人中心
-                                    </a-menu-item>
-                                    <a-menu-item>
-                                        <router-link to="/my_space">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <SchemeSwitcher />
+                        <div v-if="loginUserStore.loginUser.id">
+                            <a-dropdown>
+                                <a-space>
+                                    <a-avatar :src="loginUserStore.loginUser.userAvatar"></a-avatar>
+                                    {{ loginUserStore.loginUser.userName ?? '无名' }}
+                                </a-space>
+                                <template #overlay>
+                                    <a-menu>
+                                        <a-menu-item @click="router.push('/user/center')">
                                             <UserOutlined />
-                                            我的空间
-                                        </router-link>
-                                    </a-menu-item>
-                                    <a-menu-item @click="logout()">
-                                        <LogoutOutlined />
-                                        退出登录
-                                    </a-menu-item>
-
-
-                                </a-menu>
-                            </template>
-                        </a-dropdown>
-
-
+                                            个人中心
+                                        </a-menu-item>
+                                        <a-menu-item>
+                                            <router-link to="/my_space">
+                                                <UserOutlined />
+                                                我的空间
+                                            </router-link>
+                                        </a-menu-item>
+                                        <a-menu-item @click="logout()">
+                                            <LogoutOutlined />
+                                            退出登录
+                                        </a-menu-item>
+                                    </a-menu>
+                                </template>
+                            </a-dropdown>
+                        </div>
+                        <div v-else>
+                            <a-button type="primary" href="/user/login">登录</a-button>
+                        </div>
                     </div>
-                    <div v-else>
-                        <a-button type="primary" href="/user/login">登录</a-button>
-                    </div>
-
                 </div>
             </a-col>
 
@@ -65,6 +63,8 @@ import { userLoginUserStore } from '@/stores/user'
 import { LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { logOutUsingPost } from '@/api/userController'
 import checkAccess from '@/access/checkAccess'
+import SchemeSwitcher from '@/layouts/scheme-1-immersive/components/SchemeSwitcher.vue'
+
 
 const loginUserStore = userLoginUserStore()
 
@@ -162,4 +162,5 @@ const items = computed<MenuProps['items']>(() => filterMenus(originItems))
     color: black;
     margin-left: 16px;
 }
+
 </style>

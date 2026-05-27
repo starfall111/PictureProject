@@ -24,7 +24,17 @@ import Antd from 'ant-design-vue';
 import 'ant-design-vue/dist/reset.css';
 import "@/access";
 
+// Layout scheme system
+import '@/styles/base.css'
+import '@/styles/schemes.css'
+import '@/layouts/scheme-1-immersive'
+import { useLayoutScheme } from '@/composables/useLayoutScheme'
+
 const app = createApp(App)
+
+// Initialize scheme system (sets data-scheme on <html>)
+const { initialize } = useLayoutScheme()
+initialize()
 
 app.use(Antd);
 app.use(createPinia())
