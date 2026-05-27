@@ -24,7 +24,7 @@ public class PexelsImageSearchStrategy implements ImageSearchStrategy {
 
     @Override
     public List<ImageSourceResult> searchImages(String searchText, int count) {
-        List<PexelsResponse> responses = pexelsPicture.getPexelsPicture(searchText);
+        List<PexelsResponse> responses = pexelsPicture.getPexelsPicture(searchText,count);
 
         return responses.stream()
                 .limit(count)

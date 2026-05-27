@@ -219,7 +219,7 @@ public class PictureController {
     public BaseResponse<Integer> pictureUploadByBatch(@RequestBody PictureUploadByBatchDTO pictureUploadByBatchDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUploadByBatchDTO), ErrorCode.PARAMS_ERROR);
 
-        ThrowUtils.throwIf(pictureUploadByBatchDTO.getCount() > 30,ErrorCode.PARAMS_ERROR,"最多一次抓取 30 张图片");
+        ThrowUtils.throwIf(pictureUploadByBatchDTO.getCount() > 30, ErrorCode.PARAMS_ERROR, "最多一次抓取 30 张图片");
         int result = pictureService.pictureUploadByBatch(pictureUploadByBatchDTO);
 
         return ResultUtils.success(result);
@@ -303,13 +303,4 @@ public class PictureController {
         return ResultUtils.success(true);
     }
 
-    @Resource
-    private PexelsPicture pexelsPicture;
-
-    @GetMapping("/test/pexels")
-    public BaseResponse<List<PexelsResponse>> test(){
-        List<PexelsResponse> result = pexelsPicture.getPexelsPicture("");
-
-        return ResultUtils.success(result);
-    }
 }
