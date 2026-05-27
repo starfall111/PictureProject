@@ -3,7 +3,7 @@
     <Waterfall
       :list="waterfallList"
       :imgSelector="'img'"
-      :heightDifference="130"
+      :heightDifference="0"
       :gutter="12"
       :width="220"
       :breakpoints="breakpoints"

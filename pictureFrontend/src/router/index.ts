@@ -22,6 +22,9 @@ import PictureSearchPage from '@/Page/picture/PictureSearchPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior() {
+    return { top: 0 }
+  },
   routes: [
     // 登录/注册等页面 —— 无 BasicLayout 框架
     {
@@ -139,12 +142,6 @@ const router = createRouter({
           path: '/add_space',
           name: '创建空间',
           component: AddSpacePage,
-        },
-
-        {
-          path: 'about',
-          name: 'about',
-          component: () => import('../views/AboutView.vue'),
         },
       ],
     },
