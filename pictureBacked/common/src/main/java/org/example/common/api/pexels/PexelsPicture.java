@@ -27,16 +27,16 @@ public class PexelsPicture {
     private String apiKey;
 
     //精选图片
-    private final String curatedApiUrl = "https://api.pexels.com/v1/curated?per_page=1&per_page=15";
+    private final String curatedApiUrl = "https://api.pexels.com/v1/curated?per_page=1&per_page=%s";
 
     //搜索图片
-    private final String searchApiUrl = "https://api.pexels.com/v1/search?query=%s&per_page=1&per_page=15";
+    private final String searchApiUrl = "https://api.pexels.com/v1/search?query=%s&per_page=1&per_page=%s";
 
-    public List<PexelsResponse> getPexelsPicture(String query) {
-        String requestUrl = curatedApiUrl;
+    public List<PexelsResponse> getPexelsPicture(String query,int count) {
+        String requestUrl = String.format(curatedApiUrl,count);
 
         if (StrUtil.isNotBlank(query)) {
-            requestUrl = String.format(searchApiUrl, query);
+            requestUrl = String.format(searchApiUrl, query,count);
         }
 
         try {

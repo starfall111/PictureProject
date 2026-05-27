@@ -21,6 +21,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.Formatter;
 import java.util.UUID;
 
+/**
+ * @author Zou
+ */
 @Getter
 @Slf4j
 @Component
@@ -34,6 +37,9 @@ public class AliOssUtil {
 
     @Value("${aliyun.oss.region}")
     private String region;
+
+    @Value("${aliyun.oss.cdn}")
+    private String cdn;
 
     /**
      * 文件上传
@@ -85,7 +91,7 @@ public class AliOssUtil {
         }
 
 
-        return endpoint.split("//")[0] + "//" + bucketName + "." + endpoint.split("//")[1] + "/" + FileName;
+        return endpoint.split("//")[0] + "//" + cdn + "/" + FileName;
     }
 
     public String processPicture(String styleType, String sourceImage) throws com.aliyuncs.exceptions.ClientException {
@@ -109,7 +115,7 @@ public class AliOssUtil {
         String targetImage = dir + "/" + newFileName;
 
         // 从 URL 中提取 object key: https://bucket.endpoint/path → path
-        String domain = bucketName + "." + endpoint.split("//")[1];
+        String domain = cdn;
         int domainIndex = sourceImage.indexOf(domain);
         if (domainIndex < 0) {
             log.warn("无法从 URL 提取 object key: {}", sourceImage);
@@ -148,7 +154,7 @@ public class AliOssUtil {
                 ossClient.shutdown();
             }
         }
-        return endpoint.split("//")[0] + "//" + bucketName + "." + endpoint.split("//")[1] + "/" + targetImage;
+        return endpoint.split("//")[0] + "//" + cdn + "/" + targetImage;
     }
 
     /**
@@ -161,8 +167,8 @@ public class AliOssUtil {
             return;
         }
 
-        // 从 URL 中提取 object key: https://bucket.endpoint/path → path
-        String domain = bucketName + "." + endpoint.split("//")[1];
+        // 从 URL 中提取 object key: https://zoustarfall.xin/path → path
+        String domain = cdn;
         int domainIndex = fileUrl.indexOf(domain);
         if (domainIndex < 0) {
             log.warn("无法从 URL 提取 object key: {}", fileUrl);
@@ -205,7 +211,7 @@ public class AliOssUtil {
         //从环境变量中获取访问凭证。运行本代码示例之前，请确保已设置环境变量OSS_ACCESS_KEY_ID和OSS_ACCESS_KEY_SECRET。
         EnvironmentVariableCredentialsProvider credentialsProvider = CredentialsProviderFactory.newEnvironmentVariableCredentialsProvider();
         // 填写不包含Bucket名称在内的Object完整路径，例如testfolder/exampleobject.txt。
-        String domain = bucketName + "." + endpoint.split("//")[1];
+        String domain = cdn;
         int domainIndex = imageUrl.indexOf(domain);
         if (domainIndex < 0) {
             log.warn("无法从 URL 提取 object key: {}", imageUrl);
