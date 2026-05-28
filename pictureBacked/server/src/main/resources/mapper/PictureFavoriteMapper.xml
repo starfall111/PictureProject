@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="org.example.server.mapper.PictureLikeMapper">
+<mapper namespace="org.example.server.mapper.PictureFavoriteMapper">
 
-    <resultMap id="BaseResultMap" type="org.example.pojo.entity.PictureLike">
+    <resultMap id="BaseResultMap" type="org.example.pojo.entity.PictureFavorite">
         <id property="id" column="id"/>
         <result property="pictureId" column="pictureId"/>
         <result property="userId" column="userId"/>
@@ -16,7 +16,7 @@
     </sql>
 
     <!-- 图片简要信息 ResultMap -->
-    <resultMap id="PictureBriefVOMap" type="org.example.pojo.vo.PictureBriefVO">
+    <resultMap id="PictureBriefMap" type="org.example.pojo.entity.PictureBrief">
         <id property="id" column="id"/>
         <result property="name" column="name"/>
         <result property="url" column="url"/>
@@ -30,11 +30,11 @@
         <result property="favoriteCount" column="favoriteCount"/>
         <result property="viewCount" column="viewCount"/>
         <result property="downloadCount" column="downloadCount"/>
-        <result property="likeTime" column="likeTime"/>
+        <result property="favoriteTime" column="favoriteTime"/>
     </resultMap>
 
-    <!-- 查询用户点赞的图片列表 -->
-    <select id="selectUserLikedPictures" resultMap="PictureBriefVOMap">
+    <!-- 查询用户收藏的图片列表 -->
+    <select id="selectUserFavoritedPictures" resultMap="PictureBriefMap">
         SELECT
             p.id,
             p.name,
@@ -49,12 +49,12 @@
             ps.favoriteCount,
             ps.viewCount,
             ps.downloadCount,
-            pl.createTime AS likeTime
-        FROM picture_like pl
-        INNER JOIN picture p ON pl.pictureId = p.id
+            pf.createTime AS favoriteTime
+        FROM picture_favorite pf
+        INNER JOIN picture p ON pf.pictureId = p.id
         LEFT JOIN category c ON p.categoryId = c.id
         LEFT JOIN picture_statistics ps ON p.id = ps.pictureId
-        WHERE pl.userId = #{userId}
+        WHERE pf.userId = #{userId}
           AND p.isDelete = 0
           AND p.reviewStatus = 1
         <if test="query.category != null and query.category != ''">
@@ -68,22 +68,22 @@
         </if>
         <choose>
             <when test="query.sortBy == 'hot'">
-                ORDER BY ps.likeCount DESC, pl.createTime DESC
+                ORDER BY ps.favoriteCount DESC, pf.createTime DESC
             </when>
             <otherwise>
-                ORDER BY pl.createTime DESC
+                ORDER BY pf.createTime DESC
             </otherwise>
         </choose>
         LIMIT #{offset}, #{pageSize}
     </select>
 
-    <!-- 统计用户点赞的图片总数 -->
-    <select id="countUserLikedPictures" resultType="java.lang.Long">
+    <!-- 统计用户收藏的图片总数 -->
+    <select id="countUserFavoritedPictures" resultType="java.lang.Long">
         SELECT COUNT(*)
-        FROM picture_like pl
-        INNER JOIN picture p ON pl.pictureId = p.id
+        FROM picture_favorite pf
+        INNER JOIN picture p ON pf.pictureId = p.id
         LEFT JOIN category c ON p.categoryId = c.id
-        WHERE pl.userId = #{userId}
+        WHERE pf.userId = #{userId}
           AND p.isDelete = 0
           AND p.reviewStatus = 1
         <if test="query.category != null and query.category != ''">

@@ -3,8 +3,8 @@ package org.example.server.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
 import org.example.pojo.dto.social.UserPictureQueryDTO;
+import org.example.pojo.entity.PictureBrief;
 import org.example.pojo.entity.PictureFavorite;
-import org.example.pojo.vo.PictureBriefVO;
 
 import java.util.List;
 
@@ -25,10 +25,10 @@ public interface PictureFavoriteMapper extends BaseMapper<PictureFavorite> {
      * @param pageSize 每页数量
      * @return 图片列表
      */
-    List<PictureBriefVO> selectUserFavoritedPictures(@Param("userId") Long userId,
-                                                     @Param("query") UserPictureQueryDTO queryDTO,
-                                                     @Param("offset") Integer offset,
-                                                     @Param("pageSize") Integer pageSize);
+    List<PictureBrief> selectUserFavoritedPictures(@Param("userId") Long userId,
+                                                   @Param("query") UserPictureQueryDTO queryDTO,
+                                                   @Param("offset") Integer offset,
+                                                   @Param("pageSize") Integer pageSize);
 
     /**
      * 统计用户收藏的图片总数

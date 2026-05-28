@@ -1,6 +1,9 @@
 package org.example.pojo.vo;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.json.JSONUtil;
 import lombok.Data;
+import org.example.pojo.entity.PictureBrief;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -87,6 +90,20 @@ public class PictureBriefVO implements Serializable {
      * 收藏时间（仅收藏列表返回）
      */
     private Date favoriteTime;
+
+    /**
+     * PictureBrief（String tags）→ PictureBriefVO（List<String> tags）
+     * 仿 PictureVO.objToVO 的转换模式
+     */
+    public static PictureBriefVO objToVO(PictureBrief brief) {
+        if (brief == null) {
+            return null;
+        }
+        PictureBriefVO vo = new PictureBriefVO();
+        BeanUtil.copyProperties(brief, vo);
+        vo.setTags(JSONUtil.toList(brief.getTags(), String.class));
+        return vo;
+    }
 
     @Serial
     private static final long serialVersionUID = 1L;

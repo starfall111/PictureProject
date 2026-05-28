@@ -7,8 +7,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.common.annotation.CheckAuth;
 import org.example.common.api.imagesearch.ImageSearchApiFacade;
 import org.example.common.api.imagesearch.model.ImageSearchResult;
-import org.example.common.api.pexels.PexelsPicture;
-import org.example.common.api.pexels.model.PexelsResponse;
 import org.example.common.constants.UserConstant;
 import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
@@ -199,7 +197,6 @@ public class PictureController {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
         PictureVO pictureVO = pictureService.getByPictureIdUser(id);
-        //todo 没有封装用户是否点赞收藏数据
 
         return ResultUtils.success(pictureVO);
     }

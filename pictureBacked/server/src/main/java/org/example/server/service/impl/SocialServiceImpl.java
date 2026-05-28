@@ -1,6 +1,5 @@
 package org.example.server.service.impl;
 
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +7,7 @@ import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.example.pojo.dto.social.UserPictureQueryDTO;
 import org.example.pojo.entity.Picture;
+import org.example.pojo.entity.PictureBrief;
 import org.example.pojo.entity.PictureFavorite;
 import org.example.pojo.entity.PictureLike;
 import org.example.pojo.entity.PictureStatistics;
@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -51,24 +52,39 @@ public class SocialServiceImpl implements SocialService {
     @Resource
     private TransactionTemplate transactionTemplate;
 
+    /**
+     * 本地锁，防止同一用户对同一图片的 toggle 操作并发执行
+     * key = "userId:pictureId"
+     */
+    private final ConcurrentHashMap<String, Object> toggleLocks = new ConcurrentHashMap<>();
+
     @Override
     public ToggleLikeVO toggleLike(Long pictureId, Long userId) {
         validPicturePublic(pictureId);
 
-        QueryWrapper<PictureLike> qw = new QueryWrapper<>();
-        qw.eq("pictureId", pictureId).eq("UserId", userId);
-        PictureLike existing = pictureLikeMapper.selectOne(qw);
+        String lockKey = userId + ":" + pictureId;
+        Object lock = toggleLocks.computeIfAbsent(lockKey, k -> new Object());
 
         boolean liked;
-        if (existing != null) {
-            pictureLikeMapper.deleteById(existing.getId());
-            liked = false;
-        } else {
-            PictureLike pictureLike = new PictureLike();
-            pictureLike.setPictureId(pictureId);
-            pictureLike.setUserId(userId);
-            pictureLikeMapper.insert(pictureLike);
-            liked = true;
+        try {
+            synchronized (lock) {
+                QueryWrapper<PictureLike> qw = new QueryWrapper<>();
+                qw.eq("pictureId", pictureId).eq("userId", userId);
+                PictureLike existing = pictureLikeMapper.selectOne(qw);
+
+                if (existing != null) {
+                    pictureLikeMapper.deleteById(existing.getId());
+                    liked = false;
+                } else {
+                    PictureLike pictureLike = new PictureLike();
+                    pictureLike.setPictureId(pictureId);
+                    pictureLike.setUserId(userId);
+                    pictureLikeMapper.insert(pictureLike);
+                    liked = true;
+                }
+            }
+        } finally {
+            toggleLocks.remove(lockKey);
         }
 
         int likeCount = updateLikeCount(pictureId);
@@ -89,7 +105,7 @@ public class SocialServiceImpl implements SocialService {
         }
 
         QueryWrapper<PictureLike> qw = new QueryWrapper<>();
-        qw.in("pictureId", pictureIds).eq("UserId", userId);
+        qw.in("pictureId", pictureIds).eq("userId", userId);
         List<PictureLike> likes = pictureLikeMapper.selectList(qw);
 
         Map<Long, Boolean> result = pictureIds.stream()
@@ -104,20 +120,29 @@ public class SocialServiceImpl implements SocialService {
     public ToggleFavoriteVO toggleFavorite(Long pictureId, Long userId) {
         validPicturePublic(pictureId);
 
-        QueryWrapper<PictureFavorite> qw = new QueryWrapper<>();
-        qw.eq("pictureId", pictureId).eq("UserId", userId);
-        PictureFavorite existing = pictureFavoriteMapper.selectOne(qw);
+        String lockKey = userId + ":" + pictureId;
+        Object lock = toggleLocks.computeIfAbsent(lockKey, k -> new Object());
 
         boolean favorited;
-        if (existing != null) {
-            pictureFavoriteMapper.deleteById(existing.getId());
-            favorited = false;
-        } else {
-            PictureFavorite pictureFavorite = new PictureFavorite();
-            pictureFavorite.setPictureId(pictureId);
-            pictureFavorite.setUserId(userId);
-            pictureFavoriteMapper.insert(pictureFavorite);
-            favorited = true;
+        try {
+            synchronized (lock) {
+                QueryWrapper<PictureFavorite> qw = new QueryWrapper<>();
+                qw.eq("pictureId", pictureId).eq("userId", userId);
+                PictureFavorite existing = pictureFavoriteMapper.selectOne(qw);
+
+                if (existing != null) {
+                    pictureFavoriteMapper.deleteById(existing.getId());
+                    favorited = false;
+                } else {
+                    PictureFavorite pictureFavorite = new PictureFavorite();
+                    pictureFavorite.setPictureId(pictureId);
+                    pictureFavorite.setUserId(userId);
+                    pictureFavoriteMapper.insert(pictureFavorite);
+                    favorited = true;
+                }
+            }
+        } finally {
+            toggleLocks.remove(lockKey);
         }
 
         int favoriteCount = updateFavoriteCount(pictureId);
@@ -307,19 +332,9 @@ public class SocialServiceImpl implements SocialService {
         Integer offset = (current - 1) * pageSize;
 
         // 查询列表
-        List<PictureBriefVO> records = pictureLikeMapper.selectUserLikedPictures(userId, queryDTO, offset, pageSize);
-        // 解析 tags JSON 字符串
-        records.forEach(vo -> {
-            if (vo.getTags() != null) {
-                // MyBatis 返回的是 String 类型，需要解析为 List
-                String tagsStr = vo.getTags().toString();
-                if (tagsStr.startsWith("[")) {
-                    vo.setTags(JSONUtil.toList(tagsStr, String.class));
-                } else {
-                    vo.setTags(Collections.singletonList(tagsStr));
-                }
-            }
-        });
+        List<PictureBrief> briefList = pictureLikeMapper.selectUserLikedPictures(userId, queryDTO, offset, pageSize);
+        // PictureBrief → PictureBriefVO（String tags → List<String> tags）
+        List<PictureBriefVO> records = briefList.stream().map(PictureBriefVO::objToVO).collect(Collectors.toList());
 
         // 查询总数
         Long total = pictureLikeMapper.countUserLikedPictures(userId, queryDTO);
@@ -341,19 +356,9 @@ public class SocialServiceImpl implements SocialService {
         Integer offset = (current - 1) * pageSize;
 
         // 查询列表
-        List<PictureBriefVO> records = pictureFavoriteMapper.selectUserFavoritedPictures(userId, queryDTO, offset, pageSize);
-        // 解析 tags JSON 字符串
-        records.forEach(vo -> {
-            if (vo.getTags() != null) {
-                // MyBatis 返回的是 String 类型，需要解析为 List
-                String tagsStr = vo.getTags().toString();
-                if (tagsStr.startsWith("[")) {
-                    vo.setTags(JSONUtil.toList(tagsStr, String.class));
-                } else {
-                    vo.setTags(Collections.singletonList(tagsStr));
-                }
-            }
-        });
+        List<PictureBrief> briefList = pictureFavoriteMapper.selectUserFavoritedPictures(userId, queryDTO, offset, pageSize);
+        // PictureBrief → PictureBriefVO（String tags → List<String> tags）
+        List<PictureBriefVO> records = briefList.stream().map(PictureBriefVO::objToVO).collect(Collectors.toList());
 
         // 查询总数
         Long total = pictureFavoriteMapper.countUserFavoritedPictures(userId, queryDTO);
