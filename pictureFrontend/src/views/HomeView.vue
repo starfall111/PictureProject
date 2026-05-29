@@ -109,7 +109,7 @@
 
 <script setup lang="ts">
 import { listCategoryUsingGet } from '@/api/categoryController'
-import { queryPictureUserUsingPost } from '@/api/pictureController'
+import { queryPictureUserCacheUsingPost } from '@/api/pictureController'
 import { listTagUsingGet } from '@/api/tagController'
 import { message } from 'ant-design-vue'
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
@@ -185,7 +185,7 @@ const fetchData = async (reset = false) => {
   }
 
   try {
-    const res = await queryPictureUserUsingPost(params)
+    const res = await queryPictureUserCacheUsingPost(params)
     if (res.data.data) {
       const records = res.data.data.records ?? []
       total.value = res.data.data.total ?? 0

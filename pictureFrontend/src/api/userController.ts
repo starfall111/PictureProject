@@ -86,6 +86,43 @@ export async function bindAccountUsingPost(
   });
 }
 
+/** getUserInfoCache GET /api/user/cache/get/info */
+export async function getUserInfoCacheUsingGet(options?: {
+  [key: string]: any;
+}) {
+  return request<API.BaseResponseUserVO_>("/api/user/cache/get/info", {
+    method: "GET",
+    ...(options || {}),
+  });
+}
+
+/** getLoginUserCache GET /api/user/cache/get/login */
+export async function getLoginUserCacheUsingGet(options?: {
+  [key: string]: any;
+}) {
+  return request<API.BaseResponseLoginUserVO_>("/api/user/cache/get/login", {
+    method: "GET",
+    ...(options || {}),
+  });
+}
+
+/** getUserProfileCache GET /api/user/cache/profile/${param0} */
+export async function getUserProfileCacheUsingGet(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getUserProfileCacheUsingGETParams,
+  options?: { [key: string]: any }
+) {
+  const { id: param0, ...queryParams } = params;
+  return request<API.BaseResponseUserProfileVO_>(
+    `/api/user/cache/profile/${param0}`,
+    {
+      method: "GET",
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  );
+}
+
 /** deleteUser DELETE /api/user/delete */
 export async function deleteUserUsingDelete(
   body: API.DeleteRequest,

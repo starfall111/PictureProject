@@ -25,7 +25,7 @@ import { ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { HeartOutlined, HeartFilled, StarOutlined, StarFilled, ShareAltOutlined } from '@ant-design/icons-vue'
 import { listCategoryUsingGet } from '@/api/categoryController';
-import { recordShareUsingPost, toggleFavoriteUsingPost, toggleLikeUsingPost } from '@/api/pictureController';
+import { toggleFavoriteCacheUsingPost, toggleLikeCacheUsingPost } from '@/api/pictureController';
 
 interface Props {
   pictureId: number
@@ -58,7 +58,7 @@ const isFavorited = ref(props.isFavorited)
 const handleLike = async () => {
   try {
     // TODO: 替换为真实 API
-    const res = await toggleLikeUsingPost(
+    const res = await toggleLikeCacheUsingPost(
       { pictureId: props.pictureId }
     )
     if (res.data.code === 0) {
@@ -75,7 +75,7 @@ const handleLike = async () => {
 const handleFavorite = async () => {
   try {
     // TODO: 替换为真实 API
-    const res = await toggleFavoriteUsingPost(
+    const res = await toggleFavoriteCacheUsingPost(
       { pictureId: props.pictureId }
     )
     if (res.data.code === 0) {
