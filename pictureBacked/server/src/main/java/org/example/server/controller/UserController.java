@@ -33,8 +33,11 @@ import javax.xml.transform.Result;
 @RequestMapping("/user")
 public class UserController {
 
-    @Resource
+    @Resource(name = "dbUserService")
     private UserService userService;
+
+    @Resource(name = "cachedUserService")
+    private UserService cacheUserService;
 
     @PostMapping("/register")
     public BaseResponse<Long> register(@RequestBody UserRegisterDTO userRegisterDTO){
@@ -181,4 +184,27 @@ public class UserController {
         return ResultUtils.success(profile);
     }
 
+    @GetMapping("/cache/get/login")
+    public BaseResponse<LoginUserVO> getLoginUserCache(){
+        return ResultUtils.success(cacheUserService.getLoginUser());
+    }
+
+
+    @GetMapping("/cache/profile/{id}")
+    public BaseResponse<UserProfileVO> getUserProfileCache(@PathVariable Long id) {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
+        UserProfileVO profile = cacheUserService.getUserProfile(id);
+        return ResultUtils.success(profile);
+    }
+
+    //根据ID获取信息
+    @GetMapping("/cache/get/info")
+    public BaseResponse<UserVO> getUserInfoCache(){
+        User userlogin = UserContext.get();
+        UserVO userVO = new UserVO();
+        User user = cacheUserService.getById(userlogin.getId());
+        BeanUtil.copyProperties(user,userVO);
+
+        return ResultUtils.success(userVO);
+    }
 }

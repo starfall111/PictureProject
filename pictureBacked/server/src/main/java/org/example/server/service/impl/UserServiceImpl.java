@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
  * @createDate 2026-05-11 20:54:16
  */
 
-@Service
+@Service("dbUserService")
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {
 

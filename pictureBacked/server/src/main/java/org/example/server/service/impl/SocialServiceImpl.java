@@ -369,4 +369,41 @@ public class SocialServiceImpl implements SocialService {
         page.setTotal(total);
         return page;
     }
+
+    @Override
+    public Page<PictureBriefVO> getUserUploadedPictures(Long userId, UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+
+        Integer current = queryDTO.getCurrent();
+        Integer pageSize = queryDTO.getPageSize();
+
+        QueryWrapper<Picture> qw = new QueryWrapper<>();
+        qw.eq("userId", userId)
+                .eq("reviewStatus", 1)
+                .isNull("spaceId")
+                .orderByDesc("editTime");
+
+        Page<Picture> picturePage = pictureMapper.selectPage(new Page<>(current, pageSize), qw);
+        List<PictureBriefVO> records = picturePage.getRecords().stream()
+                .map(picture -> {
+                    PictureBriefVO vo = new PictureBriefVO();
+                    vo.setId(picture.getId());
+                    vo.setName(picture.getName());
+                    vo.setUrl(picture.getUrl());
+                    vo.setThumbnailUrl(picture.getThumbnailUrl());
+                    vo.setPicWidth(picture.getPicWidth());
+                    vo.setPicHeight(picture.getPicHeight());
+                    vo.setCreateTime(picture.getCreateTime());
+                    if (picture.getTags() != null) {
+                        vo.setTags(cn.hutool.json.JSONUtil.toList(picture.getTags(), String.class));
+                    }
+                    return vo;
+                })
+                .collect(Collectors.toList());
+
+        Page<PictureBriefVO> page = new Page<>(current, pageSize, picturePage.getTotal());
+        page.setRecords(records);
+        return page;
+    }
 }

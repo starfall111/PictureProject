@@ -457,4 +457,43 @@ public class PictureController {
         return ResultUtils.success(true);
     }
 
+    /**
+     * [缓存版] 获取用户点赞的图片列表（不支持筛选）
+     */
+    @PostMapping("/cache/liked/user/{userId}/query")
+    public BaseResponse<Page<PictureBriefVO>> getUserLikedPicturesCache(
+            @PathVariable Long userId,
+            @RequestBody UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        Page<PictureBriefVO> result = cachedSocialService.getUserLikedPictures(userId, queryDTO);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * [缓存版] 获取用户收藏的图片列表（不支持筛选）
+     */
+    @PostMapping("/cache/favorited/user/{userId}/query")
+    public BaseResponse<Page<PictureBriefVO>> getUserFavoritedPicturesCache(
+            @PathVariable Long userId,
+            @RequestBody UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        Page<PictureBriefVO> result = cachedSocialService.getUserFavoritedPictures(userId, queryDTO);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * [缓存版] 获取用户上传的图片列表（不支持筛选）
+     */
+    @PostMapping("/cache/uploaded/user/{userId}/query")
+    public BaseResponse<Page<PictureBriefVO>> getUserUploadedPicturesCache(
+            @PathVariable Long userId,
+            @RequestBody UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        Page<PictureBriefVO> result = cachedSocialService.getUserUploadedPictures(userId, queryDTO);
+        return ResultUtils.success(result);
+    }
+
 }

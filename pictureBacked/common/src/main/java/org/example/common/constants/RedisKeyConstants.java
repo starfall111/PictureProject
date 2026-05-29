@@ -62,6 +62,15 @@ public class RedisKeyConstants {
      */
     public static final String PIC_DETAIL_KEY = "pic:detail:%d";
 
+    // ==================== 用户图片列表缓存 Key ====================
+
+    /** 用户点赞列表缓存 */
+    public static final String LIST_LIKED_KEY = "list:liked:%d:%s";
+    /** 用户收藏列表缓存 */
+    public static final String LIST_FAV_KEY = "list:fav:%d:%s";
+    /** 用户上传列表缓存 */
+    public static final String LIST_UPLOADED_KEY = "list:uploaded:%d:%s";
+
     // ==================== 社交功能 TTL ====================
 
     /** 点赞/收藏状态缓存 TTL 基础时间（秒）= 7 天 */

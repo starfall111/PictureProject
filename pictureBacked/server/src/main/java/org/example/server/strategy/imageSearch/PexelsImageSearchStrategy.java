@@ -1,10 +1,11 @@
-package org.example.common.api.imagesearch.strategy;
+package org.example.server.strategy.imageSearch;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.api.pexels.PexelsPicture;
 import org.example.common.api.pexels.model.PexelsResponse;
 import org.example.common.api.translate.BaiduTranslate;
+import org.example.server.strategy.imageSearch.model.ImageSourceResult;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

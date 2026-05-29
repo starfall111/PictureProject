@@ -82,20 +82,6 @@ public class CachedUserServiceImpl extends ServiceImpl<UserMapper, User>
         return json != null ? JSONUtil.toBean(json, UserProfileVO.class) : null;
     }
 
-    // todo getById的应用场景为鉴权阶段，需要绝对的数据一致性
-//    @Override
-//    public User getById(Serializable id) {
-//        String cacheKey = String.format(RedisKeyConstants.USER_INFO_KEY, id);
-//        int ttlSeconds = 600 + RandomUtil.randomInt(0, 300);
-//
-//        String json = redisCacheUtil.getWithLock(cacheKey, ttlSeconds, () -> {
-//            User user = super.getById(id);
-//            return user != null ? JSONUtil.toJsonStr(user) : null;
-//        });
-//
-//        return json != null ? JSONUtil.toBean(json, User.class) : null;
-//    }
-
     // ==================== 写方法（委托 + 缓存失效）====================
 
     @Override

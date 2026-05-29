@@ -1,6 +1,7 @@
 package org.example.server.service.impl;
 
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.exception.BusinessException;
@@ -23,11 +24,13 @@ import org.example.server.mapper.PictureMapper;
 import org.example.server.mapper.PictureStatisticsMapper;
 import org.example.server.service.SocialService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -65,6 +68,9 @@ public class CachedSocialServiceImpl implements SocialService {
 
     @Resource
     private DefaultRedisScript<Long> releaseLockScript;
+
+    @Resource(name = "dbSocialService")
+    private SocialService dbSocialService;
 
     /**
      * 分布式锁超时时间（秒）
@@ -122,6 +128,10 @@ public class CachedSocialServiceImpl implements SocialService {
             ToggleLikeVO result = new ToggleLikeVO();
             result.setLiked(liked);
             result.setLikeCount(Math.max(likeCount, 0));
+
+            // 失效用户点赞列表缓存
+            redisCacheUtil.deleteByPattern(String.format("list:liked:%d:*", userId));
+
             return result;
         } finally {
             stringRedisTemplate.execute(releaseLockScript, Collections.singletonList(lockKey), lockValue);
@@ -225,6 +235,10 @@ public class CachedSocialServiceImpl implements SocialService {
             ToggleFavoriteVO result = new ToggleFavoriteVO();
             result.setFavorited(favorited);
             result.setFavoriteCount(Math.max(favoriteCount, 0));
+
+            // 失效用户收藏列表缓存
+            redisCacheUtil.deleteByPattern(String.format("list:fav:%d:*", userId));
+
             return result;
         } finally {
             stringRedisTemplate.execute(releaseLockScript, Collections.singletonList(lockKey), lockValue);
@@ -364,16 +378,76 @@ public class CachedSocialServiceImpl implements SocialService {
 
     @Override
     public Page<PictureBriefVO> getUserLikedPictures(Long userId, UserPictureQueryDTO queryDTO) {
-        // 委托给 dbSocialService（多表 JOIN + 分页，不走缓存）
-        throw new UnsupportedOperationException("请使用 dbSocialService");
+        String md5 = buildPageMd5(queryDTO.getCurrent(), queryDTO.getPageSize());
+        String cacheKey = String.format(RedisKeyConstants.LIST_LIKED_KEY, userId, md5);
+        int ttl = 300 + RandomUtil.randomInt(0, 180);
+
+        String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
+            Page<PictureBriefVO> result = dbSocialService.getUserLikedPictures(userId, queryDTO);
+            return JSONUtil.toJsonStr(result);
+        });
+
+        if (json == null) {
+            return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
+        }
+        return deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
     }
 
     @Override
     public Page<PictureBriefVO> getUserFavoritedPictures(Long userId, UserPictureQueryDTO queryDTO) {
-        throw new UnsupportedOperationException("请使用 dbSocialService");
+        String md5 = buildPageMd5(queryDTO.getCurrent(), queryDTO.getPageSize());
+        String cacheKey = String.format(RedisKeyConstants.LIST_FAV_KEY, userId, md5);
+        int ttl = 300 + RandomUtil.randomInt(0, 180);
+
+        String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
+            Page<PictureBriefVO> result = dbSocialService.getUserFavoritedPictures(userId, queryDTO);
+            return JSONUtil.toJsonStr(result);
+        });
+
+        if (json == null) {
+            return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
+        }
+        return deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+    }
+
+    @Override
+    public Page<PictureBriefVO> getUserUploadedPictures(Long userId, UserPictureQueryDTO queryDTO) {
+        String md5 = buildPageMd5(queryDTO.getCurrent(), queryDTO.getPageSize());
+        String cacheKey = String.format(RedisKeyConstants.LIST_UPLOADED_KEY, userId, md5);
+        int ttl = 300 + RandomUtil.randomInt(0, 180);
+
+        String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
+            Page<PictureBriefVO> result = dbSocialService.getUserUploadedPictures(userId, queryDTO);
+            return JSONUtil.toJsonStr(result);
+        });
+
+        if (json == null) {
+            return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
+        }
+        return deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
     }
 
     // ==================== 私有方法 ====================
+
+    private String buildPageMd5(int current, int pageSize) {
+        String raw = "cur=" + current + "|ps=" + pageSize;
+        return DigestUtils.md5DigestAsHex(raw.getBytes());
+    }
+
+    private Page<PictureBriefVO> deserializePictureBriefVOPage(String json, int current, int pageSize) {
+        cn.hutool.json.JSONObject jsonObj = JSONUtil.parseObj(json);
+        Page<PictureBriefVO> page = new Page<>(
+                jsonObj.getInt("current", current),
+                jsonObj.getInt("size", pageSize),
+                jsonObj.getLong("total", 0L)
+        );
+        List<PictureBriefVO> records = jsonObj.getJSONArray("records")
+                .stream()
+                .map(obj -> ((cn.hutool.json.JSONObject) obj).toBean(PictureBriefVO.class))
+                .collect(Collectors.toList());
+        page.setRecords(records);
+        return page;
+    }
 
     private void validPicturePublic(Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR, "图片 id 不合法");

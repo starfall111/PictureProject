@@ -5,6 +5,7 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -37,6 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
+import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -60,7 +62,7 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
     @Resource
     private RedisCacheUtil redisCacheUtil;
 
-    @Resource
+    @Resource(name = "dbUserService")
     private UserService userService;
 
     @Resource
@@ -157,12 +159,13 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         if (picture != null && picture.getId() != null) {
             invalidateDetailCache(picture.getId());
             invalidateAllQueryCache();
+            invalidateUploadedListCache(picture.getUserId());
         }
         return picture;
     }
 
     @Override
-    public byte[] download(Picture picture) throws Exception {
+    public byte[] download(Picture picture) throws FileNotFoundException, ClientException {
         return dbPictureService.download(picture);
     }
 
@@ -172,6 +175,10 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         if (result) {
             invalidateDetailCache(pictureUpdateDTO.getId());
             invalidateAllQueryCache();
+            Picture picture = this.getById(pictureUpdateDTO.getId());
+            if (picture != null) {
+                invalidateUploadedListCache(picture.getUserId());
+            }
         }
         return result;
     }
@@ -182,16 +189,24 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         if (result) {
             invalidateDetailCache(pictureEditDTO.getId());
             invalidateAllQueryCache();
+            Picture picture = this.getById(pictureEditDTO.getId());
+            if (picture != null) {
+                invalidateUploadedListCache(picture.getUserId());
+            }
         }
         return result;
     }
 
     @Override
     public Boolean deletePicture(long id) throws Exception {
+        Picture picture = this.getById(id);
         Boolean result = dbPictureService.deletePicture(id);
         if (Boolean.TRUE.equals(result)) {
             invalidateDetailCache(id);
             invalidateAllQueryCache();
+            if (picture != null) {
+                invalidateUploadedListCache(picture.getUserId());
+            }
         }
         return result;
     }
@@ -238,6 +253,15 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
     public void invalidateAllQueryCache() {
         redisCacheUtil.deleteByPattern("pic:query:hot:*");
         redisCacheUtil.deleteByPattern("pic:query:normal:*");
+    }
+
+    /**
+     * 删除用户上传列表缓存
+     */
+    private void invalidateUploadedListCache(Long userId) {
+        if (userId != null) {
+            redisCacheUtil.deleteByPattern(String.format("list:uploaded:%d:*", userId));
+        }
     }
 
     // ==================== 私有方法 ====================

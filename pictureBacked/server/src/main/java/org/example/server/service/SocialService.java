@@ -100,4 +100,13 @@ public interface SocialService {
      * @return 分页结果
      */
     Page<PictureBriefVO> getUserFavoritedPictures(Long userId, UserPictureQueryDTO queryDTO);
+
+    /**
+     * 获取用户上传的公共图片列表（分页）
+     *
+     * @param userId   目标用户 id
+     * @param queryDTO 查询条件（分页）
+     * @return 分页结果
+     */
+    Page<PictureBriefVO> getUserUploadedPictures(Long userId, UserPictureQueryDTO queryDTO);
 }
