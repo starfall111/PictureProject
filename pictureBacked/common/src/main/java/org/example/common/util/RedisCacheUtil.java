@@ -5,11 +5,14 @@ import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -25,6 +28,9 @@ public class RedisCacheUtil {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private DefaultRedisScript<Long> releaseLockScript;
 
     /**
      * 空值标记，用于防穿透
@@ -42,9 +48,14 @@ public class RedisCacheUtil {
     private static final int LOCK_TIMEOUT_SECONDS = 10;
 
     /**
-     * 获取锁失败后等待时间（毫秒）
+     * 获取锁失败后每次等待时间（毫秒）
      */
     private static final int LOCK_WAIT_MS = 100;
+
+    /**
+     * 自旋重试次数
+     */
+    private static final int SPIN_RETRIES = 3;
 
     /**
      * 带分布式锁的缓存读取（防击穿 + 防穿透）
@@ -63,9 +74,10 @@ public class RedisCacheUtil {
             return NULL_MARKER.equals(cacheValue) ? null : cacheValue;
         }
 
-        // 2. 尝试获取分布式锁
+        // 2. 尝试获取分布式锁（使用 UUID 作为锁值，防止误解锁）
         String lockKey = "lock:" + cacheKey;
-        Boolean locked = ops.setIfAbsent(lockKey, "1", LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        String lockValue = UUID.randomUUID().toString();
+        Boolean locked = ops.setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
         if (Boolean.TRUE.equals(locked)) {
             try {
@@ -86,21 +98,28 @@ public class RedisCacheUtil {
                 }
                 return result;
             } finally {
-                stringRedisTemplate.delete(lockKey);
+                // Lua 脚本原子释放锁（仅删除自己持有的锁）
+                stringRedisTemplate.execute(
+                        releaseLockScript,
+                        Collections.singletonList(lockKey),
+                        lockValue
+                );
             }
         } else {
-            // 未获取锁，短暂等待后重试读缓存
-            try {
-                Thread.sleep(LOCK_WAIT_MS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            // 未获取锁，自旋重试等待锁持有者写入缓存
+            for (int i = 0; i < SPIN_RETRIES; i++) {
+                try {
+                    Thread.sleep(LOCK_WAIT_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                cacheValue = ops.get(cacheKey);
+                if (cacheValue != null) {
+                    return NULL_MARKER.equals(cacheValue) ? null : cacheValue;
+                }
             }
-            cacheValue = ops.get(cacheKey);
-            if (cacheValue != null) {
-                return NULL_MARKER.equals(cacheValue) ? null : cacheValue;
-            }
-            // 兜底：直接查数据库（极端情况下锁等待失败）
-            return loader.get();
+            throw new org.example.common.exception.BusinessException(
+                    org.example.common.exception.ErrorCode.OPERATION_ERROR, "当前请求过多，请稍后重试");
         }
     }
 

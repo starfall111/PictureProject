@@ -1,4 +1,4 @@
-package org.example.common.api.imagesearch.strategy;
+package org.example.server.strategy.imageSearch;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
@@ -6,6 +6,7 @@ import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
+import org.example.server.strategy.imageSearch.model.ImageSourceResult;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;

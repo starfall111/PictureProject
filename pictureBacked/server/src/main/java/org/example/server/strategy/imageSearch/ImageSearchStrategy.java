@@ -1,4 +1,6 @@
-package org.example.common.api.imagesearch.strategy;
+package org.example.server.strategy.imageSearch;
+
+import org.example.server.strategy.imageSearch.model.ImageSourceResult;
 
 import java.util.List;
 

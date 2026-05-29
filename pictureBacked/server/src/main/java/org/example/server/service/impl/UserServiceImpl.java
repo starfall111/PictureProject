@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.example.common.constants.PictureConstant;
 import org.example.common.constants.UserConstant;
 import org.example.pojo.dto.user.*;
+import org.example.pojo.dto.social.UserPictureQueryDTO;
 import org.example.pojo.entity.Category;
 import org.example.pojo.entity.Picture;
 import org.example.pojo.entity.User;
@@ -22,6 +23,8 @@ import org.example.pojo.entity.PictureStatistics;
 import org.example.pojo.vo.CategoryBriefVO;
 import org.example.pojo.vo.UserProfileVO;
 import org.example.pojo.vo.UserVO;
+import org.example.server.mapper.PictureFavoriteMapper;
+import org.example.server.mapper.PictureLikeMapper;
 import org.example.server.mapper.PictureMapper;
 import org.example.server.mapper.PictureStatisticsMapper;
 import org.example.server.mapper.UserMapper;
@@ -55,7 +58,7 @@ import java.util.stream.Collectors;
  * @createDate 2026-05-11 20:54:16
  */
 
-@Service
+@Service("dbUserService")
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {
 
@@ -91,6 +94,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Resource
     private CategoryService categoryService;
+
+    @Resource
+    private PictureLikeMapper pictureLikeMapper;
+
+    @Resource
+    private PictureFavoriteMapper pictureFavoriteMapper;
 
     @Override
     public long userRegister(UserRegisterDTO userRegisterDTO) {
@@ -387,7 +396,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         profile.setUserRole(user.getUserRole());
         profile.setCreateTime(user.getCreateTime());
 
-        // 2. 统计公共图库上传数量
+        // 2. 统计用户点赞和收藏的图片数量
+        UserPictureQueryDTO emptyQuery = new UserPictureQueryDTO();
+        Long userLikeCount = pictureLikeMapper.countUserLikedPictures(userId, emptyQuery);
+        Long userFavoriteCount = pictureFavoriteMapper.countUserFavoritedPictures(userId, emptyQuery);
+        profile.setUserLikeCount(userLikeCount != null ? userLikeCount.intValue() : 0);
+        profile.setUserFavoriteCount(userFavoriteCount != null ? userFavoriteCount.intValue() : 0);
+
+        // 3. 统计公共图库上传数量
         QueryWrapper<Picture> pictureQw = new QueryWrapper<>();
         pictureQw.eq("userId", userId)
                 .isNull("spaceId")

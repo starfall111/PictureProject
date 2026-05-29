@@ -3,7 +3,6 @@ package org.example.server.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ObjUtil;
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.aliyuncs.exceptions.ClientException;
@@ -41,18 +40,14 @@ import org.example.server.service.SocialService;
 import org.example.server.service.PictureService;
 import org.example.server.mapper.PictureMapper;
 import org.example.server.service.UserService;
-import org.example.common.util.RedisCacheUtil;
-import org.example.common.api.imagesearch.strategy.ImageSearchStrategy;
-import org.example.common.api.imagesearch.strategy.ImageSourceResult;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.example.server.strategy.imageSearch.ImageSearchStrategy;
+import org.example.server.strategy.imageSearch.model.ImageSourceResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -61,13 +56,13 @@ import java.util.stream.Collectors;
  * @createDate 2026-05-14 21:47:55
  */
 @Slf4j
-@Service
+@Service("dbPictureService")
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         implements PictureService {
     @Resource
     private AliOssUtil aliOssUtils;
 
-    @Resource
+    @Resource(name = "dbUserService")
     private UserService userService;
 
     @Resource
@@ -96,7 +91,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Resource
     private TransactionTemplate transactionTemplate;
 
-    @Resource
+    @Resource(name = "dbSocialService")
     private SocialService socialService;
 
     @Resource

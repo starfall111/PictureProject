@@ -21,7 +21,7 @@ import javax.annotation.Resource;
 @Component
 public class CheckAuthAop {
 
-    @Resource
+    @Resource(name = "dbUserService")
     private UserService userService;
 
     @Around("@annotation(checkAuth)")

@@ -25,7 +25,7 @@ import java.util.Map;
 @Component
 public class CountSyncScheduled {
 
-    @Resource
+    @Resource(name = "dbPictureService")
     private PictureService pictureService;
 
     @Resource

@@ -1,13 +1,17 @@
 package org.example.server.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
+import org.example.pojo.dto.social.UserPictureQueryDTO;
 import org.example.pojo.entity.Picture;
+import org.example.pojo.entity.PictureBrief;
 import org.example.pojo.entity.PictureFavorite;
 import org.example.pojo.entity.PictureLike;
 import org.example.pojo.entity.PictureStatistics;
+import org.example.pojo.vo.PictureBriefVO;
 import org.example.pojo.vo.PictureStatisticsVO;
 import org.example.pojo.vo.ToggleFavoriteVO;
 import org.example.pojo.vo.ToggleLikeVO;
@@ -21,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -29,7 +34,7 @@ import java.util.stream.Collectors;
  * @author Zou
  */
 @Slf4j
-@Service
+@Service("dbSocialService")
 public class SocialServiceImpl implements SocialService {
 
     @Resource
@@ -47,24 +52,39 @@ public class SocialServiceImpl implements SocialService {
     @Resource
     private TransactionTemplate transactionTemplate;
 
+    /**
+     * 本地锁，防止同一用户对同一图片的 toggle 操作并发执行
+     * key = "userId:pictureId"
+     */
+    private final ConcurrentHashMap<String, Object> toggleLocks = new ConcurrentHashMap<>();
+
     @Override
     public ToggleLikeVO toggleLike(Long pictureId, Long userId) {
         validPicturePublic(pictureId);
 
-        QueryWrapper<PictureLike> qw = new QueryWrapper<>();
-        qw.eq("pictureId", pictureId).eq("UserId", userId);
-        PictureLike existing = pictureLikeMapper.selectOne(qw);
+        String lockKey = userId + ":" + pictureId;
+        Object lock = toggleLocks.computeIfAbsent(lockKey, k -> new Object());
 
         boolean liked;
-        if (existing != null) {
-            pictureLikeMapper.deleteById(existing.getId());
-            liked = false;
-        } else {
-            PictureLike pictureLike = new PictureLike();
-            pictureLike.setPictureId(pictureId);
-            pictureLike.setUserId(userId);
-            pictureLikeMapper.insert(pictureLike);
-            liked = true;
+        try {
+            synchronized (lock) {
+                QueryWrapper<PictureLike> qw = new QueryWrapper<>();
+                qw.eq("pictureId", pictureId).eq("userId", userId);
+                PictureLike existing = pictureLikeMapper.selectOne(qw);
+
+                if (existing != null) {
+                    pictureLikeMapper.deleteById(existing.getId());
+                    liked = false;
+                } else {
+                    PictureLike pictureLike = new PictureLike();
+                    pictureLike.setPictureId(pictureId);
+                    pictureLike.setUserId(userId);
+                    pictureLikeMapper.insert(pictureLike);
+                    liked = true;
+                }
+            }
+        } finally {
+            toggleLocks.remove(lockKey);
         }
 
         int likeCount = updateLikeCount(pictureId);
@@ -85,7 +105,7 @@ public class SocialServiceImpl implements SocialService {
         }
 
         QueryWrapper<PictureLike> qw = new QueryWrapper<>();
-        qw.in("pictureId", pictureIds).eq("UserId", userId);
+        qw.in("pictureId", pictureIds).eq("userId", userId);
         List<PictureLike> likes = pictureLikeMapper.selectList(qw);
 
         Map<Long, Boolean> result = pictureIds.stream()
@@ -100,20 +120,29 @@ public class SocialServiceImpl implements SocialService {
     public ToggleFavoriteVO toggleFavorite(Long pictureId, Long userId) {
         validPicturePublic(pictureId);
 
-        QueryWrapper<PictureFavorite> qw = new QueryWrapper<>();
-        qw.eq("pictureId", pictureId).eq("UserId", userId);
-        PictureFavorite existing = pictureFavoriteMapper.selectOne(qw);
+        String lockKey = userId + ":" + pictureId;
+        Object lock = toggleLocks.computeIfAbsent(lockKey, k -> new Object());
 
         boolean favorited;
-        if (existing != null) {
-            pictureFavoriteMapper.deleteById(existing.getId());
-            favorited = false;
-        } else {
-            PictureFavorite pictureFavorite = new PictureFavorite();
-            pictureFavorite.setPictureId(pictureId);
-            pictureFavorite.setUserId(userId);
-            pictureFavoriteMapper.insert(pictureFavorite);
-            favorited = true;
+        try {
+            synchronized (lock) {
+                QueryWrapper<PictureFavorite> qw = new QueryWrapper<>();
+                qw.eq("pictureId", pictureId).eq("userId", userId);
+                PictureFavorite existing = pictureFavoriteMapper.selectOne(qw);
+
+                if (existing != null) {
+                    pictureFavoriteMapper.deleteById(existing.getId());
+                    favorited = false;
+                } else {
+                    PictureFavorite pictureFavorite = new PictureFavorite();
+                    pictureFavorite.setPictureId(pictureId);
+                    pictureFavorite.setUserId(userId);
+                    pictureFavoriteMapper.insert(pictureFavorite);
+                    favorited = true;
+                }
+            }
+        } finally {
+            toggleLocks.remove(lockKey);
         }
 
         int favoriteCount = updateFavoriteCount(pictureId);
@@ -291,5 +320,90 @@ public class SocialServiceImpl implements SocialService {
         vo.setViewCount(0);
         vo.setDownloadCount(0);
         return vo;
+    }
+
+    @Override
+    public Page<PictureBriefVO> getUserLikedPictures(Long userId, UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+
+        Integer current = queryDTO.getCurrent();
+        Integer pageSize = queryDTO.getPageSize();
+        Integer offset = (current - 1) * pageSize;
+
+        // 查询列表
+        List<PictureBrief> briefList = pictureLikeMapper.selectUserLikedPictures(userId, queryDTO, offset, pageSize);
+        // PictureBrief → PictureBriefVO（String tags → List<String> tags）
+        List<PictureBriefVO> records = briefList.stream().map(PictureBriefVO::objToVO).collect(Collectors.toList());
+
+        // 查询总数
+        Long total = pictureLikeMapper.countUserLikedPictures(userId, queryDTO);
+
+        // 组装分页结果
+        Page<PictureBriefVO> page = new Page<>(current, pageSize);
+        page.setRecords(records);
+        page.setTotal(total);
+        return page;
+    }
+
+    @Override
+    public Page<PictureBriefVO> getUserFavoritedPictures(Long userId, UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+
+        Integer current = queryDTO.getCurrent();
+        Integer pageSize = queryDTO.getPageSize();
+        Integer offset = (current - 1) * pageSize;
+
+        // 查询列表
+        List<PictureBrief> briefList = pictureFavoriteMapper.selectUserFavoritedPictures(userId, queryDTO, offset, pageSize);
+        // PictureBrief → PictureBriefVO（String tags → List<String> tags）
+        List<PictureBriefVO> records = briefList.stream().map(PictureBriefVO::objToVO).collect(Collectors.toList());
+
+        // 查询总数
+        Long total = pictureFavoriteMapper.countUserFavoritedPictures(userId, queryDTO);
+
+        // 组装分页结果
+        Page<PictureBriefVO> page = new Page<>(current, pageSize);
+        page.setRecords(records);
+        page.setTotal(total);
+        return page;
+    }
+
+    @Override
+    public Page<PictureBriefVO> getUserUploadedPictures(Long userId, UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+
+        Integer current = queryDTO.getCurrent();
+        Integer pageSize = queryDTO.getPageSize();
+
+        QueryWrapper<Picture> qw = new QueryWrapper<>();
+        qw.eq("userId", userId)
+                .eq("reviewStatus", 1)
+                .isNull("spaceId")
+                .orderByDesc("editTime");
+
+        Page<Picture> picturePage = pictureMapper.selectPage(new Page<>(current, pageSize), qw);
+        List<PictureBriefVO> records = picturePage.getRecords().stream()
+                .map(picture -> {
+                    PictureBriefVO vo = new PictureBriefVO();
+                    vo.setId(picture.getId());
+                    vo.setName(picture.getName());
+                    vo.setUrl(picture.getUrl());
+                    vo.setThumbnailUrl(picture.getThumbnailUrl());
+                    vo.setPicWidth(picture.getPicWidth());
+                    vo.setPicHeight(picture.getPicHeight());
+                    vo.setCreateTime(picture.getCreateTime());
+                    if (picture.getTags() != null) {
+                        vo.setTags(cn.hutool.json.JSONUtil.toList(picture.getTags(), String.class));
+                    }
+                    return vo;
+                })
+                .collect(Collectors.toList());
+
+        Page<PictureBriefVO> page = new Page<>(current, pageSize, picturePage.getTotal());
+        page.setRecords(records);
+        return page;
     }
 }

@@ -74,6 +74,16 @@ public class UserProfileVO implements Serializable {
     private Integer totalDownloads;
 
     /**
+     * 用户点赞的图片数量
+     */
+    private Integer userLikeCount;
+
+    /**
+     * 用户收藏的图片数量
+     */
+    private Integer userFavoriteCount;
+
+    /**
      * 分类列表
      */
     private List<CategoryBriefVO> categories;

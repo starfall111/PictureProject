@@ -1,4 +1,4 @@
-package org.example.common.api.imagesearch.strategy;
+package org.example.server.strategy.imageSearch.model;
 
 import lombok.Data;
 
