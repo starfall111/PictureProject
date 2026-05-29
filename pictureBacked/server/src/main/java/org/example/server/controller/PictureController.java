@@ -44,14 +44,20 @@ import java.util.*;
 public class PictureController {
 
     private static final Logger log = LoggerFactory.getLogger(PictureController.class);
-    @Resource
+    @Resource(name = "dbPictureService")
     private PictureService pictureService;
 
     @Resource
     private AliOssUtil aliOssUtils;
 
-    @Resource
+    @Resource(name = "dbSocialService")
     private SocialService socialService;
+
+    @Resource(name = "cachedSocialService")
+    private SocialService cachedSocialService;
+
+    @Resource(name = "cachedPictureService")
+    private PictureService cachedPictureService;
 
     /**
      * 图片上传
@@ -346,6 +352,109 @@ public class PictureController {
         ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
         Page<PictureBriefVO> result = socialService.getUserFavoritedPictures(userId, queryDTO);
         return ResultUtils.success(result);
+    }
+
+    // ==================== 缓存版接口（/cache/ 前缀） ====================
+
+    /**
+     * [缓存版] 图片列表查询
+     */
+    @PostMapping("/cache/user/query")
+    public BaseResponse<Page<PictureVO>> queryPictureUserCache(@RequestBody PictureQueryDTO pictureQueryDTO) {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
+        pictureQueryDTO.setReviewStatus(1);
+        Page<PictureVO> result = cachedPictureService.queryPictureListUser(pictureQueryDTO);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * [缓存版] 图片详情查询
+     */
+    @GetMapping("/cache/user/{id}")
+    public BaseResponse<PictureVO> getPictureByIdUserCache(@PathVariable Long id) {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
+        PictureVO pictureVO = cachedPictureService.getByPictureIdUser(id);
+        return ResultUtils.success(pictureVO);
+    }
+
+    /**
+     * [缓存版] 点赞/取消点赞
+     */
+    @PostMapping("/cache/like/{pictureId}")
+    public BaseResponse<ToggleLikeVO> toggleLikeCache(@PathVariable Long pictureId) {
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        User user = UserContext.get();
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);
+        ToggleLikeVO result = cachedSocialService.toggleLike(pictureId, user.getId());
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * [缓存版] 批量获取点赞状态
+     */
+    @PostMapping("/cache/like/status")
+    public BaseResponse<Map<Long, Boolean>> batchLikeStatusCache(@RequestBody BatchStatusQueryDTO request) {
+        List<Long> pictureIds = request.getPictureIds();
+        ThrowUtils.throwIf(pictureIds == null || pictureIds.isEmpty(), ErrorCode.PARAMS_ERROR);
+        User user = UserContext.get();
+        Long userId = user != null ? user.getId() : null;
+        Map<Long, Boolean> result = cachedSocialService.batchLikeStatus(pictureIds, userId);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * [缓存版] 收藏/取消收藏
+     */
+    @PostMapping("/cache/favorite/{pictureId}")
+    public BaseResponse<ToggleFavoriteVO> toggleFavoriteCache(@PathVariable Long pictureId) {
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        User user = UserContext.get();
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);
+        ToggleFavoriteVO result = cachedSocialService.toggleFavorite(pictureId, user.getId());
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * [缓存版] 批量获取收藏状态
+     */
+    @PostMapping("/cache/favorite/status")
+    public BaseResponse<Map<Long, Boolean>> batchFavoriteStatusCache(@RequestBody BatchStatusQueryDTO request) {
+        List<Long> pictureIds = request.getPictureIds();
+        ThrowUtils.throwIf(pictureIds == null || pictureIds.isEmpty(), ErrorCode.PARAMS_ERROR);
+        User user = UserContext.get();
+        Long userId = user != null ? user.getId() : null;
+        Map<Long, Boolean> result = cachedSocialService.batchFavoriteStatus(pictureIds, userId);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * [缓存版] 记录分享行为
+     */
+    @PostMapping("/cache/share/{pictureId}")
+    public BaseResponse<Boolean> recordShareCache(@PathVariable Long pictureId) {
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        cachedSocialService.recordShare(pictureId);
+        return ResultUtils.success(true);
+    }
+
+    /**
+     * [缓存版] 记录浏览行为
+     */
+    @PostMapping("/cache/view/{pictureId}")
+    public BaseResponse<Boolean> recordViewCache(@PathVariable Long pictureId) {
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        cachedSocialService.incrementViewCount(pictureId);
+        return ResultUtils.success(true);
+    }
+
+    /**
+     * [缓存版] 记录下载行为
+     */
+    @PostMapping("/cache/download/count/{pictureId}")
+    public BaseResponse<Boolean> recordDownloadCountCache(@PathVariable Long pictureId) {
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        cachedSocialService.incrementDownloadCount(pictureId);
+        return ResultUtils.success(true);
     }
 
 }

@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * @author Zou
  */
 @Slf4j
-@Service
+@Service("dbSocialService")
 public class SocialServiceImpl implements SocialService {
 
     @Resource

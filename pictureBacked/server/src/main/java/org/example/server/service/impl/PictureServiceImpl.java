@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
  * @createDate 2026-05-14 21:47:55
  */
 @Slf4j
-@Service
+@Service("dbPictureService")
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         implements PictureService {
     @Resource
@@ -96,7 +96,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Resource
     private TransactionTemplate transactionTemplate;
 
-    @Resource
+    @Resource(name = "dbSocialService")
     private SocialService socialService;
 
     @Resource
