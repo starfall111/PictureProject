@@ -62,10 +62,30 @@ public class RedisKeyConstants {
      */
     public static final String PIC_DETAIL_KEY = "pic:detail:%d";
 
+    // ==================== 社交功能 TTL ====================
+
+    /** 点赞/收藏状态缓存 TTL 基础时间（秒）= 7 天 */
+    public static final int SOCIAL_STATUS_TTL_BASE = 7 * 24 * 3600;
+    /** 点赞/收藏状态缓存 TTL 随机抖动上限（秒）= 60 分钟 */
+    public static final int SOCIAL_STATUS_TTL_JITTER = 3600;
+    /** 统计 Hash 缓存 TTL 基础时间（秒）= 7 天 */
+    public static final int SOCIAL_STATS_TTL_BASE = 7 * 24 * 3600;
+    /** 统计 Hash 缓存 TTL 随机抖动上限（秒）= 60 分钟 */
+    public static final int SOCIAL_STATS_TTL_JITTER = 3600;
+
     // ==================== 统计同步锁 ====================
 
     /**
      * 统计同步任务分布式锁
      */
     public static final String STATS_SYNC_LOCK_KEY = "lock:stats:sync";
+
+    /**
+     * 用户档案信息缓存
+     */
+    public static final String USER_PROFILE_KEY = "user:profile:%d";
+    /**
+     * 用户个人信息缓存
+     */
+    public static final String USER_INFO_KEY = "user:info:%d";
 }

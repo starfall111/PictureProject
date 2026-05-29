@@ -31,6 +31,7 @@ import org.example.server.service.PictureService;
 import org.example.server.service.SocialService;
 import org.example.server.service.SpaceService;
 import org.example.server.service.UserService;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -43,7 +44,8 @@ import java.util.stream.Collectors;
 /**
  * 缓存版图片服务实现
  * - 图片列表查询 → 热门查询缓存 + 普通查询 MD5 Key 缓存
- * - 图片详情页 → 缓存 PictureVO（不含 PictureSocialVO）
+ * - 图片详情页 → 缓存 PictureVO（不含 PictureSocialVO），走 getWithLock 防击穿
+ * - 写操作 → 委托 dbPictureService + 后置缓存失效
  *
  * @author Zou
  */
@@ -69,6 +71,10 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
 
     @Resource(name = "cachedSocialService")
     private SocialService socialService;
+
+    @Resource
+    @Qualifier("dbPictureService")
+    private PictureService dbPictureService;
 
     @Override
     public Page<PictureVO> queryPictureListUser(PictureQueryDTO queryDTO) {
@@ -112,110 +118,108 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
 
     @Override
     public PictureVO getByPictureIdUser(long id) {
+        // 1. 查 DB 判断是否存在及是否空间图片
+        Picture picture = this.getById(id);
+        ThrowUtils.throwIf(ObjUtil.isEmpty(picture), ErrorCode.PARAMS_ERROR, "图片不存在");
+
+        // 2. 空间图片 → 权限校验后直接返回（不缓存）
+        if (ObjUtil.isNotEmpty(picture.getSpaceId())) {
+            Space space = spaceService.getById(picture.getSpaceId());
+            spaceService.validAuthUser(space, UserContext.get());
+            PictureVO vo = getPictureVO(picture);
+            return vo;
+        }
+
+        // 3. 公共图片 → getWithLock 缓存（防击穿）
         String detailKey = String.format(RedisKeyConstants.PIC_DETAIL_KEY, id);
+        int ttl = 900 + RandomUtil.randomInt(0, 900);
 
-        // 1. 查 Redis 缓存（PictureVO 不含 socialInfo）
-        String cachedJson = stringRedisTemplate.opsForValue().get(detailKey);
+        String json = redisCacheUtil.getWithLock(detailKey, ttl, () -> {
+            PictureVO vo = getPictureVO(picture);
+            PictureVO copy = new PictureVO();
+            BeanUtil.copyProperties(vo, copy);
+            copy.setSocialInfo(null);
+            return JSONUtil.toJsonStr(copy);
+        });
 
-        PictureVO pictureVO;
-        if (cachedJson != null) {
-            pictureVO = JSONUtil.toBean(cachedJson, PictureVO.class);
-        } else {
-            // 2. 未命中 → 组装完整 PictureVO（picture + user + category）
-            Picture picture = this.getById(id);
-            ThrowUtils.throwIf(ObjUtil.isEmpty(picture), ErrorCode.PARAMS_ERROR, "图片不存在");
+        PictureVO pictureVO = JSONUtil.toBean(json, PictureVO.class);
 
-            if (ObjUtil.isNotEmpty(picture.getSpaceId())) {
-                Space space = spaceService.getById(picture.getSpaceId());
-                spaceService.validAuthUser(space, UserContext.get());
-            }
-
-            pictureVO = getPictureVO(picture);
-
-            // 缓存（不含 socialInfo）
-            PictureVO cacheCopy = new PictureVO();
-            BeanUtil.copyProperties(pictureVO, cacheCopy);
-            cacheCopy.setSocialInfo(null);
-            int ttl = 900 + RandomUtil.randomInt(0, 900);
-            stringRedisTemplate.opsForValue().set(detailKey, JSONUtil.toJsonStr(cacheCopy), ttl, TimeUnit.SECONDS);
-        }
-
-        // 3. 填充社交数据（仅公共图库 spaceId == null）
-        if (pictureVO.getSpaceId() == null) {
-            User currentUser = UserContext.get();
-            Long currentUserId = currentUser != null ? currentUser.getId() : null;
-            List<Long> ids = Collections.singletonList(id);
-
-            Map<Long, PictureStatisticsVO> statsMap = socialService.batchStatistics(ids);
-            PictureStatisticsVO stats = statsMap.getOrDefault(id, new PictureStatisticsVO());
-
-            PictureSocialVO socialVO = new PictureSocialVO();
-            socialVO.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
-            socialVO.setFavoriteCount(stats.getFavoriteCount() != null ? stats.getFavoriteCount() : 0);
-            socialVO.setShareCount(stats.getShareCount() != null ? stats.getShareCount() : 0);
-            socialVO.setViewCount(stats.getViewCount() != null ? stats.getViewCount() : 0);
-            socialVO.setDownloadCount(stats.getDownloadCount() != null ? stats.getDownloadCount() : 0);
-
-            if (currentUserId != null) {
-                Map<Long, Boolean> likeStatus = socialService.batchLikeStatus(ids, currentUserId);
-                Map<Long, Boolean> favStatus = socialService.batchFavoriteStatus(ids, currentUserId);
-                socialVO.setIsLiked(likeStatus.getOrDefault(id, false));
-                socialVO.setIsFavorited(favStatus.getOrDefault(id, false));
-            } else {
-                socialVO.setIsLiked(false);
-                socialVO.setIsFavorited(false);
-            }
-            pictureVO.setSocialInfo(socialVO);
-        }
-
+        // 4. 实时填充社交数据
+        fillSocialData(Collections.singletonList(pictureVO));
         return pictureVO;
     }
 
-    // ==================== 未缓存的方法，委托 dbPictureService 或抛异常 ====================
+    // ==================== 写操作：委托 dbPictureService + 后置缓存失效 ====================
 
     @Override
     public Picture upload(Object inputResource, FileDTO fileDTO) throws Exception {
-        throw new UnsupportedOperationException("请使用 dbPictureService");
+        Picture picture = dbPictureService.upload(inputResource, fileDTO);
+        if (picture != null && picture.getId() != null) {
+            invalidateDetailCache(picture.getId());
+            invalidateAllQueryCache();
+        }
+        return picture;
     }
 
     @Override
-    public byte[] download(Picture picture) {
-        throw new UnsupportedOperationException("请使用 dbPictureService");
+    public byte[] download(Picture picture) throws Exception {
+        return dbPictureService.download(picture);
     }
 
     @Override
     public boolean updatePicture(PictureUpdateDTO pictureUpdateDTO) {
-        throw new UnsupportedOperationException("请使用 dbPictureService");
+        boolean result = dbPictureService.updatePicture(pictureUpdateDTO);
+        if (result) {
+            invalidateDetailCache(pictureUpdateDTO.getId());
+            invalidateAllQueryCache();
+        }
+        return result;
     }
 
     @Override
     public boolean editPicture(PictureEditDTO pictureEditDTO) {
-        throw new UnsupportedOperationException("请使用 dbPictureService");
+        boolean result = dbPictureService.editPicture(pictureEditDTO);
+        if (result) {
+            invalidateDetailCache(pictureEditDTO.getId());
+            invalidateAllQueryCache();
+        }
+        return result;
     }
 
     @Override
     public Boolean deletePicture(long id) throws Exception {
-        throw new UnsupportedOperationException("请使用 dbPictureService");
+        Boolean result = dbPictureService.deletePicture(id);
+        if (Boolean.TRUE.equals(result)) {
+            invalidateDetailCache(id);
+            invalidateAllQueryCache();
+        }
+        return result;
     }
 
     @Override
     public Page<PictureEntityVO> queryPictureListAdmin(PictureQueryDTO queryDTO) {
-        throw new UnsupportedOperationException("请使用 dbPictureService");
+        return dbPictureService.queryPictureListAdmin(queryDTO);
     }
 
     @Override
     public Picture getByPictureIdAdmin(long id) {
-        throw new UnsupportedOperationException("请使用 dbPictureService");
+        return dbPictureService.getByPictureIdAdmin(id);
     }
 
     @Override
     public void pictureReview(PictureReviewDTO pictureReviewDTO) {
-        throw new UnsupportedOperationException("请使用 dbPictureService");
+        dbPictureService.pictureReview(pictureReviewDTO);
+        invalidateDetailCache(pictureReviewDTO.getId());
+        invalidateAllQueryCache();
     }
 
     @Override
     public Integer pictureUploadByBatch(PictureUploadByBatchDTO pictureUploadByBatchDTO) {
-        throw new UnsupportedOperationException("请使用 dbPictureService");
+        Integer count = dbPictureService.pictureUploadByBatch(pictureUploadByBatchDTO);
+        if (count != null && count > 0) {
+            invalidateAllQueryCache();
+        }
+        return count;
     }
 
     // ==================== 缓存失效方法 ====================

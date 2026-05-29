@@ -1,7 +1,9 @@
 package org.example.server.service.impl;
 
+import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.example.common.util.RedisCacheUtil;
@@ -21,7 +23,10 @@ import org.example.server.mapper.PictureMapper;
 import org.example.server.mapper.PictureStatisticsMapper;
 import org.example.server.service.SocialService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import org.springframework.data.redis.connection.StringRedisConnection;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -58,6 +63,9 @@ public class CachedSocialServiceImpl implements SocialService {
     @Resource
     private PictureStatisticsMapper pictureStatisticsMapper;
 
+    @Resource
+    private DefaultRedisScript<Long> releaseLockScript;
+
     /**
      * 分布式锁超时时间（秒）
      */
@@ -68,7 +76,8 @@ public class CachedSocialServiceImpl implements SocialService {
         validPicturePublic(pictureId);
 
         String lockKey = String.format(RedisKeyConstants.SOCIAL_LOCK_KEY, "like", userId, pictureId);
-        Boolean locked = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, "1", LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        String lockValue = UUID.randomUUID().toString();
+        Boolean locked = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         ThrowUtils.throwIf(!Boolean.TRUE.equals(locked), ErrorCode.OPERATION_ERROR, "操作过于频繁，请稍后再试");
 
         try {
@@ -82,7 +91,8 @@ public class CachedSocialServiceImpl implements SocialService {
             String existing = stringRedisTemplate.opsForValue().get(likeKey);
             if ("1".equals(existing)) {
                 // 已点赞 → 取消点赞，value 设为 "0"
-                stringRedisTemplate.opsForValue().set(likeKey, "0");
+                int ttl = RedisKeyConstants.SOCIAL_STATUS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATUS_TTL_JITTER);
+                stringRedisTemplate.opsForValue().set(likeKey, "0", ttl, TimeUnit.SECONDS);
                 stringRedisTemplate.opsForHash().increment(statsKey, "likeCount", -1);
                 // DB 删除
                 QueryWrapper<PictureLike> qw = new QueryWrapper<>();
@@ -91,7 +101,8 @@ public class CachedSocialServiceImpl implements SocialService {
                 liked = false;
             } else {
                 // 未点赞 → 点赞，value 设为 "1"
-                stringRedisTemplate.opsForValue().set(likeKey, "1");
+                int ttl = RedisKeyConstants.SOCIAL_STATUS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATUS_TTL_JITTER);
+                stringRedisTemplate.opsForValue().set(likeKey, "1", ttl, TimeUnit.SECONDS);
                 stringRedisTemplate.opsForHash().increment(statsKey, "likeCount", 1);
                 // DB 插入
                 PictureLike pictureLike = new PictureLike();
@@ -113,7 +124,7 @@ public class CachedSocialServiceImpl implements SocialService {
             result.setLikeCount(Math.max(likeCount, 0));
             return result;
         } finally {
-            stringRedisTemplate.delete(lockKey);
+            stringRedisTemplate.execute(releaseLockScript, Collections.singletonList(lockKey), lockValue);
         }
     }
 
@@ -129,14 +140,18 @@ public class CachedSocialServiceImpl implements SocialService {
         Map<Long, Boolean> result = new HashMap<>();
         List<Long> missedIds = new ArrayList<>();
 
-        // 逐个查询 Redis：有 key 时根据 value "1"=已点赞 "0"=未点赞
-        for (Long pictureId : pictureIds) {
-            String likeKey = String.format(RedisKeyConstants.SOCIAL_LIKE_KEY, userId, pictureId);
-            String value = stringRedisTemplate.opsForValue().get(likeKey);
+        // Pipeline 批量查询 Redis
+        List<String> likeKeys = pictureIds.stream()
+                .map(id -> String.format(RedisKeyConstants.SOCIAL_LIKE_KEY, userId, id))
+                .collect(Collectors.toList());
+        List<String> values = pipelineBatchGet(likeKeys);
+
+        for (int i = 0; i < pictureIds.size(); i++) {
+            String value = values.get(i);
             if (value != null) {
-                result.put(pictureId, "1".equals(value));
+                result.put(pictureIds.get(i), "1".equals(value));
             } else {
-                missedIds.add(pictureId);
+                missedIds.add(pictureIds.get(i));
             }
         }
 
@@ -151,7 +166,8 @@ public class CachedSocialServiceImpl implements SocialService {
                 boolean liked = likedIds.contains(pictureId);
                 result.put(pictureId, liked);
                 String likeKey = String.format(RedisKeyConstants.SOCIAL_LIKE_KEY, userId, pictureId);
-                stringRedisTemplate.opsForValue().set(likeKey, liked ? "1" : "0");
+                int ttl = RedisKeyConstants.SOCIAL_STATUS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATUS_TTL_JITTER);
+                stringRedisTemplate.opsForValue().set(likeKey, liked ? "1" : "0", ttl, TimeUnit.SECONDS);
             }
         }
 
@@ -163,7 +179,8 @@ public class CachedSocialServiceImpl implements SocialService {
         validPicturePublic(pictureId);
 
         String lockKey = String.format(RedisKeyConstants.SOCIAL_LOCK_KEY, "fav", userId, pictureId);
-        Boolean locked = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, "1", LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        String lockValue = UUID.randomUUID().toString();
+        Boolean locked = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         ThrowUtils.throwIf(!Boolean.TRUE.equals(locked), ErrorCode.OPERATION_ERROR, "操作过于频繁，请稍后再试");
 
         try {
@@ -177,7 +194,8 @@ public class CachedSocialServiceImpl implements SocialService {
             String existing = stringRedisTemplate.opsForValue().get(favKey);
             if ("1".equals(existing)) {
                 // 已收藏 → 取消收藏，value 设为 "0"
-                stringRedisTemplate.opsForValue().set(favKey, "0");
+                int ttl = RedisKeyConstants.SOCIAL_STATUS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATUS_TTL_JITTER);
+                stringRedisTemplate.opsForValue().set(favKey, "0", ttl, TimeUnit.SECONDS);
                 stringRedisTemplate.opsForHash().increment(statsKey, "favoriteCount", -1);
                 // DB 删除
                 QueryWrapper<PictureFavorite> qw = new QueryWrapper<>();
@@ -186,7 +204,8 @@ public class CachedSocialServiceImpl implements SocialService {
                 favorited = false;
             } else {
                 // 未收藏 → 收藏，value 设为 "1"
-                stringRedisTemplate.opsForValue().set(favKey, "1");
+                int ttl = RedisKeyConstants.SOCIAL_STATUS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATUS_TTL_JITTER);
+                stringRedisTemplate.opsForValue().set(favKey, "1", ttl, TimeUnit.SECONDS);
                 stringRedisTemplate.opsForHash().increment(statsKey, "favoriteCount", 1);
                 // DB 插入
                 PictureFavorite pictureFavorite = new PictureFavorite();
@@ -208,7 +227,7 @@ public class CachedSocialServiceImpl implements SocialService {
             result.setFavoriteCount(Math.max(favoriteCount, 0));
             return result;
         } finally {
-            stringRedisTemplate.delete(lockKey);
+            stringRedisTemplate.execute(releaseLockScript, Collections.singletonList(lockKey), lockValue);
         }
     }
 
@@ -224,14 +243,18 @@ public class CachedSocialServiceImpl implements SocialService {
         Map<Long, Boolean> result = new HashMap<>();
         List<Long> missedIds = new ArrayList<>();
 
-        // 逐个查询 Redis：有 key 时根据 value "1"=已收藏 "0"=未收藏
-        for (Long pictureId : pictureIds) {
-            String favKey = String.format(RedisKeyConstants.SOCIAL_FAV_KEY, userId, pictureId);
-            String value = stringRedisTemplate.opsForValue().get(favKey);
+        // Pipeline 批量查询 Redis
+        List<String> favKeys = pictureIds.stream()
+                .map(id -> String.format(RedisKeyConstants.SOCIAL_FAV_KEY, userId, id))
+                .collect(Collectors.toList());
+        List<String> values = pipelineBatchGet(favKeys);
+
+        for (int i = 0; i < pictureIds.size(); i++) {
+            String value = values.get(i);
             if (value != null) {
-                result.put(pictureId, "1".equals(value));
+                result.put(pictureIds.get(i), "1".equals(value));
             } else {
-                missedIds.add(pictureId);
+                missedIds.add(pictureIds.get(i));
             }
         }
 
@@ -246,7 +269,8 @@ public class CachedSocialServiceImpl implements SocialService {
                 boolean favorited = favIds.contains(pictureId);
                 result.put(pictureId, favorited);
                 String favKey = String.format(RedisKeyConstants.SOCIAL_FAV_KEY, userId, pictureId);
-                stringRedisTemplate.opsForValue().set(favKey, favorited ? "1" : "0");
+                int ttl = RedisKeyConstants.SOCIAL_STATUS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATUS_TTL_JITTER);
+                stringRedisTemplate.opsForValue().set(favKey, favorited ? "1" : "0", ttl, TimeUnit.SECONDS);
             }
         }
 
@@ -278,14 +302,18 @@ public class CachedSocialServiceImpl implements SocialService {
         Map<Long, PictureStatisticsVO> result = new HashMap<>();
         List<Long> missedIds = new ArrayList<>();
 
-        // Pipeline 批量 HMGET
-        for (Long pictureId : pictureIds) {
-            String statsKey = String.format(RedisKeyConstants.SOCIAL_STATS_KEY, pictureId);
-            Map<Object, Object> entries = stringRedisTemplate.opsForHash().entries(statsKey);
-            if (!entries.isEmpty()) {
-                result.put(pictureId, hashToStatsVO(entries));
+        // Pipeline 批量 HGETALL
+        List<String> statsKeys = pictureIds.stream()
+                .map(id -> String.format(RedisKeyConstants.SOCIAL_STATS_KEY, id))
+                .collect(Collectors.toList());
+        List<Map<Object, Object>> entries = pipelineBatchHGetAll(statsKeys);
+
+        for (int i = 0; i < pictureIds.size(); i++) {
+            Map<Object, Object> entry = entries.get(i);
+            if (entry != null && !entry.isEmpty()) {
+                result.put(pictureIds.get(i), hashToStatsVO(entry));
             } else {
-                missedIds.add(pictureId);
+                missedIds.add(pictureIds.get(i));
             }
         }
 
@@ -300,22 +328,28 @@ public class CachedSocialServiceImpl implements SocialService {
             for (Long pictureId : missedIds) {
                 PictureStatistics stat = dbMap.get(pictureId);
                 if (stat != null) {
-                    // 写入 Redis Hash
+                    // 写入 Redis Hash（使用 putIfAbsent 防止覆盖并发 INCR 的结果）
                     String statsKey = String.format(RedisKeyConstants.SOCIAL_STATS_KEY, pictureId);
-                    Map<String, String> hash = new HashMap<>();
-                    hash.put("likeCount", String.valueOf(stat.getLikeCount() != null ? stat.getLikeCount() : 0));
-                    hash.put("favoriteCount", String.valueOf(stat.getFavoriteCount() != null ? stat.getFavoriteCount() : 0));
-                    hash.put("shareCount", String.valueOf(stat.getShareCount() != null ? stat.getShareCount() : 0));
-                    hash.put("viewCount", String.valueOf(stat.getViewCount() != null ? stat.getViewCount() : 0));
-                    hash.put("downloadCount", String.valueOf(stat.getDownloadCount() != null ? stat.getDownloadCount() : 0));
-                    stringRedisTemplate.opsForHash().putAll(statsKey, hash);
+                    int like = stat.getLikeCount() != null ? stat.getLikeCount() : 0;
+                    int fav = stat.getFavoriteCount() != null ? stat.getFavoriteCount() : 0;
+                    int share = stat.getShareCount() != null ? stat.getShareCount() : 0;
+                    int view = stat.getViewCount() != null ? stat.getViewCount() : 0;
+                    int download = stat.getDownloadCount() != null ? stat.getDownloadCount() : 0;
+
+                    stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "likeCount", String.valueOf(like));
+                    stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "favoriteCount", String.valueOf(fav));
+                    stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "shareCount", String.valueOf(share));
+                    stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "viewCount", String.valueOf(view));
+                    stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "downloadCount", String.valueOf(download));
+                    int ttl = RedisKeyConstants.SOCIAL_STATS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATS_TTL_JITTER);
+                    stringRedisTemplate.expire(statsKey, ttl, TimeUnit.SECONDS);
 
                     PictureStatisticsVO vo = new PictureStatisticsVO();
-                    vo.setLikeCount(stat.getLikeCount() != null ? stat.getLikeCount() : 0);
-                    vo.setFavoriteCount(stat.getFavoriteCount() != null ? stat.getFavoriteCount() : 0);
-                    vo.setShareCount(stat.getShareCount() != null ? stat.getShareCount() : 0);
-                    vo.setViewCount(stat.getViewCount() != null ? stat.getViewCount() : 0);
-                    vo.setDownloadCount(stat.getDownloadCount() != null ? stat.getDownloadCount() : 0);
+                    vo.setLikeCount(like);
+                    vo.setFavoriteCount(fav);
+                    vo.setShareCount(share);
+                    vo.setViewCount(view);
+                    vo.setDownloadCount(download);
                     result.put(pictureId, vo);
                 } else {
                     // DB 中也无数据，初始化为零
@@ -365,7 +399,7 @@ public class CachedSocialServiceImpl implements SocialService {
     }
 
     /**
-     * 如果 Redis Hash 不存在，从 DB 初始化
+     * 如果 Redis Hash 不存在，从 DB 初始化（使用 putIfAbsent 防止覆盖并发 INCR）
      */
     private void initStatsHashIfNeeded(Long pictureId) {
         String statsKey = String.format(RedisKeyConstants.SOCIAL_STATS_KEY, pictureId);
@@ -375,31 +409,70 @@ public class CachedSocialServiceImpl implements SocialService {
         }
 
         PictureStatistics stat = pictureStatisticsMapper.selectById(pictureId);
+        int like = 0, fav = 0, share = 0, view = 0, download = 0;
         if (stat != null) {
-            Map<String, String> hash = new HashMap<>();
-            hash.put("likeCount", String.valueOf(stat.getLikeCount() != null ? stat.getLikeCount() : 0));
-            hash.put("favoriteCount", String.valueOf(stat.getFavoriteCount() != null ? stat.getFavoriteCount() : 0));
-            hash.put("shareCount", String.valueOf(stat.getShareCount() != null ? stat.getShareCount() : 0));
-            hash.put("viewCount", String.valueOf(stat.getViewCount() != null ? stat.getViewCount() : 0));
-            hash.put("downloadCount", String.valueOf(stat.getDownloadCount() != null ? stat.getDownloadCount() : 0));
-            stringRedisTemplate.opsForHash().putAll(statsKey, hash);
-        } else {
-            initStatsHash(pictureId, 0, 0, 0, 0, 0);
+            like = stat.getLikeCount() != null ? stat.getLikeCount() : 0;
+            fav = stat.getFavoriteCount() != null ? stat.getFavoriteCount() : 0;
+            share = stat.getShareCount() != null ? stat.getShareCount() : 0;
+            view = stat.getViewCount() != null ? stat.getViewCount() : 0;
+            download = stat.getDownloadCount() != null ? stat.getDownloadCount() : 0;
         }
+
+        stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "likeCount", String.valueOf(like));
+        stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "favoriteCount", String.valueOf(fav));
+        stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "shareCount", String.valueOf(share));
+        stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "viewCount", String.valueOf(view));
+        stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "downloadCount", String.valueOf(download));
+        int ttl = RedisKeyConstants.SOCIAL_STATS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATS_TTL_JITTER);
+        stringRedisTemplate.expire(statsKey, ttl, TimeUnit.SECONDS);
     }
 
     /**
-     * 初始化 Redis Hash 为零值
+     * 初始化 Redis Hash 为零值（使用 putIfAbsent 防止覆盖）
      */
     private void initStatsHash(Long pictureId, int like, int fav, int share, int view, int download) {
         String statsKey = String.format(RedisKeyConstants.SOCIAL_STATS_KEY, pictureId);
-        Map<String, String> hash = new HashMap<>();
-        hash.put("likeCount", String.valueOf(like));
-        hash.put("favoriteCount", String.valueOf(fav));
-        hash.put("shareCount", String.valueOf(share));
-        hash.put("viewCount", String.valueOf(view));
-        hash.put("downloadCount", String.valueOf(download));
-        stringRedisTemplate.opsForHash().putAll(statsKey, hash);
+        stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "likeCount", String.valueOf(like));
+        stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "favoriteCount", String.valueOf(fav));
+        stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "shareCount", String.valueOf(share));
+        stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "viewCount", String.valueOf(view));
+        stringRedisTemplate.opsForHash().putIfAbsent(statsKey, "downloadCount", String.valueOf(download));
+        int ttl = RedisKeyConstants.SOCIAL_STATS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATS_TTL_JITTER);
+        stringRedisTemplate.expire(statsKey, ttl, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Pipeline 批量 GET
+     */
+    private List<String> pipelineBatchGet(List<String> keys) {
+        List<Object> results = stringRedisTemplate.executePipelined(
+                (RedisCallback<Object>) connection -> {
+                    StringRedisConnection stringConn = (StringRedisConnection) connection;
+                    for (String key : keys) {
+                        stringConn.get(key);
+                    }
+                    return null;
+                }
+        );
+        return results.stream().map(obj -> obj != null ? obj.toString() : null)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Pipeline 批量 HGETALL
+     */
+    @SuppressWarnings("unchecked")
+    private List<Map<Object, Object>> pipelineBatchHGetAll(List<String> keys) {
+        List<Object> results = stringRedisTemplate.executePipelined(
+                (RedisCallback<Object>) connection -> {
+                    StringRedisConnection stringConn = (StringRedisConnection) connection;
+                    for (String key : keys) {
+                        stringConn.hGetAll(key);
+                    }
+                    return null;
+                }
+        );
+        return (List<Map<Object, Object>>) (List<?>) results;
     }
 
     /**
@@ -416,7 +489,9 @@ public class CachedSocialServiceImpl implements SocialService {
     }
 
     private int parseInt(Object val) {
-        if (val == null) return 0;
+        if (val == null) {
+            return 0;
+        }
         try {
             return Integer.parseInt(val.toString());
         } catch (NumberFormatException e) {
