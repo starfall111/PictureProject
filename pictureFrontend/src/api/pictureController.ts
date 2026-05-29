@@ -34,6 +34,228 @@ export async function queryPictureAdminUsingPost(
   );
 }
 
+/** recordDownloadCountCache POST /api/picture/cache/download/count/${param0} */
+export async function recordDownloadCountCacheUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.recordDownloadCountCacheUsingPOSTParams,
+  options?: { [key: string]: any }
+) {
+  const { pictureId: param0, ...queryParams } = params;
+  return request<API.BaseResponseBoolean_>(
+    `/api/picture/cache/download/count/${param0}`,
+    {
+      method: "POST",
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  );
+}
+
+/** toggleFavoriteCache POST /api/picture/cache/favorite/${param0} */
+export async function toggleFavoriteCacheUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.toggleFavoriteCacheUsingPOSTParams,
+  options?: { [key: string]: any }
+) {
+  const { pictureId: param0, ...queryParams } = params;
+  return request<API.BaseResponseToggleFavoriteVO_>(
+    `/api/picture/cache/favorite/${param0}`,
+    {
+      method: "POST",
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  );
+}
+
+/** batchFavoriteStatusCache POST /api/picture/cache/favorite/status */
+export async function batchFavoriteStatusCacheUsingPost(
+  body: API.BatchStatusQueryDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseMapLongBoolean_>(
+    "/api/picture/cache/favorite/status",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
+/** getUserFavoritedPicturesCache POST /api/picture/cache/favorited/user/${param0}/query */
+export async function getUserFavoritedPicturesCacheUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getUserFavoritedPicturesCacheUsingPOSTParams,
+  body: API.UserPictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  const { userId: param0, ...queryParams } = params;
+  return request<API.BaseResponsePagePictureBriefVO_>(
+    `/api/picture/cache/favorited/user/${param0}/query`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      params: { ...queryParams },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
+/** toggleLikeCache POST /api/picture/cache/like/${param0} */
+export async function toggleLikeCacheUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.toggleLikeCacheUsingPOSTParams,
+  options?: { [key: string]: any }
+) {
+  const { pictureId: param0, ...queryParams } = params;
+  return request<API.BaseResponseToggleLikeVO_>(
+    `/api/picture/cache/like/${param0}`,
+    {
+      method: "POST",
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  );
+}
+
+/** batchLikeStatusCache POST /api/picture/cache/like/status */
+export async function batchLikeStatusCacheUsingPost(
+  body: API.BatchStatusQueryDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseMapLongBoolean_>(
+    "/api/picture/cache/like/status",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
+/** getUserLikedPicturesCache POST /api/picture/cache/liked/user/${param0}/query */
+export async function getUserLikedPicturesCacheUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getUserLikedPicturesCacheUsingPOSTParams,
+  body: API.UserPictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  const { userId: param0, ...queryParams } = params;
+  return request<API.BaseResponsePagePictureBriefVO_>(
+    `/api/picture/cache/liked/user/${param0}/query`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      params: { ...queryParams },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
+/** recordShareCache POST /api/picture/cache/share/${param0} */
+export async function recordShareCacheUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.recordShareCacheUsingPOSTParams,
+  options?: { [key: string]: any }
+) {
+  const { pictureId: param0, ...queryParams } = params;
+  return request<API.BaseResponseBoolean_>(
+    `/api/picture/cache/share/${param0}`,
+    {
+      method: "POST",
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  );
+}
+
+/** getUserUploadedPicturesCache POST /api/picture/cache/uploaded/user/${param0}/query */
+export async function getUserUploadedPicturesCacheUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getUserUploadedPicturesCacheUsingPOSTParams,
+  body: API.UserPictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  const { userId: param0, ...queryParams } = params;
+  return request<API.BaseResponsePagePictureBriefVO_>(
+    `/api/picture/cache/uploaded/user/${param0}/query`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      params: { ...queryParams },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
+/** getPictureByIdUserCache GET /api/picture/cache/user/${param0} */
+export async function getPictureByIdUserCacheUsingGet(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getPictureByIdUserCacheUsingGETParams,
+  options?: { [key: string]: any }
+) {
+  const { id: param0, ...queryParams } = params;
+  return request<API.BaseResponsePictureVO_>(
+    `/api/picture/cache/user/${param0}`,
+    {
+      method: "GET",
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  );
+}
+
+/** queryPictureUserCache POST /api/picture/cache/user/query */
+export async function queryPictureUserCacheUsingPost(
+  body: API.PictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponsePagePictureVO_>(
+    "/api/picture/cache/user/query",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
+/** recordViewCache POST /api/picture/cache/view/${param0} */
+export async function recordViewCacheUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.recordViewCacheUsingPOSTParams,
+  options?: { [key: string]: any }
+) {
+  const { pictureId: param0, ...queryParams } = params;
+  return request<API.BaseResponseBoolean_>(
+    `/api/picture/cache/view/${param0}`,
+    {
+      method: "POST",
+      params: { ...queryParams },
+      ...(options || {}),
+    }
+  );
+}
+
 /** deletePicture DELETE /api/picture/delete */
 export async function deletePictureUsingDelete(
   body: API.DeleteRequest,
@@ -131,6 +353,28 @@ export async function batchFavoriteStatusUsingPost(
   );
 }
 
+/** getUserFavoritedPictures POST /api/picture/favorited/user/${param0}/query */
+export async function getUserFavoritedPicturesUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getUserFavoritedPicturesUsingPOSTParams,
+  body: API.UserPictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  const { userId: param0, ...queryParams } = params;
+  return request<API.BaseResponsePagePictureBriefVO_>(
+    `/api/picture/favorited/user/${param0}/query`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      params: { ...queryParams },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
 /** toggleLike POST /api/picture/like/${param0} */
 export async function toggleLikeUsingPost(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -158,6 +402,28 @@ export async function batchLikeStatusUsingPost(
     data: body,
     ...(options || {}),
   });
+}
+
+/** getUserLikedPictures POST /api/picture/liked/user/${param0}/query */
+export async function getUserLikedPicturesUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getUserLikedPicturesUsingPOSTParams,
+  body: API.UserPictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  const { userId: param0, ...queryParams } = params;
+  return request<API.BaseResponsePagePictureBriefVO_>(
+    `/api/picture/liked/user/${param0}/query`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      params: { ...queryParams },
+      data: body,
+      ...(options || {}),
+    }
+  );
 }
 
 /** reviewPicture POST /api/picture/review */

@@ -79,6 +79,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePagePictureBriefVO_ = {
+    code?: number;
+    data?: PagePictureBriefVO_;
+    message?: string;
+  };
+
   type BaseResponsePagePictureEntityVO_ = {
     code?: number;
     data?: PagePictureEntityVO_;
@@ -234,6 +240,11 @@ declare namespace API {
     id: number;
   };
 
+  type getPictureByIdUserCacheUsingGETParams = {
+    /** id */
+    id: number;
+  };
+
   type getPictureByIdUserUsingGETParams = {
     /** id */
     id: number;
@@ -254,7 +265,32 @@ declare namespace API {
     id: number;
   };
 
+  type getUserFavoritedPicturesCacheUsingPOSTParams = {
+    /** userId */
+    userId: number;
+  };
+
+  type getUserFavoritedPicturesUsingPOSTParams = {
+    /** userId */
+    userId: number;
+  };
+
   type getUserInfoUsingGETParams = {
+    /** id */
+    id: number;
+  };
+
+  type getUserLikedPicturesCacheUsingPOSTParams = {
+    /** userId */
+    userId: number;
+  };
+
+  type getUserLikedPicturesUsingPOSTParams = {
+    /** userId */
+    userId: number;
+  };
+
+  type getUserProfileCacheUsingGETParams = {
     /** id */
     id: number;
   };
@@ -262,6 +298,11 @@ declare namespace API {
   type getUserProfileUsingGETParams = {
     /** id */
     id: number;
+  };
+
+  type getUserUploadedPicturesCacheUsingPOSTParams = {
+    /** userId */
+    userId: number;
   };
 
   type ImageSearchResult = {
@@ -289,6 +330,14 @@ declare namespace API {
     current?: number;
     pages?: number;
     records?: Category[];
+    size?: number;
+    total?: number;
+  };
+
+  type PagePictureBriefVO_ = {
+    current?: number;
+    pages?: number;
+    records?: PictureBriefVO[];
     size?: number;
     total?: number;
   };
@@ -357,6 +406,24 @@ declare namespace API {
     updateTime?: string;
     url?: string;
     userId?: number;
+  };
+
+  type PictureBriefVO = {
+    categoryName?: string;
+    createTime?: string;
+    downloadCount?: number;
+    favoriteCount?: number;
+    favoriteTime?: string;
+    id?: number;
+    likeCount?: number;
+    likeTime?: string;
+    name?: string;
+    picHeight?: number;
+    picWidth?: number;
+    tags?: string[];
+    thumbnailUrl?: string;
+    url?: string;
+    viewCount?: number;
   };
 
   type PictureEditDTO = {
@@ -474,12 +541,27 @@ declare namespace API {
     userVO?: UserVO;
   };
 
+  type recordDownloadCountCacheUsingPOSTParams = {
+    /** pictureId */
+    pictureId: number;
+  };
+
   type recordDownloadCountUsingPOSTParams = {
     /** pictureId */
     pictureId: number;
   };
 
+  type recordShareCacheUsingPOSTParams = {
+    /** pictureId */
+    pictureId: number;
+  };
+
   type recordShareUsingPOSTParams = {
+    /** pictureId */
+    pictureId: number;
+  };
+
+  type recordViewCacheUsingPOSTParams = {
     /** pictureId */
     pictureId: number;
   };
@@ -604,6 +686,11 @@ declare namespace API {
     name?: string;
   };
 
+  type toggleFavoriteCacheUsingPOSTParams = {
+    /** pictureId */
+    pictureId: number;
+  };
+
   type toggleFavoriteUsingPOSTParams = {
     /** pictureId */
     pictureId: number;
@@ -612,6 +699,11 @@ declare namespace API {
   type ToggleFavoriteVO = {
     favoriteCount?: number;
     favorited?: boolean;
+  };
+
+  type toggleLikeCacheUsingPOSTParams = {
+    /** pictureId */
+    pictureId: number;
   };
 
   type toggleLikeUsingPOSTParams = {
@@ -672,6 +764,14 @@ declare namespace API {
     verityCode?: string;
   };
 
+  type UserPictureQueryDTO = {
+    category?: string;
+    current?: number;
+    pageSize?: number;
+    sortBy?: string;
+    tags?: string[];
+  };
+
   type UserProfileVO = {
     categories?: CategoryBriefVO[];
     createTime?: string;
@@ -683,6 +783,8 @@ declare namespace API {
     totalViews?: number;
     uploadCount?: number;
     userAvatar?: string;
+    userFavoriteCount?: number;
+    userLikeCount?: number;
     userName?: string;
     userProfile?: string;
     userRole?: string;

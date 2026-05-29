@@ -12,27 +12,27 @@
     <div class="profile-banner-right">
       <div class="profile-banner-stats">
         <div class="stat-item">
-          <span class="stat-value">{{ uploadCount }}</span>
+          <span class="stat-value">{{ formatCount(uploadCount) }}</span>
           <span class="stat-label">上传</span>
         </div>
         <div class="stat-item">
-          <span class="stat-value">{{ likeCount }}</span>
+          <span class="stat-value">{{ formatCount(likeCount) }}</span>
           <span class="stat-label">获赞</span>
         </div>
         <div class="stat-item">
-          <span class="stat-value">{{ favoriteCount }}</span>
+          <span class="stat-value">{{ formatCount(favoriteCount) }}</span>
           <span class="stat-label">收藏</span>
         </div>
         <div class="stat-item">
-          <span class="stat-value">{{ viewCount }}</span>
+          <span class="stat-value">{{ formatCount(viewCount) }}</span>
           <span class="stat-label">浏览</span>
         </div>
         <div class="stat-item">
-          <span class="stat-value">{{ shareCount }}</span>
+          <span class="stat-value">{{ formatCount(shareCount) }}</span>
           <span class="stat-label">分享</span>
         </div>
         <div class="stat-item">
-          <span class="stat-value">{{ downloadCount }}</span>
+          <span class="stat-value">{{ formatCount(downloadCount) }}</span>
           <span class="stat-label">下载</span>
         </div>
       </div>
@@ -49,6 +49,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatCount } from '@/utils/formatCount'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()

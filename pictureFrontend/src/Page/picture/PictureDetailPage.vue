@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { deletePictureUsingDelete, getPictureByIdUserUsingGet, toggleLikeUsingPost, toggleFavoriteUsingPost, recordShareUsingPost, recordViewUsingPost, recordDownloadCountUsingPost } from '@/api/pictureController';
+import { deletePictureUsingDelete, getPictureByIdUserCacheUsingGet, toggleLikeCacheUsingPost, toggleFavoriteCacheUsingPost, recordShareCacheUsingPost, recordViewCacheUsingPost, recordDownloadCountCacheUsingPost } from '@/api/pictureController';
 import router from '@/router';
 import { userLoginUserStore } from '@/stores/user';
 import { downloadImage } from '@/util/download';
@@ -66,7 +66,7 @@ const shareModalOpen = ref(false)
 // 获取图片详情
 const fetchPictureDetail = async () => {
   try {
-    const res = await getPictureByIdUserUsingGet({
+    const res = await getPictureByIdUserCacheUsingGet({
       id: props.id,
     })
     if (res.data.code === 0 && res.data.data) {
@@ -75,7 +75,7 @@ const fetchPictureDetail = async () => {
       detailIsFavorited.value = res.data.data.socialInfo?.isFavorited ?? false
       // 记录浏览量
       try {
-        await recordViewUsingPost({ pictureId: props.id })
+        await recordViewCacheUsingPost({ pictureId: props.id })
         if (picture.value.socialInfo) {
           picture.value.socialInfo.viewCount = (picture.value.socialInfo.viewCount ?? 0) + 1
         }
@@ -104,7 +104,7 @@ const canEdit = computed(() => {
 // 点赞
 const handleDetailLike = async () => {
   try {
-    const res = await toggleLikeUsingPost({ pictureId: props.id })
+    const res = await toggleLikeCacheUsingPost({ pictureId: props.id })
     if (res.data.code === 0 && res.data.data) {
       detailIsLiked.value = res.data.data.liked ?? false
       if (picture.value.socialInfo) {
@@ -121,7 +121,7 @@ const handleDetailLike = async () => {
 // 收藏
 const handleDetailFavorite = async () => {
   try {
-    const res = await toggleFavoriteUsingPost({ pictureId: props.id })
+    const res = await toggleFavoriteCacheUsingPost({ pictureId: props.id })
     if (res.data.code === 0 && res.data.data) {
       detailIsFavorited.value = res.data.data.favorited ?? false
       if (picture.value.socialInfo) {
@@ -138,7 +138,7 @@ const handleDetailFavorite = async () => {
 // 分享
 const handleDetailShare = async () => {
   try {
-    await recordShareUsingPost({ pictureId: props.id })
+    await recordShareCacheUsingPost({ pictureId: props.id })
     if (picture.value.socialInfo) {
       picture.value.socialInfo.shareCount = (picture.value.socialInfo.shareCount ?? 0) + 1
     }
@@ -181,7 +181,7 @@ const doDownload = async () => {
   downloadImage(picture.value.originUrl)
   // 记录下载量
   try {
-    await recordDownloadCountUsingPost({ pictureId: props.id })
+    await recordDownloadCountCacheUsingPost({ pictureId: props.id })
     if (picture.value.socialInfo) {
       picture.value.socialInfo.downloadCount = (picture.value.socialInfo.downloadCount ?? 0) + 1
     }
