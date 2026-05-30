@@ -25,4 +25,28 @@
         userAvatar,userProfile,userRole,editTime,createTime,
         updateTime,isDelete
     </sql>
+
+    <!-- 按条件筛选用户ID（系统消息定向发送） -->
+    <select id="selectIdsByFilter" resultType="java.lang.Long">
+        SELECT u.id
+        FROM user u
+        WHERE u.isDelete = 0
+        <if test="filterRole != null and filterRole != ''">
+            AND u.userRole = #{filterRole}
+        </if>
+        <if test="filterSpaceLevel != null">
+            AND EXISTS (
+                SELECT 1 FROM space s
+                WHERE s.userId = u.id
+                  AND s.spaceLevel = #{filterSpaceLevel}
+                  AND s.isDelete = 0
+            )
+        </if>
+        <if test="filterRegisterStart != null">
+            AND u.createTime &gt;= #{filterRegisterStart}
+        </if>
+        <if test="filterRegisterEnd != null">
+            AND u.createTime &lt;= #{filterRegisterEnd}
+        </if>
+    </select>
 </mapper>

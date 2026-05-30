@@ -97,4 +97,24 @@ public class RedisKeyConstants {
      * 用户个人信息缓存
      */
     public static final String USER_INFO_KEY = "user:info:%d";
+
+    // ==================== 通知功能 Key ====================
+
+    /**
+     * 通知未读计数缓存
+     * Value: STRING count
+     */
+    public static final String NOTIFICATION_UNREAD_KEY = "notify:unread:%d";
+
+    /**
+     * 通知未读计数 TTL（秒）= 30 分钟
+     */
+    public static final int NOTIFICATION_UNREAD_TTL = 30 * 60;
+
+    // ==================== 系统消息 Key ====================
+
+    /**
+     * 系统消息发布分布式锁
+     */
+    public static final String SYSTEM_MSG_LOCK_KEY = "lock:sysmsg:publish:%d";
 }

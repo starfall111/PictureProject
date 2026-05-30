@@ -24,6 +24,7 @@
         <result property="picWidth" column="picWidth"/>
         <result property="picHeight" column="picHeight"/>
         <result property="categoryName" column="categoryName"/>
+        <result property="userId" column="userId"/>
         <result property="tags" column="tags"/>
         <result property="createTime" column="createTime"/>
         <result property="likeCount" column="likeCount"/>
@@ -43,6 +44,7 @@
             p.picWidth,
             p.picHeight,
             c.name AS categoryName,
+            p.userId,
             p.tags,
             p.createTime,
             ps.likeCount,

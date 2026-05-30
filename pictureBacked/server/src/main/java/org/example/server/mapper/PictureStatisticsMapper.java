@@ -11,6 +11,11 @@ import org.example.pojo.entity.PictureStatistics;
  */
 public interface PictureStatisticsMapper extends BaseMapper<PictureStatistics> {
 
+    /**
+     * 原子 UPSERT：存在则更新，不存在则插入
+     */
+    @Override
+    boolean insertOrUpdate(PictureStatistics stat);
 }
 
 

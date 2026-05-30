@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   redis:
     host: localhost
     port: 6379
@@ -10,7 +14,7 @@ spring:
     username: root
     password: 125801
   session:
-    timeout: 30m                    # Session 过期时间
+    timeout: 2592000                    # Session 过期时间
     store-type: redis               # 存储类型
     redis:
         namespace: "myapp:session"    # Redis key 前缀
@@ -42,6 +46,7 @@ mybatis-plus:
       logic-delete-field: isDelete # 逻辑删除字段
       logic-delete-value: 1 # 逻辑已删除（默认为1）
       logic-not-delete-value: 0 # 逻辑未删除（默认为0）
+  mapper-locations: classpath*:mapper/*.xml
 # 接口文档配置
 knife4j:
   enable: true
@@ -59,6 +64,7 @@ aliyun:
     endpoint: https://oss-cn-beijing.aliyuncs.com
     bucketName: zjx-project
     region: cn-beijing
+    cdn: zoustarfall.xin
   sms:
     sign-name: 速通互联验证服务
     region: cn-shanghai
@@ -70,3 +76,14 @@ server:
   port: 4040
   servlet:
     context-path: /api
+    session:
+      cookie:
+        max-age: 2592000
+
+pexels:
+  api-key: ${PEXELS_API_KEY:}
+
+baidu:
+  translate:
+    appid: ${BAIDU_TRANSLATE_APPID:}
+    secret: ${BAIDU_TRANSLATE_SECRET:}

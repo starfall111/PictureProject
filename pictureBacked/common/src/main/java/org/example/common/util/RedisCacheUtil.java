@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /**
@@ -57,6 +58,18 @@ public class RedisCacheUtil {
      */
     private static final int SPIN_RETRIES = 3;
 
+    // ==================== 缓存监控计数器 ====================
+
+    private final AtomicLong hitCount = new AtomicLong();
+    private final AtomicLong missCount = new AtomicLong();
+    private final AtomicLong lockFailCount = new AtomicLong();
+
+    /**
+     * 定时输出缓存统计日志（每 5 分钟）
+     */
+    // 使用 @Scheduled 需要依赖 Spring 的调度模块，这里用简单的方式
+    private long lastLogTime = System.currentTimeMillis();
+
     /**
      * 带分布式锁的缓存读取（防击穿 + 防穿透）
      *
@@ -71,8 +84,11 @@ public class RedisCacheUtil {
         // 1. 查缓存
         String cacheValue = ops.get(cacheKey);
         if (cacheValue != null) {
+            hitCount.incrementAndGet();
             return NULL_MARKER.equals(cacheValue) ? null : cacheValue;
         }
+        missCount.incrementAndGet();
+        maybeLogStats();
 
         // 2. 尝试获取分布式锁（使用 UUID 作为锁值，防止误解锁）
         String lockKey = "lock:" + cacheKey;
@@ -107,6 +123,7 @@ public class RedisCacheUtil {
             }
         } else {
             // 未获取锁，自旋重试等待锁持有者写入缓存
+            lockFailCount.incrementAndGet();
             for (int i = 0; i < SPIN_RETRIES; i++) {
                 try {
                     Thread.sleep(LOCK_WAIT_MS);
@@ -137,5 +154,23 @@ public class RedisCacheUtil {
         if (!keys.isEmpty()) {
             stringRedisTemplate.delete(keys);
         }
+    }
+
+    /**
+     * 每 5 分钟输出一次缓存统计日志
+     * TODO: 上线前接入 Spring Boot Actuator + Prometheus，替换此简易方案
+     */
+    private void maybeLogStats() {
+        long now = System.currentTimeMillis();
+        if (now - lastLogTime < 300_000) {
+            return;
+        }
+        lastLogTime = now;
+        long hit = hitCount.get();
+        long miss = missCount.get();
+        long lockFail = lockFailCount.get();
+        long total = hit + miss;
+        String hitRate = total > 0 ? String.format("%.1f%%", hit * 100.0 / total) : "N/A";
+        log.info("[Cache Stats] hit={}, miss={}, hitRate={}, lockFail={}", hit, miss, hitRate, lockFail);
     }
 }

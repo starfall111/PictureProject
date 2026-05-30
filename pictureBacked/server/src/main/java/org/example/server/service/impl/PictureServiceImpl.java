@@ -471,10 +471,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             if (categoryId != null && categoryMap.containsKey(categoryId)) {
                 pictureVO.setCategoryName(categoryMap.get(categoryId).getName());
             }
-            // 填充社交数据（仅公共图库图片）
-            fillSocialData(pictureVOList);
 
         });
+        // 填充社交数据（仅公共图库图片）
+        fillSocialData(pictureVOList);
         result = result.setRecords(pictureVOList);
 
 //            return JSONUtil.toJsonStr(result);

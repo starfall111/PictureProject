@@ -57,7 +57,9 @@ import java.util.stream.Collectors;
  * @description 针对表【user(用户)】的数据库操作Service实现
  * @createDate 2026-05-11 20:54:16
  */
-
+//todo 添加密码修改功能
+// 在用户绑定手机号时 如果是初次绑定，需要调用自动过审 异步执行
+// 考虑在修改用户信息时删除redis中的session中的用户信息，并将最新的用户信息回填redis
 @Service("dbUserService")
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {

@@ -4,6 +4,8 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -51,6 +53,9 @@ import java.util.stream.Collectors;
  *
  * @author Zou
  */
+//todo 用户需要看见自己当前未被审批通过的图片列表，
+// 并且在UserService的绑定手机号功能中，添加自动过审功能，自动改过审最新的100张图片
+// 考虑新用户拥有几次自动过审的图片机制（需要防止刷号，比如前后端关闭账号注册功能）
 @Slf4j
 @Service("cachedPictureService")
 public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
@@ -85,12 +90,16 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
 
         // 空间图片 → 不缓存（涉及权限校验）
         if (ObjUtil.isNotEmpty(spaceId)) {
-            return doQueryPictureListUser(queryDTO);
+            Page<PictureVO> result = doQueryPictureListUser(queryDTO);
+            fillSocialData(result.getRecords());
+            return result;
         }
 
         // 深度分页 → 不缓存
         if (queryDTO.getCurrent() > 10) {
-            return doQueryPictureListUser(queryDTO);
+            Page<PictureVO> result = doQueryPictureListUser(queryDTO);
+            fillSocialData(result.getRecords());
+            return result;
         }
 
         // 判断是否为热门查询
@@ -115,7 +124,18 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         if (json == null) {
             return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
         }
-        return JSONUtil.toBean(json, Page.class);
+        // 手动反序列化，避免 Page<PictureVO> 泛型擦除导致 records 类型丢失
+        JSONObject jsonObj = JSONUtil.parseObj(json);
+        Page<PictureVO> result = new Page<>();
+        result.setCurrent(jsonObj.getLong("current"));
+        result.setSize(jsonObj.getLong("size"));
+        result.setTotal(jsonObj.getLong("total"));
+        JSONArray recordsArr = jsonObj.getJSONArray("records");
+        if (recordsArr != null) {
+            result.setRecords(recordsArr.toList(PictureVO.class));
+        }
+        fillSocialData(result.getRecords());
+        return result;
     }
 
     @Override
@@ -377,9 +397,6 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
                 pictureVO.setCategoryName(categoryMap.get(categoryId).getName());
             }
         });
-
-        // 填充社交数据
-        fillSocialData(pictureVOList);
 
         result = result.setRecords(pictureVOList);
         return result;

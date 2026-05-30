@@ -11,20 +11,19 @@ import org.example.pojo.entity.PictureBrief;
 import org.example.pojo.entity.PictureFavorite;
 import org.example.pojo.entity.PictureLike;
 import org.example.pojo.entity.PictureStatistics;
+import org.example.pojo.entity.User;
 import org.example.pojo.vo.PictureBriefVO;
 import org.example.pojo.vo.PictureStatisticsVO;
 import org.example.pojo.vo.ToggleFavoriteVO;
 import org.example.pojo.vo.ToggleLikeVO;
+import org.example.pojo.vo.UserVO;
 import org.example.server.mapper.*;
 import org.example.server.service.SocialService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -48,6 +47,9 @@ public class SocialServiceImpl implements SocialService {
 
     @Resource
     private PictureStatisticsMapper pictureStatisticsMapper;
+
+    @Resource
+    private UserMapper userMapper;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -244,6 +246,33 @@ public class SocialServiceImpl implements SocialService {
 
     // ==================== 私有方法 ====================
 
+    /**
+     * 批量填充图片上传者用户信息
+     */
+    private void fillUserInfo(List<PictureBriefVO> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        Set<Long> userIds = records.stream()
+                .map(PictureBriefVO::getUserId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+        if (userIds.isEmpty()) {
+            return;
+        }
+        Map<Long, User> userMap = userMapper.selectBatchIds(userIds)
+                .stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+        for (PictureBriefVO vo : records) {
+            User user = userMap.get(vo.getUserId());
+            if (user != null) {
+                UserVO userVO = new UserVO();
+                cn.hutool.core.bean.BeanUtil.copyProperties(user, userVO);
+                vo.setUserVO(userVO);
+            }
+        }
+    }
+
     private void validPicturePublic(Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR, "图片 id 不合法");
         Picture picture = pictureMapper.selectById(pictureId);
@@ -336,6 +365,9 @@ public class SocialServiceImpl implements SocialService {
         // PictureBrief → PictureBriefVO（String tags → List<String> tags）
         List<PictureBriefVO> records = briefList.stream().map(PictureBriefVO::objToVO).collect(Collectors.toList());
 
+        // 批量填充用户信息
+        fillUserInfo(records);
+
         // 查询总数
         Long total = pictureLikeMapper.countUserLikedPictures(userId, queryDTO);
 
@@ -359,6 +391,9 @@ public class SocialServiceImpl implements SocialService {
         List<PictureBrief> briefList = pictureFavoriteMapper.selectUserFavoritedPictures(userId, queryDTO, offset, pageSize);
         // PictureBrief → PictureBriefVO（String tags → List<String> tags）
         List<PictureBriefVO> records = briefList.stream().map(PictureBriefVO::objToVO).collect(Collectors.toList());
+
+        // 批量填充用户信息
+        fillUserInfo(records);
 
         // 查询总数
         Long total = pictureFavoriteMapper.countUserFavoritedPictures(userId, queryDTO);
@@ -395,6 +430,7 @@ public class SocialServiceImpl implements SocialService {
                     vo.setPicWidth(picture.getPicWidth());
                     vo.setPicHeight(picture.getPicHeight());
                     vo.setCreateTime(picture.getCreateTime());
+                    vo.setUserId(picture.getUserId());
                     if (picture.getTags() != null) {
                         vo.setTags(cn.hutool.json.JSONUtil.toList(picture.getTags(), String.class));
                     }
@@ -404,6 +440,10 @@ public class SocialServiceImpl implements SocialService {
 
         Page<PictureBriefVO> page = new Page<>(current, pageSize, picturePage.getTotal());
         page.setRecords(records);
+
+        // 批量填充用户信息
+        fillUserInfo(records);
+
         return page;
     }
 }

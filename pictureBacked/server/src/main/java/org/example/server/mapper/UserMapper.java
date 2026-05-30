@@ -1,7 +1,11 @@
 package org.example.server.mapper;
 
+import org.apache.ibatis.annotations.Param;
 import org.example.pojo.entity.User;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
+import java.util.Date;
+import java.util.List;
 
 /**
 * @author Zou
@@ -11,6 +15,13 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface UserMapper extends BaseMapper<User> {
 
+    /**
+     * 按条件筛选用户ID（系统消息定向发送）
+     */
+    List<Long> selectIdsByFilter(@Param("filterRole") String filterRole,
+                                 @Param("filterSpaceLevel") Integer filterSpaceLevel,
+                                 @Param("filterRegisterStart") Date filterRegisterStart,
+                                 @Param("filterRegisterEnd") Date filterRegisterEnd);
 }
 
 

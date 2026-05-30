@@ -34,12 +34,14 @@ public class PictureStatisticsSyncScheduled {
 
     /**
      * 每 5 分钟执行一次
+     * TODO: 上线前确认 Redis 已开启 AOF 持久化（appendonly yes + appendfsync everysec）
+     *       防止 Redis 重启导致未同步的 view/download/share 计数永久丢失
      */
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRate = 60000 * 5)
     public void syncStatistics() {
         // 分布式锁防多实例重复执行
         Boolean locked = stringRedisTemplate.opsForValue()
-                .setIfAbsent(RedisKeyConstants.STATS_SYNC_LOCK_KEY, "1", 240, TimeUnit.SECONDS);
+                .setIfAbsent(RedisKeyConstants.STATS_SYNC_LOCK_KEY, "1", 50, TimeUnit.SECONDS);
         if (!Boolean.TRUE.equals(locked)) {
             log.debug("统计同步任务已在其他实例执行，跳过");
             return;
@@ -85,11 +87,8 @@ public class PictureStatisticsSyncScheduled {
                 stat.setViewCount(viewCount != null ? Integer.parseInt(viewCount) : 0);
                 stat.setDownloadCount(downloadCount != null ? Integer.parseInt(downloadCount) : 0);
 
-                // UPSERT：先尝试 update，失败则 insert
-                int updated = pictureStatisticsMapper.updateById(stat);
-                if (updated == 0) {
-                    pictureStatisticsMapper.insert(stat);
-                }
+                // 原子 UPSERT：INSERT ON DUPLICATE KEY UPDATE 消除竞态
+                pictureStatisticsMapper.insertOrUpdate(stat);
 
                 // 同步成功，从脏集合移除
                 stringRedisTemplate.opsForSet().remove(RedisKeyConstants.SOCIAL_STATS_DIRTY_KEY, pictureIdStr);
