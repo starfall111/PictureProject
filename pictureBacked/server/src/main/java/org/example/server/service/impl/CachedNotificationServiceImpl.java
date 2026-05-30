@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Zou
  */
-// todo 增加用户在注册时的系统消息（手机号、邮箱注册需要附带初始密码 123456 并提醒用户修改密码） 用户上传图片审批通过系统通知（单次、批量）
 @Slf4j
 @Service("cachedNotificationService")
 public class CachedNotificationServiceImpl implements NotificationService {

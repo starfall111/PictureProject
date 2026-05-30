@@ -53,9 +53,6 @@ import java.util.stream.Collectors;
  *
  * @author Zou
  */
-//todo 用户需要看见自己当前未被审批通过的图片列表，
-// 并且在UserService的绑定手机号功能中，添加自动过审功能，自动改过审最新的100张图片
-// 考虑新用户拥有几次自动过审的图片机制（需要防止刷号，比如前后端关闭账号注册功能）
 @Slf4j
 @Service("cachedPictureService")
 public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
@@ -242,6 +239,21 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
     }
 
     @Override
+    public Page<PictureVO> queryPendingPictures(PictureQueryDTO queryDTO) {
+        // 待审批列表直接查 DB，不缓存
+        return dbPictureService.queryPendingPictures(queryDTO);
+    }
+
+    @Override
+    public int autoApprovePicturesByBindPhone(Long userId) {
+        int count = dbPictureService.autoApprovePicturesByBindPhone(userId);
+        if (count > 0) {
+            invalidateAllQueryCache();
+        }
+        return count;
+    }
+
+    @Override
     public void pictureReview(PictureReviewDTO pictureReviewDTO) {
         dbPictureService.pictureReview(pictureReviewDTO);
         invalidateDetailCache(pictureReviewDTO.getId());
@@ -318,31 +330,43 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
      * 构建查询 MD5 Key
      */
     private String buildQueryMd5(PictureQueryDTO queryDTO, boolean isHot) {
-        String raw;
-        if (isHot) {
-            // 热门查询：精确参数
-            raw = String.format("cat=%s|tags=%s|uid=%s|rs=%s|cur=%d|ps=%d",
-                    queryDTO.getCategoryId(),
-                    queryDTO.getTags(),
-                    queryDTO.getUserId(),
-                    queryDTO.getReviewStatus(),
-                    queryDTO.getCurrent(),
-                    queryDTO.getPageSize());
-        } else {
-            // 普通查询：宽松参数
-            List<String> tags = queryDTO.getTags();
-            String tagsPart = "";
-            if (tags != null && !tags.isEmpty()) {
-                tagsPart = tags.stream().limit(3).sorted().collect(Collectors.joining(","));
-            }
-            raw = String.format("cat=%s|rs=%s|tags=%s|cur=%d|ps=%d",
-                    queryDTO.getCategoryId(),
-                    queryDTO.getReviewStatus(),
-                    tagsPart,
-                    queryDTO.getCurrent(),
-                    queryDTO.getPageSize());
+        List<String> tags = queryDTO.getTags();
+        String tagsPart = "";
+        if (tags != null && !tags.isEmpty()) {
+            tagsPart = tags.stream().sorted().collect(Collectors.joining(","));
         }
+        // 包含所有影响查询结果的参数，防止缓存串数据
+        String raw = String.format(
+                "cat=%s|tags=%s|uid=%s|rs=%s|sid=%s|ns=%s|" +
+                "search=%s|name=%s|intro=%s|sf=%s|so=%s|" +
+                "psize=%s|pw=%s|ph=%s|pscale=%s|" +
+                "set=%s|eet=%s|cur=%d|ps=%d",
+                queryDTO.getCategoryId(),
+                tagsPart,
+                queryDTO.getUserId(),
+                queryDTO.getReviewStatus(),
+                queryDTO.getSpaceId(),
+                queryDTO.getNullSpaceId(),
+                truncate(queryDTO.getSearchText(), 100),
+                truncate(queryDTO.getName(), 100),
+                truncate(queryDTO.getIntroduction(), 100),
+                queryDTO.getSortField(),
+                queryDTO.getSortOrder(),
+                queryDTO.getPicSize(),
+                queryDTO.getPicWidth(),
+                queryDTO.getPicHeight(),
+                queryDTO.getPicScale(),
+                queryDTO.getStartEditTime(),
+                queryDTO.getEndEditTime(),
+                queryDTO.getCurrent(),
+                queryDTO.getPageSize());
         return DigestUtils.md5DigestAsHex(raw.getBytes());
+    }
+
+    /** 截断过长字符串防止缓存 key 过大 */
+    private static String truncate(String s, int maxLen) {
+        if (s == null) return null;
+        return s.length() <= maxLen ? s : s.substring(0, maxLen);
     }
 
     /**
@@ -474,11 +498,17 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
      */
     private static class PictureServiceImplHelper {
         static com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Picture> getQueryWrapper(PictureQueryDTO pictureQueryDTO) {
+            // 输入校验：防 DoS
+            List<String> tags = pictureQueryDTO.getTags();
+            ThrowUtils.throwIf(tags != null && tags.size() > 20, ErrorCode.PARAMS_ERROR, "标签数量不能超过20个");
+            String searchText = pictureQueryDTO.getSearchText();
+            ThrowUtils.throwIf(StrUtil.isNotBlank(searchText) && searchText.length() > 200,
+                    ErrorCode.PARAMS_ERROR, "搜索文本不能超过200个字符");
+
             Long id = pictureQueryDTO.getId();
             String name = pictureQueryDTO.getName();
             String introduction = pictureQueryDTO.getIntroduction();
             Long categoryId = pictureQueryDTO.getCategoryId();
-            List<String> tags = pictureQueryDTO.getTags();
             Long picSize = pictureQueryDTO.getPicSize();
             Integer picWidth = pictureQueryDTO.getPicWidth();
             Integer picHeight = pictureQueryDTO.getPicHeight();
@@ -486,7 +516,6 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
             Long userId = pictureQueryDTO.getUserId();
             Long spaceId = pictureQueryDTO.getSpaceId();
             Boolean nullSpaceId = pictureQueryDTO.getNullSpaceId();
-            String searchText = pictureQueryDTO.getSearchText();
             Integer reviewStatus = pictureQueryDTO.getReviewStatus();
             Date startEditTime = pictureQueryDTO.getStartEditTime();
             Date endEditTime = pictureQueryDTO.getEndEditTime();

@@ -405,7 +405,6 @@ public class CachedSocialServiceImpl implements SocialService {
         return result;
     }
 
-    // todo 这三个方法获取的社交信息需要额外封装，和获取图片列表一样的方式，缓存中只存储图片信息，但是容易变化的社交信息需要额外通过redis其封装
     /**
      * 获取指定用户点赞图片列表
      * @param userId   目标用户 id
@@ -420,13 +419,18 @@ public class CachedSocialServiceImpl implements SocialService {
 
         String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
             Page<PictureBriefVO> result = dbSocialService.getUserLikedPictures(userId, queryDTO);
+            // 缓存前移除社交统计，只存图片基本信息
+            stripSocialStats(result.getRecords());
             return JSONUtil.toJsonStr(result);
         });
 
         if (json == null) {
             return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
         }
-        return deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        Page<PictureBriefVO> page = deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        // 反序列化后通过 batchStatistics 实时填充社交数据
+        fillSocialStats(page.getRecords());
+        return page;
     }
 
     /**
@@ -443,13 +447,18 @@ public class CachedSocialServiceImpl implements SocialService {
 
         String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
             Page<PictureBriefVO> result = dbSocialService.getUserFavoritedPictures(userId, queryDTO);
+            // 缓存前移除社交统计，只存图片基本信息
+            stripSocialStats(result.getRecords());
             return JSONUtil.toJsonStr(result);
         });
 
         if (json == null) {
             return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
         }
-        return deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        Page<PictureBriefVO> page = deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        // 反序列化后通过 batchStatistics 实时填充社交数据
+        fillSocialStats(page.getRecords());
+        return page;
     }
 
     /**
@@ -466,13 +475,18 @@ public class CachedSocialServiceImpl implements SocialService {
 
         String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
             Page<PictureBriefVO> result = dbSocialService.getUserUploadedPictures(userId, queryDTO);
+            // 缓存前移除社交统计，只存图片基本信息
+            stripSocialStats(result.getRecords());
             return JSONUtil.toJsonStr(result);
         });
 
         if (json == null) {
             return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
         }
-        return deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        Page<PictureBriefVO> page = deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        // 反序列化后通过 batchStatistics 实时填充社交数据
+        fillSocialStats(page.getRecords());
+        return page;
     }
 
     // ==================== 私有方法 ====================
@@ -657,5 +671,40 @@ public class CachedSocialServiceImpl implements SocialService {
         vo.setViewCount(0);
         vo.setDownloadCount(0);
         return vo;
+    }
+
+    /**
+     * 缓存前移除社交统计（缓存只存图片基本信息）
+     */
+    private void stripSocialStats(List<PictureBriefVO> records) {
+        if (records == null) {
+            return;
+        }
+        for (PictureBriefVO vo : records) {
+            vo.setLikeCount(null);
+            vo.setFavoriteCount(null);
+            vo.setViewCount(null);
+            vo.setDownloadCount(null);
+        }
+    }
+
+    /**
+     * 反序列化后通过 batchStatistics 实时填充社交统计
+     */
+    private void fillSocialStats(List<PictureBriefVO> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        List<Long> pictureIds = records.stream()
+                .map(PictureBriefVO::getId)
+                .collect(Collectors.toList());
+        Map<Long, PictureStatisticsVO> statsMap = batchStatistics(pictureIds);
+        for (PictureBriefVO vo : records) {
+            PictureStatisticsVO stats = statsMap.getOrDefault(vo.getId(), defaultStats());
+            vo.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
+            vo.setFavoriteCount(stats.getFavoriteCount() != null ? stats.getFavoriteCount() : 0);
+            vo.setViewCount(stats.getViewCount() != null ? stats.getViewCount() : 0);
+            vo.setDownloadCount(stats.getDownloadCount() != null ? stats.getDownloadCount() : 0);
+        }
     }
 }

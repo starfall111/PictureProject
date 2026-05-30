@@ -38,7 +38,7 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
 
     @Override
     public boolean saveBatch(List<Notification> entities) {
-        return false;
+        return super.saveBatch(entities);
     }
 
     @Override

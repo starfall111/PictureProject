@@ -111,10 +111,87 @@ public class RedisKeyConstants {
      */
     public static final int NOTIFICATION_UNREAD_TTL = 30 * 60;
 
+    // ==================== 限流 Key（滑动窗口） ====================
+
+    /**
+     * 通用限流 key 前缀
+     * 格式: rate_limit:{resource}:{key}
+     * 使用 RateLimitUtil 进行原子操作
+     */
+    public static final String RATE_LIMIT_KEY_PREFIX = "rate_limit";
+
+    /** 登录限流资源名 */
+    public static final String RATE_LIMIT_RESOURCE_LOGIN = "login";
+
+    /** 登录限流窗口（秒）= 5 分钟 */
+    public static final int LOGIN_RATE_LIMIT_WINDOW = 5 * 60;
+
+    /** 登录限流最大次数 */
+    public static final int LOGIN_RATE_LIMIT_MAX = 5;
+
+    /** 登录锁定窗口（秒）= 30 分钟（连续触发限流后，窗口变大） */
+    public static final int LOGIN_LOCK_WINDOW = 30 * 60;
+
     // ==================== 系统消息 Key ====================
 
     /**
      * 系统消息发布分布式锁
      */
     public static final String SYSTEM_MSG_LOCK_KEY = "lock:sysmsg:publish:%d";
+
+    // ==================== 推荐功能 Key ====================
+
+    /**
+     * 全局热度 ZSET
+     * Value: ZSET member=pictureId, score=HotScore
+     */
+    public static final String REC_HOT_ZSET_KEY = "rec:hot:zset";
+
+    /**
+     * 分类热度 ZSET
+     * Value: ZSET member=pictureId, score=HotScore
+     */
+    public static final String REC_HOT_CAT_ZSET_KEY = "rec:hot:cat:%d";
+
+    /**
+     * 用户偏好画像缓存
+     * Value: STRING (JSON)
+     */
+    public static final String REC_PREF_KEY = "rec:pref:%d";
+
+    /**
+     * 推荐结果缓存
+     * Value: STRING (JSON)
+     */
+    public static final String REC_RESULT_KEY = "rec:result:%s:%s:%d";
+
+    /**
+     * 热度评分计算分布式锁
+     */
+    public static final String LOCK_REC_SCORE_KEY = "lock:rec:score";
+
+    /**
+     * 用户偏好计算分布式锁
+     */
+    public static final String LOCK_REC_PREF_KEY = "lock:rec:pref:%d";
+
+    // ==================== 推荐功能 TTL ====================
+
+    /** 热度 ZSET TTL（秒）= 2 天 */
+    public static final int REC_HOT_ZSET_TTL = 2 * 24 * 3600;
+
+    /** 推荐结果缓存 TTL 基础时间（秒）= 10 分钟 */
+    public static final int REC_RESULT_TTL_BASE = 10 * 60;
+
+    /** 推荐结果缓存 TTL 随机抖动上限（秒）= 5 分钟 */
+    public static final int REC_RESULT_TTL_JITTER = 5 * 60;
+
+    /** 用户偏好缓存 TTL（秒）= 24 小时 */
+    public static final int REC_PREF_TTL = 24 * 3600;
+
+    /**
+     * 热度评分待重算 pictureId 集合（脏集合）
+     * Type: SET
+     */
+    public static final String REC_HOT_DIRTY_KEY = "rec:hot:dirty";
 }

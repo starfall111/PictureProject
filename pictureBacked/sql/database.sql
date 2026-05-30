@@ -71,6 +71,13 @@ ALTER TABLE picture
 -- 创建索引
 CREATE INDEX idx_spaceId ON picture (spaceId);
 
+-- 添加热度分数字段（推荐系统持久化）
+ALTER TABLE picture
+    ADD COLUMN hotScore DOUBLE DEFAULT 0 NOT NULL COMMENT '热度分数（推荐算法计算）';
+
+-- 创建热度分数索引（热度降级查询）
+CREATE INDEX idx_hotScore ON picture (hotScore);
+
 
 create table if not exists category
 (
@@ -151,6 +158,8 @@ CREATE TABLE IF NOT EXISTS picture_statistics
     likeCount     INT DEFAULT 0,
     favoriteCount INT DEFAULT 0,
     shareCount    INT DEFAULT 0,
+    viewCount     int default 0 null,
+    downloadCount int default 0 null,
     KEY idx_like_count (likeCount),
     KEY idx_favorite_count (favoriteCount)
 ) COMMENT '图片统计' COLLATE = utf8mb4_unicode_ci;

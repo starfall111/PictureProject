@@ -62,15 +62,17 @@ public class PictureController {
     /**
      * 图片上传
      */
-//    @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
     @PostMapping("/upload")
     public BaseResponse<PictureVO> upload(
             @RequestParam("files") MultipartFile file,
             FileDTO fileDTO) throws Exception {
+        //认证检查
+        User user = UserContext.get();
+        ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.NOT_LOGIN_ERROR);
         //文件判空
         ThrowUtils.throwIf(ObjUtil.isEmpty(file), ErrorCode.PARAMS_ERROR, "文件不能为空");
 
-        Picture picture = pictureService.upload(file, fileDTO);
+        Picture picture = cachedPictureService.upload(file, fileDTO);
 
         PictureVO pictureVO = new PictureVO();
         BeanUtil.copyProperties(picture, pictureVO);
@@ -80,10 +82,13 @@ public class PictureController {
 
     @PostMapping("/upload/url")
     public BaseResponse<PictureVO> upload(@RequestBody FileDTO fileDTO) throws Exception {
+        //认证检查
+        User user = UserContext.get();
+        ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.NOT_LOGIN_ERROR);
         //文件判空
         ThrowUtils.throwIf(ObjUtil.isEmpty(fileDTO), ErrorCode.PARAMS_ERROR);
 
-        Picture picture = pictureService.upload(fileDTO.getFileUrl(), fileDTO);
+        Picture picture = cachedPictureService.upload(fileDTO.getFileUrl(), fileDTO);
 
         PictureVO pictureVO = new PictureVO();
         BeanUtil.copyProperties(picture, pictureVO);
@@ -96,12 +101,15 @@ public class PictureController {
      */
     @GetMapping("/download")
     public void download(Long id, HttpServletResponse response) throws IOException, ClientException {
+        //认证检查
+        User user = UserContext.get();
+        ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
-        Picture picture = pictureService.getById(id);
+        Picture picture = cachedPictureService.getById(id);
         ThrowUtils.throwIf(ObjUtil.isEmpty(picture), ErrorCode.PARAMS_ERROR);
         try {
             //字节流
-            byte[] result = pictureService.download(picture);
+            byte[] result = cachedPictureService.download(picture);
             String fileName = picture.getName();
             //设置响应头
             response.setContentType("application/octet-stream:charset=UTF-8");
@@ -122,7 +130,7 @@ public class PictureController {
     public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateDTO pictureUpdateDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUpdateDTO), ErrorCode.PARAMS_ERROR);
 
-        boolean result = pictureService.updatePicture(pictureUpdateDTO);
+        boolean result = cachedPictureService.updatePicture(pictureUpdateDTO);
 
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
@@ -133,7 +141,7 @@ public class PictureController {
     public BaseResponse<Boolean> editPicture(@RequestBody PictureEditDTO pictureEditDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureEditDTO), ErrorCode.PARAMS_ERROR);
 
-        boolean result = pictureService.editPicture(pictureEditDTO);
+        boolean result = cachedPictureService.editPicture(pictureEditDTO);
 
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
@@ -147,7 +155,7 @@ public class PictureController {
         Long id = deleteRequest.getId();
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
-        boolean result = pictureService.deletePicture(id);
+        boolean result = cachedPictureService.deletePicture(id);
 
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
@@ -161,7 +169,7 @@ public class PictureController {
     public BaseResponse<Page<PictureEntityVO>> queryPictureAdmin(@RequestBody PictureQueryDTO pictureQueryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
 
-        Page<PictureEntityVO> result = pictureService.queryPictureListAdmin(pictureQueryDTO);
+        Page<PictureEntityVO> result = cachedPictureService.queryPictureListAdmin(pictureQueryDTO);
 
         return ResultUtils.success(result);
     }
@@ -170,7 +178,7 @@ public class PictureController {
     public BaseResponse<Page<PictureVO>> queryPictureUser(@RequestBody PictureQueryDTO pictureQueryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
         pictureQueryDTO.setReviewStatus(1);
-        Page<PictureVO> result = pictureService.queryPictureListUser(pictureQueryDTO);
+        Page<PictureVO> result = cachedPictureService.queryPictureListUser(pictureQueryDTO);
 
         return ResultUtils.success(result);
     }
@@ -181,7 +189,7 @@ public class PictureController {
 //        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
 //        ThrowUtils.throwIf(pictureQueryDTO.getPageSize() > 20,ErrorCode.PARAMS_ERROR);
 //        pictureQueryDTO.setReviewStatus(1);
-//        Page<PictureVO> result = pictureService.queryPictureListUserCache(pictureQueryDTO);
+//        Page<PictureVO> result = cachedPictureService.queryPictureListUserCache(pictureQueryDTO);
 //
 //        return ResultUtils.success(result);
 //    }
@@ -192,7 +200,7 @@ public class PictureController {
     public BaseResponse<Picture> getPictureByIdAdmin(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
-        Picture picture = pictureService.getByPictureIdAdmin(id);
+        Picture picture = cachedPictureService.getByPictureIdAdmin(id);
 
         return ResultUtils.success(picture);
     }
@@ -202,7 +210,7 @@ public class PictureController {
     public BaseResponse<PictureVO> getPictureByIdUser(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
-        PictureVO pictureVO = pictureService.getByPictureIdUser(id);
+        PictureVO pictureVO = cachedPictureService.getByPictureIdUser(id);
 
         return ResultUtils.success(pictureVO);
     }
@@ -213,7 +221,7 @@ public class PictureController {
     public BaseResponse<Boolean> reviewPicture(@RequestBody PictureReviewDTO pictureReviewDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureReviewDTO), ErrorCode.PARAMS_ERROR);
 
-        pictureService.pictureReview(pictureReviewDTO);
+        cachedPictureService.pictureReview(pictureReviewDTO);
 
         return ResultUtils.success(true);
     }
@@ -225,11 +233,21 @@ public class PictureController {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUploadByBatchDTO), ErrorCode.PARAMS_ERROR);
 
         ThrowUtils.throwIf(pictureUploadByBatchDTO.getCount() > 30, ErrorCode.PARAMS_ERROR, "最多一次抓取 30 张图片");
-        int result = pictureService.pictureUploadByBatch(pictureUploadByBatchDTO);
+        int result = cachedPictureService.pictureUploadByBatch(pictureUploadByBatchDTO);
 
         return ResultUtils.success(result);
     }
 
+
+    /**
+     * 查询当前用户待审批的图片列表
+     */
+    @PostMapping("/user/pending/query")
+    public BaseResponse<Page<PictureVO>> queryPendingPictures(@RequestBody PictureQueryDTO pictureQueryDTO) {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
+        Page<PictureVO> result = cachedPictureService.queryPendingPictures(pictureQueryDTO);
+        return ResultUtils.success(result);
+    }
 
     /**
      * 以图搜图
@@ -239,7 +257,7 @@ public class PictureController {
         ThrowUtils.throwIf(searchPictureByPictureDTO == null, ErrorCode.PARAMS_ERROR);
         Long pictureId = searchPictureByPictureDTO.getPictureId();
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
-        Picture oldPicture = pictureService.getById(pictureId);
+        Picture oldPicture = cachedPictureService.getById(pictureId);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
         List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(oldPicture.getUrl());
         return ResultUtils.success(resultList);
@@ -256,7 +274,7 @@ public class PictureController {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         User user = UserContext.get();
         ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);
-        ToggleLikeVO result = socialService.toggleLike(pictureId, user.getId());
+        ToggleLikeVO result = cachedSocialService.toggleLike(pictureId, user.getId());
         return ResultUtils.success(result);
     }
 
@@ -269,7 +287,7 @@ public class PictureController {
         ThrowUtils.throwIf(pictureIds == null || pictureIds.isEmpty(), ErrorCode.PARAMS_ERROR);
         User user = UserContext.get();
         Long userId = user != null ? user.getId() : null;
-        Map<Long, Boolean> result = socialService.batchLikeStatus(pictureIds, userId);
+        Map<Long, Boolean> result = cachedSocialService.batchLikeStatus(pictureIds, userId);
         return ResultUtils.success(result);
     }
 
@@ -281,7 +299,7 @@ public class PictureController {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         User user = UserContext.get();
         ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);
-        ToggleFavoriteVO result = socialService.toggleFavorite(pictureId, user.getId());
+        ToggleFavoriteVO result = cachedSocialService.toggleFavorite(pictureId, user.getId());
         return ResultUtils.success(result);
     }
 
@@ -294,7 +312,7 @@ public class PictureController {
         ThrowUtils.throwIf(pictureIds == null || pictureIds.isEmpty(), ErrorCode.PARAMS_ERROR);
         User user = UserContext.get();
         Long userId = user != null ? user.getId() : null;
-        Map<Long, Boolean> result = socialService.batchFavoriteStatus(pictureIds, userId);
+        Map<Long, Boolean> result = cachedSocialService.batchFavoriteStatus(pictureIds, userId);
         return ResultUtils.success(result);
     }
 
@@ -304,7 +322,7 @@ public class PictureController {
     @PostMapping("/share/{pictureId}")
     public BaseResponse<Boolean> recordShare(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
-        socialService.recordShare(pictureId);
+        cachedSocialService.recordShare(pictureId);
         return ResultUtils.success(true);
     }
 
@@ -314,7 +332,7 @@ public class PictureController {
     @PostMapping("/view/{pictureId}")
     public BaseResponse<Boolean> recordView(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
-        socialService.incrementViewCount(pictureId);
+        cachedSocialService.incrementViewCount(pictureId);
         return ResultUtils.success(true);
     }
 
@@ -324,7 +342,7 @@ public class PictureController {
     @PostMapping("/download/count/{pictureId}")
     public BaseResponse<Boolean> recordDownloadCount(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
-        socialService.incrementDownloadCount(pictureId);
+        cachedSocialService.incrementDownloadCount(pictureId);
         return ResultUtils.success(true);
     }
 
@@ -336,8 +354,7 @@ public class PictureController {
             @PathVariable Long userId,
             @RequestBody UserPictureQueryDTO queryDTO) {
         ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
-        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
-        Page<PictureBriefVO> result = socialService.getUserLikedPictures(userId, queryDTO);
+        Page<PictureBriefVO> result = cachedSocialService.getUserLikedPictures(userId, queryDTO);
         return ResultUtils.success(result);
     }
 
@@ -350,7 +367,7 @@ public class PictureController {
             @RequestBody UserPictureQueryDTO queryDTO) {
         ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
         ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
-        Page<PictureBriefVO> result = socialService.getUserFavoritedPictures(userId, queryDTO);
+        Page<PictureBriefVO> result = cachedSocialService.getUserFavoritedPictures(userId, queryDTO);
         return ResultUtils.success(result);
     }
 
@@ -466,6 +483,8 @@ public class PictureController {
             @RequestBody UserPictureQueryDTO queryDTO) {
         ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
         ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        // 隐私保护：只能查看自己的列表
+//        verifyOwnershipOrAdmin(userId);
         Page<PictureBriefVO> result = cachedSocialService.getUserLikedPictures(userId, queryDTO);
         return ResultUtils.success(result);
     }
@@ -479,6 +498,8 @@ public class PictureController {
             @RequestBody UserPictureQueryDTO queryDTO) {
         ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
         ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        // 隐私保护：只能查看自己的列表
+//        verifyOwnershipOrAdmin(userId);
         Page<PictureBriefVO> result = cachedSocialService.getUserFavoritedPictures(userId, queryDTO);
         return ResultUtils.success(result);
     }
@@ -492,8 +513,9 @@ public class PictureController {
             @RequestBody UserPictureQueryDTO queryDTO) {
         ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
         ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        // 隐私保护：只能查看自己的列表
+//        verifyOwnershipOrAdmin(userId);
         Page<PictureBriefVO> result = cachedSocialService.getUserUploadedPictures(userId, queryDTO);
         return ResultUtils.success(result);
     }
-
 }

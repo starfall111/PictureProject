@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.constants.RedisKeyConstants;
 import org.example.common.enums.NotificationTypeEnum;
+import org.example.common.util.RedisCacheUtil;
 import org.example.pojo.entity.Notification;
 import org.example.server.service.NotificationService;
 import org.example.server.service.sse.SsePushService;
@@ -19,7 +20,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
 /**
  * 系统消息 MQ 消费者 — 批量写入 notification 并推送
@@ -38,6 +39,9 @@ public class SystemMessageConsumer {
 
     @Resource
     private SsePushService ssePushService;
+
+    @Resource
+    private RedisCacheUtil redisCacheUtil;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -68,20 +72,13 @@ public class SystemMessageConsumer {
             // 2. 批量插入
             notificationService.saveBatch(notifications);
 
-            // 3. 更新 Redis 未读计数 + SSE 推送
-            // todo 会产生多次redis网路连接 需要优化，使用pipeline管道批量修改，降低性能消耗
-            for (Long userId : userIds) {
+            // 3. Pipeline 批量更新 Redis 未读计数 + 逐个 SSE 推送
+            Map<Long, Long> unreadCounts = redisCacheUtil.pipelineIncrementUnread(userIds);
+            for (Map.Entry<Long, Long> entry : unreadCounts.entrySet()) {
                 try {
-                    String unreadKey = String.format(RedisKeyConstants.NOTIFICATION_UNREAD_KEY, userId);
-                    Long newCount = stringRedisTemplate.opsForValue().increment(unreadKey);
-                    if (newCount != null && newCount == 1L) {
-                        stringRedisTemplate.expire(unreadKey, RedisKeyConstants.NOTIFICATION_UNREAD_TTL, TimeUnit.SECONDS);
-                    }
-                    if (newCount != null) {
-                        ssePushService.pushUnreadCount(userId, newCount);
-                    }
+                    ssePushService.pushUnreadCount(entry.getKey(), entry.getValue());
                 } catch (Exception e) {
-                    log.warn("MQ消费：更新用户未读计数失败：userId={}", userId, e);
+                    log.warn("MQ消费：SSE推送失败：userId={}", entry.getKey(), e);
                 }
             }
 

@@ -66,6 +66,7 @@ public class PictureStatisticsSyncScheduled {
         log.info("开始同步统计数据，待同步数量: {}", dirtyIds.size());
 
         int successCount = 0;
+        // todo 网络开销过大
         for (String pictureIdStr : dirtyIds) {
             try {
                 Long pictureId = Long.parseLong(pictureIdStr);
@@ -90,8 +91,9 @@ public class PictureStatisticsSyncScheduled {
                 // 原子 UPSERT：INSERT ON DUPLICATE KEY UPDATE 消除竞态
                 pictureStatisticsMapper.insertOrUpdate(stat);
 
-                // 同步成功，从脏集合移除
+                // 同步成功，从脏集合移除，同时通知热度重算
                 stringRedisTemplate.opsForSet().remove(RedisKeyConstants.SOCIAL_STATS_DIRTY_KEY, pictureIdStr);
+                stringRedisTemplate.opsForSet().add(RedisKeyConstants.REC_HOT_DIRTY_KEY, pictureIdStr);
                 successCount++;
             } catch (Exception e) {
                 log.warn("同步 pictureId={} 失败，下个周期重试: {}", pictureIdStr, e.getMessage());

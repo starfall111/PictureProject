@@ -14,6 +14,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.constants.PictureConstant;
 import org.example.common.context.UserContext;
+import org.example.common.enums.NotificationTypeEnum;
 import org.example.common.enums.ReviewStatusEnum;
 import org.example.common.enums.UserEnum;
 import org.example.common.exception.BusinessException;
@@ -28,6 +29,7 @@ import org.example.common.util.AliOssUtil;
 import org.example.common.util.EmailUtil;
 import org.example.pojo.dto.picture.*;
 import org.example.pojo.entity.Category;
+import org.example.pojo.entity.Notification;
 import org.example.pojo.entity.Picture;
 import org.example.pojo.entity.User;
 import org.example.pojo.vo.PictureEntityVO;
@@ -36,6 +38,7 @@ import org.example.pojo.vo.PictureStatisticsVO;
 import org.example.pojo.vo.PictureVO;
 import org.example.pojo.vo.UserVO;
 import org.example.server.service.CategoryService;
+import org.example.server.service.NotificationService;
 import org.example.server.service.SocialService;
 import org.example.server.service.PictureService;
 import org.example.server.mapper.PictureMapper;
@@ -93,6 +96,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource(name = "dbSocialService")
     private SocialService socialService;
+
+    @Resource(name = "cachedNotificationService")
+    private NotificationService notificationService;
 
     @Resource
     private List<ImageSearchStrategy> imageSearchStrategyList;
@@ -152,9 +158,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             isSaved = true;
         }
 
-        //校验用户是否允许上传图片
+        //刷新用户信息
         user = userService.getById(user.getId());
-        ThrowUtils.throwIf(!validAuth(user), ErrorCode.UPLOAD_NO_PERMISSION);
         //校验空间是否支持上传
         if (ObjUtil.isNotEmpty(space)) {
             ThrowUtils.throwIf(space.getMaxSize() <= space.getTotalSize() || space.getMaxCount() <= space.getTotalCount(), ErrorCode.OPERATION_ERROR, "空间图片额度不足");
@@ -170,11 +175,14 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
         UploadPictureDTO uploadPictureDTO = pictureUploadTemplate.upload(inputResource);
         try {
-            //管理员上传图片或者用户上传图片至空间自动过审
+            //审核状态：管理员/空间上传/已绑定手机号 → 自动过审；未绑定手机号 → 待审核
             UserEnum userEnum = UserEnum.getByValue(user.getUserRole());
-            if (UserEnum.ADMIN.equals(userEnum) || ObjUtil.isNotEmpty(space)) {
+            boolean autoPass = UserEnum.ADMIN.equals(userEnum)
+                    || ObjUtil.isNotEmpty(space)
+                    || StrUtil.isNotBlank(user.getUserPhone());
+            if (autoPass) {
                 picture.setReviewStatus(1);
-                picture.setReviewMessage("管理员自动过审");
+                picture.setReviewMessage(ObjUtil.isNotEmpty(space) ? "空间上传自动过审" : "自动过审");
                 picture.setReviewerId(user.getId());
                 picture.setReviewTime(new Date());
             } else {
@@ -420,6 +428,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long spaceId = queryDTO.getSpaceId();
         queryDTO.setNullSpaceId(!ObjUtil.isNotEmpty(spaceId));
 
+        // 空间图片列表需校验请求者权限
+        if (ObjUtil.isNotEmpty(spaceId)) {
+            Space space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(ObjUtil.isEmpty(space), ErrorCode.PARAMS_ERROR, "空间不存在");
+            spaceService.validAuthUser(space, UserContext.get());
+        }
+
         // 缓存暂时禁用，直接查询数据库
 //        String key = JSONUtil.toJsonStr(queryDTO);
 //        String hashKey = "queryPictureListUser:" + DigestUtils.md5DigestAsHex(key.getBytes());
@@ -574,13 +589,35 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         boolean result = this.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
 
-        //审批成功后发送邮件通知上传者
+        //审批成功后发送邮件通知和站内通知给上传者
         try {
             Long uploaderId = oldPicture.getUserId();
             if (uploaderId != null) {
                 User uploader = userService.getById(uploaderId);
+                boolean passed = ReviewStatusEnum.PASS.getValue() == pictureReviewDTO.getReviewStatus();
+                String statusText = passed ? "通过" : "未通过";
+                String reviewMessage = pictureReviewDTO.getReviewMessage();
+                if (StrUtil.isBlank(reviewMessage)) {
+                    reviewMessage = passed ? "恭喜，您的图片已通过审核！" : "很遗憾，您的图片未通过审核，请修改后重新上传。";
+                }
+
+                // 发送站内通知
+                Notification notification = new Notification();
+                notification.setReceiverId(uploaderId);
+                notification.setSenderId(user.getId());
+                notification.setSenderName(user.getUserName());
+                notification.setType(NotificationTypeEnum.REVIEW.getType());
+                notification.setTitle("图片审批" + statusText);
+                notification.setContent("您的图片《" + oldPicture.getName() + "》审批" + statusText + "。"
+                        + (StrUtil.isNotBlank(pictureReviewDTO.getReviewMessage())
+                            ? "审核意见：" + pictureReviewDTO.getReviewMessage() : ""));
+                notification.setResourceId(oldPicture.getId());
+                notification.setResourceUrl(oldPicture.getUrl());
+                notification.setIsRead(0);
+                notificationService.save(notification);
+
+                // 发送邮件通知
                 if (uploader != null && StrUtil.isNotBlank(uploader.getUserEmail())) {
-                    boolean passed = ReviewStatusEnum.PASS.getValue() == pictureReviewDTO.getReviewStatus();
                     emailUtil.sendReviewNotice(
                             uploader.getUserEmail(),
                             oldPicture.getName(),
@@ -590,7 +627,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 }
             }
         } catch (Exception e) {
-            log.warn("审批通知邮件发送异常, pictureId={}, error={}", pictureReviewDTO.getId(), e.getMessage());
+            log.warn("审批通知发送异常, pictureId={}, error={}", pictureReviewDTO.getId(), e.getMessage());
         }
     }
 
@@ -674,6 +711,115 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 //    }
 
     /**
+     * 绑定手机号后自动过审最新 100 张待审批图片
+     */
+    @Override
+    public int autoApprovePicturesByBindPhone(Long userId) {
+        // 查询 reviewStatus=0 的图片，按创建时间倒序，最多 100 张
+        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("id")
+                .eq("userId", userId)
+                .eq("reviewStatus", 0)
+                .orderByDesc("createTime")
+                .last("LIMIT 100");
+
+        List<Picture> pictures = this.list(queryWrapper);
+        if (ObjUtil.isEmpty(pictures)) {
+            return 0;
+        }
+
+        List<Long> pictureIds = pictures.stream()
+                .map(Picture::getId)
+                .collect(Collectors.toList());
+
+        // 批量更新：单条 SQL 完成
+        Date now = new Date();
+        Picture update = new Picture();
+        update.setReviewStatus(1);
+        update.setReviewMessage("手机号绑定自动过审");
+        update.setReviewerId(userId);
+        update.setReviewTime(now);
+
+        QueryWrapper<Picture> updateWrapper = new QueryWrapper<>();
+        updateWrapper.in("id", pictureIds)
+                .eq("reviewStatus", 0);
+        boolean result = this.update(update, updateWrapper);
+        int count = result ? pictureIds.size() : 0;
+
+        log.info("绑定手机号自动过审：userId={}, count={}", userId, count);
+        return count;
+    }
+
+    /**
+     * 查询当前用户待审批的图片列表（直接查 DB，限定当前用户）
+     */
+    @Override
+    public Page<PictureVO> queryPendingPictures(PictureQueryDTO queryDTO) {
+        User currentUser = UserContext.get();
+        ThrowUtils.throwIf(ObjUtil.isEmpty(currentUser), ErrorCode.NOT_LOGIN_ERROR);
+
+        // 强制限定为当前用户且 reviewStatus != 1
+        queryDTO.setUserId(currentUser.getId());
+        queryDTO.setReviewStatus(null); // 不使用单一状态过滤，改为 ne
+
+        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("userId", currentUser.getId());
+        queryWrapper.ne("reviewStatus", 1);
+        queryWrapper.orderByDesc("createTime");
+
+        Page<Picture> pictureList = this.page(
+                new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize()), queryWrapper);
+        List<Picture> pictures = pictureList.getRecords();
+
+        Page<PictureVO> result = new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize(), pictureList.getTotal());
+        if (ObjUtil.isEmpty(pictures)) {
+            return result;
+        }
+
+        List<PictureVO> pictureVOList = pictures.stream()
+                .map(PictureVO::objToVO)
+                .toList();
+
+        // 批量填充用户信息
+        Set<Long> userIds = pictureVOList.stream()
+                .map(PictureVO::getUserId)
+                .collect(Collectors.toSet());
+        Map<Long, List<User>> userIdUserMapList = userService.listByIds(userIds)
+                .stream()
+                .collect(Collectors.groupingBy(User::getId));
+
+        // 批量填充分类名称
+        Set<Long> categoryIds = pictureVOList.stream()
+                .map(PictureVO::getCategoryId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+        Map<Long, Category> categoryMap = categoryIds.isEmpty()
+                ? Map.of()
+                : categoryService.listByIds(categoryIds)
+                .stream()
+                .collect(Collectors.toMap(Category::getId, c -> c));
+
+        pictureVOList.forEach(pictureVO -> {
+            Long userId = pictureVO.getUserId();
+            User user = null;
+            if (userIdUserMapList.containsKey(userId)) {
+                user = userIdUserMapList.get(userId).get(0);
+            }
+            UserVO userVO = new UserVO();
+            BeanUtil.copyProperties(user, userVO);
+            pictureVO.setUserVO(userVO);
+
+            Long categoryId = pictureVO.getCategoryId();
+            if (categoryId != null && categoryMap.containsKey(categoryId)) {
+                pictureVO.setCategoryName(categoryMap.get(categoryId).getName());
+            }
+        });
+
+        result = result.setRecords(pictureVOList);
+        return result;
+    }
+
+    /**
      * 验证图片信息是否正常
      */
     private void validPicture(Picture picture) {
@@ -707,11 +853,17 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
      * 构建查询条件
      */
     private QueryWrapper<Picture> getQueryWrapper(PictureQueryDTO pictureQueryDTO) {
+        // 输入校验：防 DoS
+        List<String> tags = pictureQueryDTO.getTags();
+        ThrowUtils.throwIf(tags != null && tags.size() > 20, ErrorCode.PARAMS_ERROR, "标签数量不能超过20个");
+        String searchText = pictureQueryDTO.getSearchText();
+        ThrowUtils.throwIf(StrUtil.isNotBlank(searchText) && searchText.length() > 200,
+                ErrorCode.PARAMS_ERROR, "搜索文本不能超过200个字符");
+
         Long id = pictureQueryDTO.getId();
         String name = pictureQueryDTO.getName();
         String introduction = pictureQueryDTO.getIntroduction();
         Long categoryId = pictureQueryDTO.getCategoryId();
-        List<String> tags = pictureQueryDTO.getTags();
         Long picSize = pictureQueryDTO.getPicSize();
         Integer picWidth = pictureQueryDTO.getPicWidth();
         Integer picHeight = pictureQueryDTO.getPicHeight();
@@ -719,7 +871,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long userId = pictureQueryDTO.getUserId();
         Long spaceId = pictureQueryDTO.getSpaceId();
         Boolean nullSpaceId = pictureQueryDTO.getNullSpaceId();
-        String searchText = pictureQueryDTO.getSearchText();
         //审核状态
         Integer reviewStatus = pictureQueryDTO.getReviewStatus();
         Date startEditTime = pictureQueryDTO.getStartEditTime();
@@ -832,22 +983,4 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         return pictureVO;
     }
 
-    /**
-     * 校验是否允许上传图片（必须绑定手机号和邮箱或者是管理员）
-     */
-    private boolean validAuth(User user) {
-        //获取用户信息
-        UserEnum userEnum = UserEnum.getByValue(user.getUserRole());
-        String userPhone = user.getUserPhone();
-
-        if (UserEnum.ADMIN.equals(userEnum)) {
-            return true;
-        }
-
-        if (StrUtil.isBlank(userPhone)) {
-            return false;
-        }
-
-        return true;
-    }
 }

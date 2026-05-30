@@ -126,6 +126,11 @@ public class CachedUserServiceImpl extends ServiceImpl<UserMapper, User>
         invalidateUserCache(currentUser.getId());
     }
 
+    @Override
+    public void updatePassword(UserPasswordUpdateDTO passwordUpdateDTO) {
+        dbUserService.updatePassword(passwordUpdateDTO);
+    }
+
     // ==================== 委托方法（无缓存）====================
 
     @Override

@@ -1,16 +1,24 @@
 package org.example.common.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.constants.RedisKeyConstants;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -154,6 +162,67 @@ public class RedisCacheUtil {
         if (!keys.isEmpty()) {
             stringRedisTemplate.delete(keys);
         }
+    }
+
+    /**
+     * 使用 Pipeline 批量 INCR 未读计数，减少 Redis 网络往返
+     *
+     * @param userIds 用户 ID 列表
+     * @return userId → 最新未读计数的映射
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public Map<Long, Long> pipelineIncrementUnread(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // 第一阶段：pipeline 批量 INCR
+        List<Object> rawResults = stringRedisTemplate.executePipelined(
+                new SessionCallback<Object>() {
+                    @Override
+                    public <K, V> Object execute(RedisOperations<K, V> operations) throws DataAccessException {
+                        for (Long userId : userIds) {
+                            String unreadKey = String.format(RedisKeyConstants.NOTIFICATION_UNREAD_KEY, userId);
+                            operations.opsForValue().increment((K) unreadKey, 1);
+                        }
+                        return null;
+                    }
+                }
+        );
+
+        Map<Long, Long> result = new HashMap<>();
+        if (rawResults == null) {
+            return result;
+        }
+
+        // 收集需要设置 TTL 的 key（count == 1，即首次创建）
+        final List<String> ttlKeys = new ArrayList<>();
+        for (int i = 0; i < userIds.size() && i < rawResults.size(); i++) {
+            Object raw = rawResults.get(i);
+            Long count = raw instanceof Long ? (Long) raw : Long.parseLong(raw.toString());
+            result.put(userIds.get(i), count);
+
+            if (count == 1L) {
+                ttlKeys.add(String.format(RedisKeyConstants.NOTIFICATION_UNREAD_KEY, userIds.get(i)));
+            }
+        }
+
+        // 第二阶段：pipeline 批量设置 TTL（减少网络往返 + 防止中间崩溃导致 key 永不过期）
+        if (!ttlKeys.isEmpty()) {
+            stringRedisTemplate.executePipelined(
+                    new SessionCallback<Object>() {
+                        @Override
+                        public <K, V> Object execute(RedisOperations<K, V> operations) throws DataAccessException {
+                            for (String key : ttlKeys) {
+                                operations.expire((K) key, RedisKeyConstants.NOTIFICATION_UNREAD_TTL, TimeUnit.SECONDS);
+                            }
+                            return null;
+                        }
+                    }
+            );
+        }
+
+        return result;
     }
 
     /**
