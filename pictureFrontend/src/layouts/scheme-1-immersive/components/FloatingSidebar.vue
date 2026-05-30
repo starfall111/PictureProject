@@ -83,6 +83,7 @@ import {
   TagsOutlined,
   RightOutlined,
   PushpinOutlined,
+  MessageOutlined,
 } from '@ant-design/icons-vue'
 import { userLoginUserStore } from '@/stores/user'
 import checkAccess from '@/access/checkAccess'
@@ -126,6 +127,7 @@ const adminNavItems = [
   { path: '/admin/spaceManage', icon: AppstoreOutlined, label: '空间管理' },
   { path: '/admin/categoryManage', icon: FolderOutlined, label: '分类管理' },
   { path: '/admin/tagManage', icon: TagsOutlined, label: '标签管理' },
+  { path: '/admin/systemMessageManage', icon: MessageOutlined, label: '系统消息管理' },
 ]
 
 // 当前路由匹配

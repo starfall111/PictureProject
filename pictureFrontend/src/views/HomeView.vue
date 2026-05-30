@@ -110,6 +110,7 @@
 <script setup lang="ts">
 import { listCategoryUsingGet } from '@/api/categoryController'
 import { queryPictureUserCacheUsingPost } from '@/api/pictureController'
+import { recommendUsingPost } from '@/api/recommendController'
 import { listTagUsingGet } from '@/api/tagController'
 import { message } from 'ant-design-vue'
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
@@ -152,15 +153,66 @@ const total = ref(0)
 const searchParams = reactive<API.PictureQueryDTO>({
   current: 1,
   pageSize,
-  sortField: 'createTime',
+  sortField: undefined,
   sortOrder: 'descend',
 })
+
+/**
+ * 获取推荐数据（使用推荐接口）
+ * @param reset 是否重置（筛选变化时清空重新加载）
+ */
+const fetchRecommendData = async (reset = false) => {
+  if (isLoading.value) return
+  if (!reset && !hasMore.value) return
+
+  if (reset) {
+    currentPage.value = 1
+    allPictures.value = []
+    hasMore.value = true
+  }
+
+  isLoading.value = true
+
+  const params: API.RecommendQueryDTO = {
+    current: currentPage.value,
+    pageSize,
+    categoryId: selectedCategory.value !== 0 ? selectedCategory.value : undefined,
+  }
+
+  try {
+    const res = await recommendUsingPost(params)
+    if (res.data.data) {
+      const records = res.data.data.pictures ?? []
+      hasMore.value = res.data.data.hasMore ?? false
+
+      if (reset) {
+        allPictures.value = records
+      } else {
+        allPictures.value = [...allPictures.value, ...records]
+      }
+
+      total.value = allPictures.value.length + (hasMore.value ? 1 : 0)
+      currentPage.value++
+    } else {
+      message.error('获取推荐数据失败，' + res.data.message)
+    }
+  } catch {
+    message.error('网络错误，请稍后重试')
+  } finally {
+    isLoading.value = false
+  }
+}
 
 /**
  * 获取数据
  * @param reset 是否重置（筛选变化时清空重新加载）
  */
 const fetchData = async (reset = false) => {
+  // 推荐模式走独立推荐接口
+  if (currentSort.value === '') {
+    return fetchRecommendData(reset)
+  }
+
   if (isLoading.value) return
   if (!reset && !hasMore.value) return
 
@@ -273,7 +325,7 @@ const categoryPopoverOpen = ref(false)
 const tagPopoverOpen = ref(false)
 
 // 排序
-const currentSort = ref('createTime')
+const currentSort = ref('')
 
 const onSortChange = () => {
   searchParams.sortField = currentSort.value || undefined

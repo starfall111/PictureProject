@@ -16,6 +16,7 @@
                 <div class="user-login-status">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <SchemeSwitcher />
+                        <NotificationBell v-if="loginUserStore.loginUser.id" />
                         <div v-if="loginUserStore.loginUser.id">
                             <a-dropdown>
                                 <a-space>
@@ -64,6 +65,7 @@ import { LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { logOutUsingPost } from '@/api/userController'
 import checkAccess from '@/access/checkAccess'
 import SchemeSwitcher from '@/layouts/scheme-1-immersive/components/SchemeSwitcher.vue'
+import NotificationBell from '@/components/notification/NotificationBell.vue'
 
 
 const loginUserStore = userLoginUserStore()
@@ -106,6 +108,11 @@ const originItems = [
         key: '/admin/tagManage',
         label: '标签管理',
         title: '标签管理',
+    },
+    {
+        key: '/admin/systemMessageManage',
+        label: '系统消息管理',
+        title: '系统消息管理',
     },
 ]
 

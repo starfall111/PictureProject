@@ -193,22 +193,6 @@ const getOldPicture = async () => {
 onMounted(async () => {
     const loginUserStore = userLoginUserStore()
     await loginUserStore.getLoginUser(true)
-    const loginUser = loginUserStore.loginUser
-    if (!loginUser.userPhone && loginUser.userRole !== 'admin') {
-        Modal.confirm({
-            title: '请先绑定手机号',
-            content: '上传图片前需要绑定手机号，是否前往个人中心绑定？',
-            okText: '去绑定',
-            cancelText: '返回主页',
-            onOk: () => {
-                router.push('/user/center')
-            },
-            onCancel: () => {
-                router.push('/')
-            },
-        })
-        return
-    }
     await getTagCategoryOptions()
     await getOldPicture()
 })

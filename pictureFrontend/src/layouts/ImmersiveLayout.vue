@@ -7,14 +7,11 @@
       </router-link>
       <div class="header-spacer"></div>
       <div class="search-area">
-        <input
-          class="search-box"
-          type="text"
-          placeholder="搜索图片..."
-          @keyup.enter="handleSearch"
-        />
+        <input class="search-box" type="text" placeholder="搜索图片..." @keyup.enter="handleSearch" />
       </div>
       <button class="upload-btn" @click="goUpload">+ 上传</button>
+
+      <NotificationBell style="margin-right: 24px" />
       <div class="user-area">
         <template v-if="loginUserStore.loginUser.id">
           <a-dropdown>
@@ -46,6 +43,7 @@ import { userLoginUserStore } from '@/stores/user'
 import { logOutUsingPost } from '@/api/userController'
 import SchemeSwitcher from '@/layouts/scheme-1-immersive/components/SchemeSwitcher.vue'
 import FloatingSidebar from '@/layouts/scheme-1-immersive/components/FloatingSidebar.vue'
+import NotificationBell from '@/components/notification/NotificationBell.vue'
 
 const router = useRouter()
 const loginUserStore = userLoginUserStore()

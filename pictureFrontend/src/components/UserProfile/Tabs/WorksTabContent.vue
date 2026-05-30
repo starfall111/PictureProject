@@ -54,14 +54,6 @@ const selectedTag = ref<string | undefined>(undefined)
 const selectedCategory = ref<number | undefined>(undefined)
 const sortOrder = ref('newest')
 
-// 从图片中提取标签列表
-const tagList = computed(() => {
-  // 这里需要从 dataList 中提取，但由于 useTabContent 的 dataList 是内部状态
-  // 我们通过 watch 监听 dataList 变化来更新 tagList
-  const tagSet = new Set<string>()
-  // 暂时返回空数组，实际使用时可以通过 expose 获取 dataList
-  return Array.from(tagSet)
-})
 
 // 本地筛选状态
 const localFilters = computed<TabContentFilters>(() => {

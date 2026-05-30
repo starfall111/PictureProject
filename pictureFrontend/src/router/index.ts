@@ -19,6 +19,8 @@ import MySpacePage from '@/Page/space/MySpacePage.vue'
 import SpaceDetailPage from '@/Page/space/SpaceDetailPage.vue'
 import PictureSearchPage from '@/Page/picture/PictureSearchPage.vue'
 import UserProfilePage from '@/Page/user/UserProfilePage.vue'
+import NotificationPage from '@/Page/notification/NotificationPage.vue'
+import SystemMessageManagePage from '@/Page/systemMessage/SystemMessageManagePage.vue'
 
 
 const router = createRouter({
@@ -123,6 +125,14 @@ const router = createRouter({
           }
         },
         {
+          path: '/admin/systemMessageManage',
+          name: '系统消息管理',
+          component: SystemMessageManagePage,
+          meta: {
+            access: ACCESS_ENUM.ADMIN
+          }
+        },
+        {
           path: '/picture/:id',
           name: '图片详情',
           component: PictureDetailPage,
@@ -149,6 +159,14 @@ const router = createRouter({
           path: '/add_space',
           name: '创建空间',
           component: AddSpacePage,
+        },
+        {
+          path: '/notifications',
+          name: '通知中心',
+          component: NotificationPage,
+          meta: {
+            access: ACCESS_ENUM.USER,
+          },
         },
       ],
     },
