@@ -254,6 +254,7 @@ public class CachedSocialServiceImpl implements SocialService {
                 publishNotification(picture, userId, NotificationTypeEnum.FAVORITE, "收藏了你的图片");
             }
 
+            // todo 在点赞收藏阶段 用户重复点击 导致违背数据库唯一索引 需要捕获异常并提示前端点击过快
             // 标记脏数据
             stringRedisTemplate.opsForSet().add(RedisKeyConstants.SOCIAL_STATS_DIRTY_KEY, String.valueOf(pictureId));
 
@@ -467,6 +468,7 @@ public class CachedSocialServiceImpl implements SocialService {
      * @param queryDTO 查询条件（分页）
      * @return
      */
+    // todo 这里的三个图片相关的方法应该移动到 Picture 模块下 ；三个方法流程一致 可抽象为模板方法
     @Override
     public Page<PictureBriefVO> getUserUploadedPictures(Long userId, UserPictureQueryDTO queryDTO) {
         String md5 = buildPageMd5(queryDTO.getCurrent(), queryDTO.getPageSize());
@@ -522,6 +524,7 @@ public class CachedSocialServiceImpl implements SocialService {
     /**
      * 发布通知事件（异步处理）
      */
+    // todo 如果要考虑高并发场景下的点赞收藏模式下，需要加入 rabbitMQ 进行削峰即可
     private void publishNotification(Picture picture, Long senderId, NotificationTypeEnum type, String action) {
         try {
             // 获取触发者信息

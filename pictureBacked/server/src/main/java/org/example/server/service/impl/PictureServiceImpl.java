@@ -9,10 +9,9 @@ import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-//import com.github.benmanes.caffeine.cache.Cache;
-//import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.constants.PictureConstant;
+import org.example.common.constants.RedisKeyConstants;
 import org.example.common.context.UserContext;
 import org.example.common.enums.NotificationTypeEnum;
 import org.example.common.enums.ReviewStatusEnum;
@@ -45,12 +44,15 @@ import org.example.server.mapper.PictureMapper;
 import org.example.server.service.UserService;
 import org.example.server.strategy.imageSearch.ImageSearchStrategy;
 import org.example.server.strategy.imageSearch.model.ImageSourceResult;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -103,6 +105,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Resource
     private List<ImageSearchStrategy> imageSearchStrategyList;
 
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
     private Map<String, ImageSearchStrategy> imageSearchStrategyMap;
 
     @javax.annotation.PostConstruct
@@ -127,7 +132,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 //    -》更新空间信息（如果spaceId不为空）
 //    -》结束
     @Override
-
     public Picture upload(Object inputResource, FileDTO fileDTO) throws Exception {
         Picture picture = new Picture();
         Picture oldPicture = new Picture();
@@ -152,7 +156,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         //已经上传过，修改状态，后续走更新操作
         if (!ObjUtil.isEmpty(imageId)) {
             picture = this.getById(imageId);
-            BeanUtil.copyProperties(picture,oldPicture);
+            BeanUtil.copyProperties(picture, oldPicture);
             //删除之前上传的图片
             aliOssUtils.deleteByUrl(picture.getUrl());
             isSaved = true;
@@ -170,7 +174,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         if (inputResource instanceof String) {
             pictureUploadTemplate = urlUploadPicture;
         }
-
 
 
         UploadPictureDTO uploadPictureDTO = pictureUploadTemplate.upload(inputResource);
@@ -222,13 +225,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 Picture finalPicture1 = picture;
                 picture = transactionTemplate.execute(status -> {
                     boolean result = this.updateById(finalPicture1);
-                    ThrowUtils.throwIf(!result,ErrorCode.OPERATION_ERROR,"图片上传失败");
-                    if (ObjUtil.isNotEmpty(space)){
+                    ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
+                    if (ObjUtil.isNotEmpty(space)) {
                         boolean update = spaceService.lambdaUpdate()
-                                .eq(Space::getId,space.getId())
+                                .eq(Space::getId, space.getId())
                                 .setSql(String.format("totalSize = totalSize + %s", finalPicture1.getPicSize() - oldPicture.getPicSize()))
                                 .update();
-                        ThrowUtils.throwIf(!update,ErrorCode.OPERATION_ERROR,"空间额度更新失败");
+                        ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "空间额度更新失败");
                     }
                     return finalPicture1;
                 });
@@ -238,14 +241,14 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 Picture finalPicture = picture;
                 picture = transactionTemplate.execute(status -> {
                     boolean result = this.save(finalPicture);
-                    ThrowUtils.throwIf(!result,ErrorCode.OPERATION_ERROR,"图片上传失败");
-                    if (ObjUtil.isNotEmpty(space)){
+                    ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
+                    if (ObjUtil.isNotEmpty(space)) {
                         boolean update = spaceService.lambdaUpdate()
-                                .eq(Space::getId,space.getId())
-                                .setSql(String.format("totalSize = totalSize + %s",finalPicture.getPicSize()))
+                                .eq(Space::getId, space.getId())
+                                .setSql(String.format("totalSize = totalSize + %s", finalPicture.getPicSize()))
                                 .setSql("totalCount = totalCount + 1")
                                 .update();
-                        ThrowUtils.throwIf(!update,ErrorCode.OPERATION_ERROR,"空间额度更新失败");
+                        ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "空间额度更新失败");
                     }
                     return finalPicture;
                 });
@@ -297,7 +300,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         //更新
         return this.updateById(picture);
     }
-//根据图片Id找到picture
+
+    //根据图片Id找到picture
 // -》判断用户权限（如果picture的spaceId不为null，则只有空间所有人才能操作）
 // -》数据库操作-》更新空间信息
 // -》返回结果
@@ -311,9 +315,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setEditTime(new Date());
         validPicture(picture);
 
-        if (ObjUtil.isNotEmpty(picture.getSpaceId())){
+        if (ObjUtil.isNotEmpty(picture.getSpaceId())) {
             Space space = spaceService.getById(picture.getSpaceId());
-            spaceService.validAuthUser(space,user);
+            spaceService.validAuthUser(space, user);
         }
         //判断图片是否存在
         Picture oldPicture = this.getById(pictureEditDTO.getId());
@@ -338,9 +342,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Picture picture = new Picture();
         picture = this.getById(id);
         ThrowUtils.throwIf(ObjUtil.isEmpty(picture), ErrorCode.PARAMS_ERROR, "图片不存在");
-        if (ObjUtil.isNotEmpty(picture.getSpaceId())){
+        if (ObjUtil.isNotEmpty(picture.getSpaceId())) {
             Space space = spaceService.getById(picture.getSpaceId());
-            spaceService.validAuthUser(space,user);
+            spaceService.validAuthUser(space, user);
         }
 
         //仅管理员或自己可删除图片
@@ -357,15 +361,14 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         //删除数据库内数据
         return transactionTemplate.execute(status -> {
             boolean remove = this.removeById(finalPicture);
-            ThrowUtils.throwIf(!remove,ErrorCode.OPERATION_ERROR);
-            if (finalPicture.getSpaceId() != null){
+            ThrowUtils.throwIf(!remove, ErrorCode.OPERATION_ERROR);
+            if (finalPicture.getSpaceId() != null) {
                 boolean update = spaceService.lambdaUpdate()
-                        .eq(Space::getId,finalPicture.getSpaceId())
+                        .eq(Space::getId, finalPicture.getSpaceId())
                         .setSql(String.format("totalSize = totalSize - %s", finalPicture.getPicSize()))
                         .setSql("totalCount = totalCount - 1")
                         .update();
-                ThrowUtils.throwIf(!update,ErrorCode.OPERATION_ERROR);
-
+                ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR);
             }
             return true;
         });
@@ -532,9 +535,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Picture picture = this.getById(id);
         ThrowUtils.throwIf(ObjUtil.isEmpty(picture), ErrorCode.PARAMS_ERROR, "图片不存在");
 
-        if (ObjUtil.isNotEmpty(picture.getSpaceId())){
+        if (ObjUtil.isNotEmpty(picture.getSpaceId())) {
             Space space = spaceService.getById(picture.getSpaceId());
-            spaceService.validAuthUser(space,UserContext.get());
+            spaceService.validAuthUser(space, UserContext.get());
         }
         PictureVO pictureVO = getPictureVO(picture);
 
@@ -585,9 +588,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         BeanUtil.copyProperties(pictureReviewDTO, picture);
         picture.setReviewerId(user.getId());
         picture.setReviewTime(new Date());
-        //数据库操作
-        boolean result = this.updateById(picture);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+
 
         //审批成功后发送邮件通知和站内通知给上传者
         try {
@@ -606,31 +607,55 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 notification.setReceiverId(uploaderId);
                 notification.setSenderId(user.getId());
                 notification.setSenderName(user.getUserName());
-                notification.setType(NotificationTypeEnum.REVIEW.getType());
+                notification.setType(NotificationTypeEnum.SYSTEM.getType());
                 notification.setTitle("图片审批" + statusText);
                 notification.setContent("您的图片《" + oldPicture.getName() + "》审批" + statusText + "。"
                         + (StrUtil.isNotBlank(pictureReviewDTO.getReviewMessage())
-                            ? "审核意见：" + pictureReviewDTO.getReviewMessage() : ""));
+                        ? "审核意见：" + pictureReviewDTO.getReviewMessage() : ""));
                 notification.setResourceId(oldPicture.getId());
                 notification.setResourceUrl(oldPicture.getUrl());
                 notification.setIsRead(0);
-                notificationService.save(notification);
 
-                // 发送邮件通知
-                if (uploader != null && StrUtil.isNotBlank(uploader.getUserEmail())) {
-                    emailUtil.sendReviewNotice(
-                            uploader.getUserEmail(),
-                            oldPicture.getName(),
-                            passed,
-                            pictureReviewDTO.getReviewMessage()
-                    );
-                }
+                // 事务管理 确保数据库操作和通知发送原子性
+                transactionTemplate.execute(status -> {
+                    //数据库操作
+                    boolean result = this.updateById(picture);
+                    ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+
+                    notificationService.save(notification);
+
+                    // 发送邮件通知
+                    if (uploader != null && StrUtil.isNotBlank(uploader.getUserEmail())) {
+                        emailUtil.sendReviewNotice(
+                                uploader.getUserEmail(),
+                                oldPicture.getName(),
+                                passed,
+                                pictureReviewDTO.getReviewMessage()
+                        );
+                    }
+
+                    // Redis 未读数 +1（最小为 0）
+                    String unreadKey = String.format(RedisKeyConstants.NOTIFICATION_UNREAD_KEY, uploaderId);
+                    Long newCount = stringRedisTemplate.opsForValue().increment(unreadKey);
+                    if (newCount != null && newCount < 0) {
+                        stringRedisTemplate.opsForValue().set(unreadKey, "0",
+                                RedisKeyConstants.NOTIFICATION_UNREAD_TTL, TimeUnit.SECONDS);
+                    }
+                    return true;
+                });
+
             }
         } catch (Exception e) {
             log.warn("审批通知发送异常, pictureId={}, error={}", pictureReviewDTO.getId(), e.getMessage());
         }
     }
 
+    /**
+     * 批量上传图片
+     *
+     * @param pictureUploadByBatchDTO
+     * @return
+     */
     @Override
     public Integer pictureUploadByBatch(PictureUploadByBatchDTO pictureUploadByBatchDTO) {
         //校验数据非空
@@ -676,7 +701,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 log.info("图片上传成功,id = {}", picture.getId());
                 uploadCount++;
             } catch (Exception e) {
-                log.error("图片上传失败，错误信息 = {}", result.getUrl(),e);
+                log.error("图片上传失败，错误信息 = {}", result.getUrl(), e);
             }
             if (uploadCount >= count) {
                 break;
@@ -685,30 +710,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
         return uploadCount;
     }
-
-    // 缓存模式暂时禁用
-//    @Override
-//    public Page<PictureVO> queryPictureListUserCache(PictureQueryDTO queryDTO) {
-//        //构造本地缓存 Key
-//        String key = JSONUtil.toJsonStr(queryDTO);
-//        String hashKey = "queryPictureListUser:" + DigestUtils.md5DigestAsHex(key.getBytes());
-//        //本地缓存查询
-//        String cacheValue = LOCAL_CACHE.getIfPresent(hashKey);
-//        if (ObjUtil.isNotEmpty(cacheValue)) {
-//            Page<PictureVO> cachePage = JSONUtil.toBean(cacheValue, Page.class);
-//            return cachePage;
-//        }
-//
-//        //查找数据库数据
-//        Page<PictureVO> pictureVOPage = queryPictureListUser(queryDTO);
-//        //存入本地缓存
-//        cacheValue = JSONUtil.toJsonStr(pictureVOPage);
-//
-//        LOCAL_CACHE.put(hashKey, cacheValue);
-//
-//        //返回数据
-//        return pictureVOPage;
-//    }
 
     /**
      * 绑定手机号后自动过审最新 100 张待审批图片
@@ -732,6 +733,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 .map(Picture::getId)
                 .collect(Collectors.toList());
 
+        // 封装手机号绑定后自动过审操作
+        // 发送站内通知
+        Notification notification = new Notification();
+        notification.setReceiverId(userId);
+        notification.setSenderName("系统通知");
+        notification.setType(NotificationTypeEnum.SYSTEM.getType());
+        notification.setTitle("图片审批通过");
+        notification.setContent("您的图片审批均已通过，感谢您的使用！");
+        notification.setIsRead(0);
+        notificationService.save(notification);
         // 批量更新：单条 SQL 完成
         Date now = new Date();
         Picture update = new Picture();
@@ -743,10 +754,29 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         QueryWrapper<Picture> updateWrapper = new QueryWrapper<>();
         updateWrapper.in("id", pictureIds)
                 .eq("reviewStatus", 0);
-        boolean result = this.update(update, updateWrapper);
-        int count = result ? pictureIds.size() : 0;
+        Boolean result = transactionTemplate.execute(status -> {
+            // 批量更新图片审批状态
+            boolean res = this.update(update, updateWrapper);
+            ThrowUtils.throwIf(!res, ErrorCode.OPERATION_ERROR, "更新图片审批状态失败");
+            // 发送通知消息
+            boolean notificationRes = notificationService.save(notification);
+            ThrowUtils.throwIf(!notificationRes, ErrorCode.OPERATION_ERROR, "发送通知消息失败");
+            // Redis 未读数 +1（最小为 0）
+            String unreadKey = String.format(RedisKeyConstants.NOTIFICATION_UNREAD_KEY, userId);
+            Long newCount = stringRedisTemplate.opsForValue().increment(unreadKey);
+            if (newCount != null && newCount < 0) {
+                stringRedisTemplate.opsForValue().set(unreadKey, "0",
+                        RedisKeyConstants.NOTIFICATION_UNREAD_TTL, TimeUnit.SECONDS);
+            }
+
+            return true;
+        });
+
+
+        int count = Boolean.TRUE.equals(result) ? pictureIds.size() : 0;
 
         log.info("绑定手机号自动过审：userId={}, count={}", userId, count);
+
         return count;
     }
 

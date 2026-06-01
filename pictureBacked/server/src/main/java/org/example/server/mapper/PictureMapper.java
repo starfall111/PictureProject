@@ -35,6 +35,13 @@ public interface PictureMapper extends BaseMapper<Picture> {
      * 查询已审核通过的热度图片（降级查询，按 hotScore 降序）
      */
     List<PictureWithStats> selectHotPictures(@Param("offset") int offset, @Param("limit") int limit);
+
+    /**
+     * 查询已审核通过的分类热度图片（降级查询，按 hotScore 降序）
+     */
+    List<PictureWithStats> selectHotPicturesByCategory(@Param("categoryId") Long categoryId,
+                                                        @Param("offset") int offset,
+                                                        @Param("limit") int limit);
 }
 
 

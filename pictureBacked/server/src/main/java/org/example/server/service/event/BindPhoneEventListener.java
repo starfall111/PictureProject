@@ -17,7 +17,7 @@ import javax.annotation.Resource;
 @Component
 public class BindPhoneEventListener {
 
-    @Resource(name = "dbPictureService")
+    @Resource(name = "cachedPictureService")
     private PictureService pictureService;
 
     @Async

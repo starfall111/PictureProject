@@ -132,4 +132,26 @@
         ORDER BY p.hotScore DESC
         LIMIT #{offset}, #{limit}
     </select>
+
+    <!-- 分类热度降级查询：按 hotScore 降序 + 分类过滤 -->
+    <select id="selectHotPicturesByCategory" resultMap="PictureWithStatsMap">
+        SELECT
+            p.id, p.name, p.url, p.thumbnailUrl, p.picWidth, p.picHeight,
+            p.categoryId, c.name AS categoryName, p.spaceId, p.userId, p.tags,
+            p.reviewStatus, p.createTime,
+            COALESCE(ps.likeCount, 0) AS likeCount,
+            COALESCE(ps.favoriteCount, 0) AS favoriteCount,
+            COALESCE(ps.shareCount, 0) AS shareCount,
+            COALESCE(ps.viewCount, 0) AS viewCount,
+            COALESCE(ps.downloadCount, 0) AS downloadCount
+        FROM picture p
+        LEFT JOIN picture_statistics ps ON p.id = ps.pictureId
+        LEFT JOIN category c ON p.categoryId = c.id
+        WHERE p.isDelete = 0
+          AND p.reviewStatus = 1
+          AND p.spaceId IS NULL
+          AND p.categoryId = #{categoryId}
+        ORDER BY p.hotScore DESC
+        LIMIT #{offset}, #{limit}
+    </select>
 </mapper>

@@ -10,30 +10,38 @@ public class RedisKeyConstants {
     private RedisKeyConstants() {
     }
 
+
+    // todo 列举缓存时机
+    //  多级缓存使用场景 人们搜索、推荐图片、图片社交数据
+
     // ==================== 社交功能 Key ====================
 
     /**
      * 点赞状态标记
      * Value: STRING "1"
      */
+    // todo 操作时数据库和缓存进行双写操作 ，缓存过期时间 7 天 定时任务同步到数据库
     public static final String SOCIAL_LIKE_KEY = "social:like:%d:%d";
 
     /**
      * 收藏状态标记
      * Value: STRING "1"
      */
+    // todo 同点赞状态标记
     public static final String SOCIAL_FAV_KEY = "social:fav:%d:%d";
 
     /**
      * 统计计数器 Hash
      * Fields: likeCount, favoriteCount, shareCount, viewCount, downloadCount
      */
+    // todo 用户进行操作时，直接更新，维护脏集合来绑定定时任务将数据回写至数据库
     public static final String SOCIAL_STATS_KEY = "social:stats:%d";
 
     /**
      * 待同步 DB 的 pictureId 集合（脏集合）
      * Type: SET
      */
+    // todo 用户进行操作时，直接更新，维护脏集合来绑定定时任务将数据回写至数据库
     public static final String SOCIAL_STATS_DIRTY_KEY = "social:stats:dirty";
 
     /**
@@ -48,12 +56,14 @@ public class RedisKeyConstants {
      * 热门图片列表查询缓存
      * Value: STRING (JSON), TTL 5-15min
      */
+    // todo 管理员手动刷新缓存，定时任务重算热度分数再更新缓存
     public static final String PIC_QUERY_HOT_KEY = "pic:query:hot:%s";
 
     /**
      * 普通图片列表查询缓存
      * Value: STRING (JSON), TTL 5min
      */
+    // todo 允许不及时展示数据，即使用户刚刚删除上传图片，但是再用户主页需要及时更新
     public static final String PIC_QUERY_NORMAL_KEY = "pic:query:normal:%s";
 
     /**
@@ -65,10 +75,13 @@ public class RedisKeyConstants {
     // ==================== 用户图片列表缓存 Key ====================
 
     /** 用户点赞列表缓存 */
+    //  todo 用户点赞时失效
     public static final String LIST_LIKED_KEY = "list:liked:%d:%s";
     /** 用户收藏列表缓存 */
+    //  todo 用户收藏时失效
     public static final String LIST_FAV_KEY = "list:fav:%d:%s";
     /** 用户上传列表缓存 */
+    //  todo 用户上传时失效，管理员审批通过后失效
     public static final String LIST_UPLOADED_KEY = "list:uploaded:%d:%s";
 
     // ==================== 社交功能 TTL ====================
@@ -104,6 +117,7 @@ public class RedisKeyConstants {
      * 通知未读计数缓存
      * Value: STRING count
      */
+    // todo 点赞、收藏、审批后、管理员发送系统通知更新 or 失效
     public static final String NOTIFICATION_UNREAD_KEY = "notify:unread:%d";
 
     /**
@@ -162,8 +176,10 @@ public class RedisKeyConstants {
     /**
      * 推荐结果缓存
      * Value: STRING (JSON)
+     * 格式: rec:result:{scene}:{categoryId}:{current}:{pageSize}
+     * categoryId 为 0 表示全部分类
      */
-    public static final String REC_RESULT_KEY = "rec:result:%s:%s:%d";
+    public static final String REC_RESULT_KEY = "rec:result:%s:%d:%d:%d";
 
     /**
      * 热度评分计算分布式锁

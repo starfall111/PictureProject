@@ -48,6 +48,11 @@ public class CachedNotificationServiceImpl implements NotificationService {
         return dbNotificationService.getById(id);
     }
 
+    /**
+     * 获取未读数
+     * @param receiverId 接收者用户ID
+     * @return
+     */
     @Override
     public long getUnreadCount(Long receiverId) {
         String unreadKey = String.format(RedisKeyConstants.NOTIFICATION_UNREAD_KEY, receiverId);
@@ -58,6 +63,7 @@ public class CachedNotificationServiceImpl implements NotificationService {
                 return Long.parseLong(cached);
             } catch (NumberFormatException e) {
                 // 缓存值异常，继续走 DB
+                // todo redis挂了 需要兜底 但是不能直接打到db上
             }
         }
 
@@ -77,6 +83,12 @@ public class CachedNotificationServiceImpl implements NotificationService {
         return dbNotificationService.listNotifications(receiverId, queryDTO);
     }
 
+    /**
+     * 标记已读
+     * @param id         通知ID
+     * @param receiverId 接收者用户ID（防越权）
+     * @return
+     */
     @Override
     public boolean markAsRead(Long id, Long receiverId) {
         boolean result = dbNotificationService.markAsRead(id, receiverId);
@@ -92,6 +104,11 @@ public class CachedNotificationServiceImpl implements NotificationService {
         return result;
     }
 
+    /**
+     * 全部已读
+     * @param receiverId 接收者用户ID
+     * @return
+     */
     @Override
     public boolean markAllAsRead(Long receiverId) {
         boolean result = dbNotificationService.markAllAsRead(receiverId);
@@ -103,6 +120,12 @@ public class CachedNotificationServiceImpl implements NotificationService {
         return result;
     }
 
+    /**
+     * 删除单条通知（软删除）
+     * @param id         通知ID
+     * @param receiverId 接收者用户ID（防越权）
+     * @return
+     */
     @Override
     public boolean deleteNotification(Long id, Long receiverId) {
         // 先查询通知状态（判断是否需要减少未读计数）
@@ -122,6 +145,11 @@ public class CachedNotificationServiceImpl implements NotificationService {
         return result;
     }
 
+    /**
+     * 清空已读通知（软删除）
+     * @param receiverId 接收者用户ID
+     * @return 清除的数量
+     */
     @Override
     public int cleanReadNotifications(Long receiverId) {
         return dbNotificationService.cleanReadNotifications(receiverId);

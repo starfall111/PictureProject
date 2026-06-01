@@ -15,8 +15,7 @@ public enum NotificationTypeEnum {
     FAVORITE("FAVORITE", "收藏"),
     COMMENT("COMMENT", "评论"),
     FOLLOW("FOLLOW", "关注"),
-    SYSTEM("SYSTEM", "系统通知"),
-    REVIEW("REVIEW", "审批通知");
+    SYSTEM("SYSTEM", "系统通知");
 
     private final String type;
     private final String desc;

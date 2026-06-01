@@ -80,6 +80,12 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
     @Qualifier("dbPictureService")
     private PictureService dbPictureService;
 
+    /**
+     * 用户查询图片列表
+     *
+     * @param queryDTO
+     * @return
+     */
     @Override
     public Page<PictureVO> queryPictureListUser(PictureQueryDTO queryDTO) {
         Long spaceId = queryDTO.getSpaceId();
@@ -99,7 +105,7 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
             return result;
         }
 
-        // 判断是否为热门查询
+        //判断是否为热门查询
         boolean isHot = isHotQuery(queryDTO);
         String md5Key = buildQueryMd5(queryDTO, isHot);
 
@@ -135,6 +141,12 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         return result;
     }
 
+    /**
+     * 用户查询图片详情
+     *
+     * @param id 图片ID
+     * @return
+     */
     @Override
     public PictureVO getByPictureIdUser(long id) {
         // 1. 查 DB 判断是否存在及是否空间图片
@@ -170,6 +182,13 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
 
     // ==================== 写操作：委托 dbPictureService + 后置缓存失效 ====================
 
+    /**
+     * 用户上传图片
+     *
+     * @param inputResource 上传文件资源
+     * @param fileDTO       上传文件DTO
+     * @return 上传的图片实体
+     */
     @Override
     public Picture upload(Object inputResource, FileDTO fileDTO) throws Exception {
         Picture picture = dbPictureService.upload(inputResource, fileDTO);
@@ -181,11 +200,23 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         return picture;
     }
 
+    /**
+     * 用户下载图片
+     *
+     * @param picture 图片实体
+     * @return 图片字节数组
+     */
     @Override
     public byte[] download(Picture picture) throws FileNotFoundException, ClientException {
         return dbPictureService.download(picture);
     }
 
+    /**
+     * 管理员更新图片
+     *
+     * @param pictureUpdateDTO 更新图片DTO
+     * @return 是否更新成功
+     */
     @Override
     public boolean updatePicture(PictureUpdateDTO pictureUpdateDTO) {
         boolean result = dbPictureService.updatePicture(pictureUpdateDTO);
@@ -200,6 +231,12 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         return result;
     }
 
+    /**
+     * 用户编辑图片
+     *
+     * @param pictureEditDTO 编辑图片DTO
+     * @return 是否编辑成功
+     */
     @Override
     public boolean editPicture(PictureEditDTO pictureEditDTO) {
         boolean result = dbPictureService.editPicture(pictureEditDTO);
@@ -214,6 +251,12 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         return result;
     }
 
+    /**
+     * 用户删除图片
+     *
+     * @param id 图片ID
+     * @return 是否删除成功
+     */
     @Override
     public Boolean deletePicture(long id) throws Exception {
         Picture picture = this.getById(id);
@@ -228,31 +271,61 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         return result;
     }
 
+    /**
+     * 管理员查询图片列表
+     *
+     * @param queryDTO 查询图片列表DTO
+     * @return 图片列表分页VO
+     */
     @Override
     public Page<PictureEntityVO> queryPictureListAdmin(PictureQueryDTO queryDTO) {
         return dbPictureService.queryPictureListAdmin(queryDTO);
     }
 
+    /**
+     * 管理员根据图片ID查询图片详情
+     *
+     * @param id 图片ID
+     * @return 图片实体
+     */
     @Override
     public Picture getByPictureIdAdmin(long id) {
         return dbPictureService.getByPictureIdAdmin(id);
     }
 
+    /**
+     * 用户查询待审批图片列表
+     *
+     * @param queryDTO 查询待审批图片列表DTO
+     * @return 待审批图片列表分页VO
+     */
     @Override
     public Page<PictureVO> queryPendingPictures(PictureQueryDTO queryDTO) {
         // 待审批列表直接查 DB，不缓存
         return dbPictureService.queryPendingPictures(queryDTO);
     }
 
+    /**
+     * 用户自动审批待审批图片
+     *
+     * @param userId 用户ID
+     * @return 审批成功图片数量
+     */
     @Override
     public int autoApprovePicturesByBindPhone(Long userId) {
         int count = dbPictureService.autoApprovePicturesByBindPhone(userId);
         if (count > 0) {
-            invalidateAllQueryCache();
+            invalidateUploadedListCache(userId);
         }
         return count;
     }
 
+    /**
+     * 管理员审批待审批图片
+     *
+     * @param pictureReviewDTO 审批图片DTO
+     * @return 是否审批成功
+     */
     @Override
     public void pictureReview(PictureReviewDTO pictureReviewDTO) {
         dbPictureService.pictureReview(pictureReviewDTO);
@@ -337,33 +410,21 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         }
         // 包含所有影响查询结果的参数，防止缓存串数据
         String raw = String.format(
-                "cat=%s|tags=%s|uid=%s|rs=%s|sid=%s|ns=%s|" +
-                "search=%s|name=%s|intro=%s|sf=%s|so=%s|" +
-                "psize=%s|pw=%s|ph=%s|pscale=%s|" +
-                "set=%s|eet=%s|cur=%d|ps=%d",
+                "cat=%s|" +
+                        "search=%s|sf=%s|so=%s|" +
+                        "cur=%d|ps=%d",
                 queryDTO.getCategoryId(),
-                tagsPart,
-                queryDTO.getUserId(),
-                queryDTO.getReviewStatus(),
-                queryDTO.getSpaceId(),
-                queryDTO.getNullSpaceId(),
                 truncate(queryDTO.getSearchText(), 100),
-                truncate(queryDTO.getName(), 100),
-                truncate(queryDTO.getIntroduction(), 100),
                 queryDTO.getSortField(),
                 queryDTO.getSortOrder(),
-                queryDTO.getPicSize(),
-                queryDTO.getPicWidth(),
-                queryDTO.getPicHeight(),
-                queryDTO.getPicScale(),
-                queryDTO.getStartEditTime(),
-                queryDTO.getEndEditTime(),
                 queryDTO.getCurrent(),
                 queryDTO.getPageSize());
         return DigestUtils.md5DigestAsHex(raw.getBytes());
     }
 
-    /** 截断过长字符串防止缓存 key 过大 */
+    /**
+     * 截断过长字符串防止缓存 key 过大
+     */
     private static String truncate(String s, int maxLen) {
         if (s == null) return null;
         return s.length() <= maxLen ? s : s.substring(0, maxLen);

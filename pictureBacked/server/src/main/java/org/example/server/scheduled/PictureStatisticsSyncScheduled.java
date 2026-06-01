@@ -5,11 +5,16 @@ import org.example.common.util.RedisCacheUtil;
 import org.example.pojo.entity.PictureStatistics;
 import org.example.common.constants.RedisKeyConstants;
 import org.example.server.mapper.PictureStatisticsMapper;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -56,6 +61,7 @@ public class PictureStatisticsSyncScheduled {
         }
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void doSync() {
         Set<String> dirtyIds = stringRedisTemplate.opsForSet()
                 .members(RedisKeyConstants.SOCIAL_STATS_DIRTY_KEY);
@@ -65,41 +71,92 @@ public class PictureStatisticsSyncScheduled {
 
         log.info("开始同步统计数据，待同步数量: {}", dirtyIds.size());
 
+        // 转为有序列表，保证 Pipeline 读取和结果解析顺序一致
+        List<String> dirtyIdList = new ArrayList<>(dirtyIds);
+
+        // ========================
+        // Phase 1: Pipeline 批量读取所有 Hash 数据（1 次网络往返）
+        // ========================
+        List<Object> rawResults = stringRedisTemplate.executePipelined(
+                new SessionCallback<Object>() {
+                    @Override
+                    public <K, V> Object execute(RedisOperations<K, V> operations) throws DataAccessException {
+                        for (String pictureIdStr : dirtyIdList) {
+                            Long pictureId = Long.parseLong(pictureIdStr);
+                            String statsKey = String.format(RedisKeyConstants.SOCIAL_STATS_KEY, pictureId);
+                            operations.opsForHash().get((K) statsKey, "likeCount");
+                            operations.opsForHash().get((K) statsKey, "favoriteCount");
+                            operations.opsForHash().get((K) statsKey, "shareCount");
+                            operations.opsForHash().get((K) statsKey, "viewCount");
+                            operations.opsForHash().get((K) statsKey, "downloadCount");
+                        }
+                        return null;
+                    }
+                }
+        );
+
+        // ========================
+        // Phase 2: 解析结果 + DB 写入
+        // ========================
         int successCount = 0;
-        // todo 网络开销过大
-        for (String pictureIdStr : dirtyIds) {
+        List<String> successIds = new ArrayList<>();
+
+        for (int i = 0; i < dirtyIdList.size(); i++) {
+            String pictureIdStr = dirtyIdList.get(i);
             try {
                 Long pictureId = Long.parseLong(pictureIdStr);
-                String statsKey = String.format(RedisKeyConstants.SOCIAL_STATS_KEY, pictureId);
+                int base = i * 5;  // 每个 picture 有 5 个 Hash field
 
-                // 读取 Redis Hash
-                String likeCount = (String) stringRedisTemplate.opsForHash().get(statsKey, "likeCount");
-                String favoriteCount = (String) stringRedisTemplate.opsForHash().get(statsKey, "favoriteCount");
-                String shareCount = (String) stringRedisTemplate.opsForHash().get(statsKey, "shareCount");
-                String viewCount = (String) stringRedisTemplate.opsForHash().get(statsKey, "viewCount");
-                String downloadCount = (String) stringRedisTemplate.opsForHash().get(statsKey, "downloadCount");
-
-                // 组装实体
                 PictureStatistics stat = new PictureStatistics();
                 stat.setPictureId(pictureId);
-                stat.setLikeCount(likeCount != null ? Integer.parseInt(likeCount) : 0);
-                stat.setFavoriteCount(favoriteCount != null ? Integer.parseInt(favoriteCount) : 0);
-                stat.setShareCount(shareCount != null ? Integer.parseInt(shareCount) : 0);
-                stat.setViewCount(viewCount != null ? Integer.parseInt(viewCount) : 0);
-                stat.setDownloadCount(downloadCount != null ? Integer.parseInt(downloadCount) : 0);
+                stat.setLikeCount(parseIntFromPipeline(rawResults.get(base)));
+                stat.setFavoriteCount(parseIntFromPipeline(rawResults.get(base + 1)));
+                stat.setShareCount(parseIntFromPipeline(rawResults.get(base + 2)));
+                stat.setViewCount(parseIntFromPipeline(rawResults.get(base + 3)));
+                stat.setDownloadCount(parseIntFromPipeline(rawResults.get(base + 4)));
 
                 // 原子 UPSERT：INSERT ON DUPLICATE KEY UPDATE 消除竞态
                 pictureStatisticsMapper.insertOrUpdate(stat);
 
-                // 同步成功，从脏集合移除，同时通知热度重算
-                stringRedisTemplate.opsForSet().remove(RedisKeyConstants.SOCIAL_STATS_DIRTY_KEY, pictureIdStr);
-                stringRedisTemplate.opsForSet().add(RedisKeyConstants.REC_HOT_DIRTY_KEY, pictureIdStr);
+                successIds.add(pictureIdStr);
                 successCount++;
             } catch (Exception e) {
                 log.warn("同步 pictureId={} 失败，下个周期重试: {}", pictureIdStr, e.getMessage());
             }
         }
 
+        // ========================
+        // Phase 3: Pipeline 批量清理 + 通知热度重算（1 次网络往返）
+        // ========================
+        if (!successIds.isEmpty()) {
+            stringRedisTemplate.executePipelined(
+                    new SessionCallback<Object>() {
+                        @Override
+                        public <K, V> Object execute(RedisOperations<K, V> operations) throws DataAccessException {
+                            for (String pictureIdStr : successIds) {
+                                operations.opsForSet().remove((K) RedisKeyConstants.SOCIAL_STATS_DIRTY_KEY, pictureIdStr);
+                                operations.opsForSet().add((K) RedisKeyConstants.REC_HOT_DIRTY_KEY, (V) pictureIdStr);
+                            }
+                            return null;
+                        }
+                    }
+            );
+        }
+
         log.info("统计同步完成，成功: {}/{}", successCount, dirtyIds.size());
+    }
+
+    /**
+     * 从 Pipeline 返回结果中解析 int 值
+     */
+    private int parseIntFromPipeline(Object obj) {
+        if (obj == null) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(obj.toString());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 }
