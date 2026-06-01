@@ -576,6 +576,24 @@ export async function getPictureByIdUserUsingGet(
   });
 }
 
+/** queryPendingPictures POST /api/picture/user/pending/query */
+export async function queryPendingPicturesUsingPost(
+  body: API.PictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponsePagePictureVO_>(
+    "/api/picture/user/pending/query",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
 /** queryPictureUser POST /api/picture/user/query */
 export async function queryPictureUserUsingPost(
   body: API.PictureQueryDTO,

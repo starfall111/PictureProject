@@ -86,13 +86,54 @@
       </a-list-item>
     </a-list>
 
-    <!-- 修改密码弹窗（预留） -->
-    <a-modal v-model:open="passwordModalVisible" title="修改密码" :footer="null" :destroy-on-close="true" width="440px">
-      <a-result status="info" title="功能开发中" sub-title="密码修改功能即将上线，敬请期待">
-        <template #extra>
-          <a-button type="primary" @click="passwordModalVisible = false">知道了</a-button>
-        </template>
-      </a-result>
+    <!-- 修改密码弹窗 -->
+    <a-modal
+      v-model:open="passwordModalVisible"
+      title="修改密码"
+      :footer="null"
+      :destroy-on-close="true"
+      width="440px"
+    >
+      <a-form
+        ref="passwordFormRef"
+        :model="passwordForm"
+        :rules="passwordRules"
+        layout="vertical"
+        class="bind-form"
+      >
+        <a-form-item label="旧密码" name="oldPassword">
+          <a-input-password
+            v-model:value="passwordForm.oldPassword"
+            placeholder="请输入旧密码"
+            size="large"
+          />
+        </a-form-item>
+        <a-form-item label="新密码" name="newPassword">
+          <a-input-password
+            v-model:value="passwordForm.newPassword"
+            placeholder="请输入新密码（至少6位）"
+            size="large"
+          />
+        </a-form-item>
+        <a-form-item label="确认密码" name="confirmPassword">
+          <a-input-password
+            v-model:value="passwordForm.confirmPassword"
+            placeholder="请再次输入新密码"
+            size="large"
+          />
+        </a-form-item>
+        <a-form-item>
+          <a-button
+            type="primary"
+            size="large"
+            block
+            :loading="passwordLoading"
+            @click="handlePasswordSubmit"
+          >
+            确认修改
+          </a-button>
+        </a-form-item>
+      </a-form>
     </a-modal>
 
     <!-- 手机绑定弹窗 -->
@@ -147,7 +188,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
 import { LockOutlined, PhoneOutlined, MailOutlined } from '@ant-design/icons-vue';
-import { bindAccountUsingPost } from '@/api/userController';
+import { bindAccountUsingPost, updatePasswordUsingPost } from '@/api/userController';
 import { sendVerificationCodeUsingPost } from '@/api/noticeController';
 import { useAliyunCaptcha } from '@/access/useAliyunCaptcha';
 
@@ -364,7 +405,65 @@ const maskEmail = (email: string) => {
 
 /** 修改密码 */
 const handleChangePassword = () => {
+  passwordForm.oldPassword = '';
+  passwordForm.newPassword = '';
+  passwordForm.confirmPassword = '';
   passwordModalVisible.value = true;
+};
+
+// ==================== 修改密码 ====================
+
+const passwordFormRef = ref();
+const passwordLoading = ref(false);
+const passwordForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+});
+
+const validateConfirmPassword = (_rule: any, value: string) => {
+  if (value && value !== passwordForm.newPassword) {
+    return Promise.reject('两次输入的密码不一致');
+  }
+  return Promise.resolve();
+};
+
+const passwordRules = {
+  oldPassword: [{ required: true, message: '请输入旧密码' }],
+  newPassword: [
+    { required: true, message: '请输入新密码' },
+    { min: 6, message: '密码长度不能少于6位' },
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认新密码' },
+    { validator: validateConfirmPassword },
+  ],
+};
+
+const handlePasswordSubmit = async () => {
+  try {
+    await passwordFormRef.value?.validate();
+  } catch {
+    return;
+  }
+  passwordLoading.value = true;
+  try {
+    const res = await updatePasswordUsingPost({
+      oldPassword: passwordForm.oldPassword,
+      newPassword: passwordForm.newPassword,
+      confirmPassword: passwordForm.confirmPassword,
+    });
+    if (res.data.code === 0) {
+      message.success('密码修改成功，请重新登录');
+      passwordModalVisible.value = false;
+    } else {
+      message.error(res.data.message || '密码修改失败');
+    }
+  } catch {
+    message.error('密码修改失败');
+  } finally {
+    passwordLoading.value = false;
+  }
 };
 </script>
 

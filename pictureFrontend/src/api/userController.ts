@@ -206,6 +206,21 @@ export async function listUserVoByQueryUsingPost(
   });
 }
 
+/** updatePassword POST /api/user/password/update */
+export async function updatePasswordUsingPost(
+  body: API.UserPasswordUpdateDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean_>("/api/user/password/update", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** getUserProfile GET /api/user/profile/${param0} */
 export async function getUserProfileUsingGet(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -240,7 +255,7 @@ export async function registerUsingPost(
 
 /** updateUser POST /api/user/update */
 export async function updateUserUsingPost1(
-  body: API.AdminUpdateDTO,
+  body: API.UserUpdateDTO,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseBoolean_>("/api/user/update", {

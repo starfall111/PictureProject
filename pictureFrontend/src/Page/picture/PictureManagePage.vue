@@ -1,11 +1,13 @@
 <template>
     <div id="PictureManagePage">
         <div>
-            <a-flex justify="space-between">
+            <a-flex justify="space-between" style="margin-bottom: 16px;">
                 <h2>图片管理</h2>
                 <a-space>
                     <a-button type="primary" href="/add_picture" target="_blank">+ 创建图片</a-button>
                     <a-button type="primary" href="/add_picture/batch" target="_blank" ghost>+ 批量创建图片</a-button>
+                    <a-button :loading="clearAllLoading" @click="doClearAllCache">清理全部缓存</a-button>
+                    <a-button :loading="clearPictureLoading" @click="doClearPictureCache">清理热门图片缓存</a-button>
                 </a-space>
             </a-flex>
             <a-form layout="inline" :model="searchParams" @finish="doSearch">
@@ -93,6 +95,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import { deletePictureUsingDelete, queryPictureAdminUsingPost, reviewPictureUsingPost } from '@/api/pictureController';
+import { clearAllCacheUsingPost, clearPictureCacheUsingPost } from '@/api/adminCacheController';
 import { listTagUsingGet } from '@/api/tagController';
 import { listCategoryUsingGet } from '@/api/categoryController';
 import { PIC_REVIEW_STATUS_ENUM, PIC_REVIEW_STATUS_MAP, PIC_REVIEW_STATUS_OPTIONS } from '@/constants/picture';
@@ -288,6 +291,63 @@ const doClear = () => {
     });
     fetchData();
 };
+
+// ==================== 缓存清理 ====================
+
+const clearAllLoading = ref(false)
+const clearPictureLoading = ref(false)
+
+const doClearAllCache = () => {
+    Modal.confirm({
+        title: '确认清理全部缓存',
+        content: '确定要清理系统全部缓存吗？清理后数据将从数据库重新加载。',
+        okText: '确定清理',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+            clearAllLoading.value = true
+            try {
+                const res = await clearAllCacheUsingPost()
+                if (res.data.code === 0) {
+                    message.success('全部缓存清理成功')
+                    fetchData()
+                } else {
+                    message.error('清理失败，' + res.data.message)
+                }
+            } catch {
+                message.error('清理失败')
+            } finally {
+                clearAllLoading.value = false
+            }
+        },
+    })
+}
+
+const doClearPictureCache = () => {
+    Modal.confirm({
+        title: '确认清理热门图片缓存',
+        content: '确定要清理热门图片缓存吗？清理后将重新计算热门数据。',
+        okText: '确定清理',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+            clearPictureLoading.value = true
+            try {
+                const res = await clearPictureCacheUsingPost()
+                if (res.data.code === 0) {
+                    message.success('热门图片缓存清理成功')
+                    fetchData()
+                } else {
+                    message.error('清理失败，' + res.data.message)
+                }
+            } catch {
+                message.error('清理失败')
+            } finally {
+                clearPictureLoading.value = false
+            }
+        },
+    })
+}
 
 // ==================== 初始化 ====================
 

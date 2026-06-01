@@ -79,6 +79,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePageNotificationVO_ = {
+    code?: number;
+    data?: PageNotificationVO_;
+    message?: string;
+  };
+
   type BaseResponsePagePictureBriefVO_ = {
     code?: number;
     data?: PagePictureBriefVO_;
@@ -103,6 +109,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePageSystemMessageVO_ = {
+    code?: number;
+    data?: PageSystemMessageVO_;
+    message?: string;
+  };
+
   type BaseResponsePageTag_ = {
     code?: number;
     data?: PageTag_;
@@ -124,6 +136,12 @@ declare namespace API {
   type BaseResponsePictureVO_ = {
     code?: number;
     data?: PictureVO;
+    message?: string;
+  };
+
+  type BaseResponseRecommendVO_ = {
+    code?: number;
+    data?: RecommendVO;
     message?: string;
   };
 
@@ -211,8 +229,18 @@ declare namespace API {
     name?: string;
   };
 
+  type deleteNotificationUsingDELETEParams = {
+    /** id */
+    id: number;
+  };
+
   type DeleteRequest = {
     id?: number;
+  };
+
+  type deleteSystemMessageUsingDELETEParams = {
+    /** id */
+    id: number;
   };
 
   type downloadUsingGETParams = {
@@ -310,6 +338,25 @@ declare namespace API {
     thumbUrl?: string;
   };
 
+  type listNotificationsUsingGETParams = {
+    current?: number;
+    isRead?: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+    type?: string;
+  };
+
+  type listSystemMessagesUsingGETParams = {
+    current?: number;
+    pageSize?: number;
+    sendMode?: string;
+    sortField?: string;
+    sortOrder?: string;
+    status?: number;
+    title?: string;
+  };
+
   type LoginUserVO = {
     createTime?: string;
     editTime?: string;
@@ -326,10 +373,37 @@ declare namespace API {
 
   type MapLongBoolean_ = true;
 
+  type markAsReadUsingPUTParams = {
+    /** id */
+    id: number;
+  };
+
+  type NotificationVO = {
+    content?: string;
+    createTime?: string;
+    id?: number;
+    isRead?: number;
+    resourceId?: number;
+    resourceUrl?: string;
+    senderAvatar?: string;
+    senderId?: number;
+    senderName?: string;
+    title?: string;
+    type?: string;
+  };
+
   type PageCategory_ = {
     current?: number;
     pages?: number;
     records?: Category[];
+    size?: number;
+    total?: number;
+  };
+
+  type PageNotificationVO_ = {
+    current?: number;
+    pages?: number;
+    records?: NotificationVO[];
     size?: number;
     total?: number;
   };
@@ -366,6 +440,14 @@ declare namespace API {
     total?: number;
   };
 
+  type PageSystemMessageVO_ = {
+    current?: number;
+    pages?: number;
+    records?: SystemMessageVO[];
+    size?: number;
+    total?: number;
+  };
+
   type PageTag_ = {
     current?: number;
     pages?: number;
@@ -386,6 +468,7 @@ declare namespace API {
     categoryId?: number;
     createTime?: string;
     editTime?: string;
+    hotScore?: number;
     id?: number;
     introduction?: string;
     isDelete?: number;
@@ -423,6 +506,8 @@ declare namespace API {
     tags?: string[];
     thumbnailUrl?: string;
     url?: string;
+    userId?: number;
+    userVO?: UserVO;
     viewCount?: number;
   };
 
@@ -541,6 +626,29 @@ declare namespace API {
     userVO?: UserVO;
   };
 
+  type publishSystemMessageUsingPOSTParams = {
+    /** id */
+    id: number;
+  };
+
+  type RecommendQueryDTO = {
+    basePictureId?: number;
+    categoryId?: number;
+    current?: number;
+    excludeIds?: number[];
+    pageSize?: number;
+    scene?: string;
+    sortField?: string;
+    sortOrder?: string;
+  };
+
+  type RecommendVO = {
+    hasMore?: boolean;
+    pictures?: PictureVO[];
+    reason?: string;
+    scene?: string;
+  };
+
   type recordDownloadCountCacheUsingPOSTParams = {
     /** pictureId */
     pictureId: number;
@@ -569,6 +677,11 @@ declare namespace API {
   type recordViewUsingPOSTParams = {
     /** pictureId */
     pictureId: number;
+  };
+
+  type revokeSystemMessageUsingPOSTParams = {
+    /** id */
+    id: number;
   };
 
   type SearchPictureByPictureDTO = {
@@ -657,6 +770,39 @@ declare namespace API {
     totalSize?: number;
     userId?: number;
     userVO?: UserVO;
+  };
+
+  type SseEmitter = {
+    timeout?: number;
+  };
+
+  type SystemMessageCreateDTO = {
+    content?: string;
+    filterRegisterEnd?: string;
+    filterRegisterStart?: string;
+    filterRole?: string;
+    filterSpaceLevel?: number;
+    id?: number;
+    sendMode?: string;
+    targetType?: string;
+    title?: string;
+  };
+
+  type SystemMessageVO = {
+    content?: string;
+    createTime?: string;
+    filterRegisterEnd?: string;
+    filterRegisterStart?: string;
+    filterRole?: string;
+    filterSpaceLevel?: number;
+    id?: number;
+    publishTime?: string;
+    publisherId?: number;
+    sendMode?: string;
+    status?: number;
+    targetType?: string;
+    title?: string;
+    updateTime?: string;
   };
 
   type Tag = {
@@ -764,6 +910,12 @@ declare namespace API {
     verityCode?: string;
   };
 
+  type UserPasswordUpdateDTO = {
+    confirmPassword?: string;
+    newPassword?: string;
+    oldPassword?: string;
+  };
+
   type UserPictureQueryDTO = {
     category?: string;
     current?: number;
@@ -809,6 +961,12 @@ declare namespace API {
     password?: string;
     type?: number;
     verityCode?: string;
+  };
+
+  type UserUpdateDTO = {
+    userAvatar?: string;
+    userName?: string;
+    userProfile?: string;
   };
 
   type UserVO = {
