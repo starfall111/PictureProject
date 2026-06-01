@@ -18,7 +18,7 @@
     <!-- 图片列表 -->
     <PictureList
       v-else
-      :dataList="dataList"
+      :dataList="convertToPictureVO(dataList)"
       :loading="isLoading && dataList.length === 0"
       layoutMode="waterfall"
       :showSocial="true"
@@ -74,6 +74,21 @@ const localFilters = computed<TabContentFilters>(() => {
   }
   return filters
 })
+
+// 将 PictureBriefVO 转换为 PictureVO（保持兼容性）
+const convertToPictureVO = (list: API.PictureBriefVO[]): API.PictureVO[] => {
+  return list.map(item => ({
+    ...item,
+    socialInfo: {
+      likeCount: item.likeCount,
+      favoriteCount: item.favoriteCount,
+      viewCount: item.viewCount,
+      downloadCount: item.downloadCount,
+      isLiked: !!item.likeTime,
+      isFavorited: !!item.favoriteTime
+    }
+  } as API.PictureVO))
+}
 
 // 使用通用Hook
 const fetchWorksPictures = async (params: {

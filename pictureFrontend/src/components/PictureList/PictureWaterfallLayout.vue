@@ -34,6 +34,7 @@ const props = withDefaults(defineProps<Props>(), {
   dataList: () => [],
 })
 
+// todo 应该等待图片计算完成后再渲染瀑布流，否则会出现布局错乱的问题 并且需要响应式布局，再变化屏幕的大小的时候，不应该实时计算，应该提前计算
 // 将 picWidth/picHeight 映射为库所需的 imgWidth/imgHeight，使库能预计算布局
 const waterfallList = computed(() =>
   props.dataList.map((item) => ({

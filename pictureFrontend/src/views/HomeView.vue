@@ -66,7 +66,7 @@
         </div>
       </div>
 
-      <!-- 已选条件汇总 -->
+      <!-- 已选条件汇总
       <div class="active-filters" v-if="selectedTagList.length > 0 || selectedCategory !== 0">
         <a-tag v-if="selectedCategory !== 0" closable @close="selectedCategory = 0; doSearch()" color="blue">
           {{ currentCategoryLabel }}
@@ -75,7 +75,7 @@
           {{ tag }}
         </a-tag>
         <a-button type="link" size="small" @click="clearAllFilters" class="clear-all-btn">清除全部</a-button>
-      </div>
+      </div> -->
 
       <!-- 布局切换 -->
       <div v-if="!isImmersive" class="layout-bar">

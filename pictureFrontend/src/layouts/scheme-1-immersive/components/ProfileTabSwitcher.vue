@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-export type ProfileTab = 'works' | 'likes' | 'favorites'
+export type ProfileTab = 'works' | 'likes' | 'favorites' | 'pending'
 
 interface Tab {
   key: ProfileTab
@@ -30,6 +30,8 @@ interface Props {
   worksCount?: number
   likesCount?: number
   favoritesCount?: number
+  pendingCount?: number
+  isCurrentUser?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -37,6 +39,8 @@ const props = withDefaults(defineProps<Props>(), {
   worksCount: 0,
   likesCount: 0,
   favoritesCount: 0,
+  pendingCount: 0,
+  isCurrentUser: false,
 })
 
 const emit = defineEmits<{
@@ -69,26 +73,46 @@ const FavoritesIcon = {
   `
 }
 
-const tabs = computed<Tab[]>(() => [
-  {
-    key: 'works',
-    label: '作品',
-    icon: WorksIcon,
-    count: props.worksCount,
-  },
-  {
-    key: 'likes',
-    label: '点赞',
-    icon: LikesIcon,
-    count: props.likesCount,
-  },
-  {
-    key: 'favorites',
-    label: '收藏',
-    icon: FavoritesIcon,
-    count: props.favoritesCount,
-  },
-])
+const PendingIcon = {
+  template: `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+      <path d="M12 7V12L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  `
+}
+
+const tabs = computed<Tab[]>(() => {
+  const list: Tab[] = [
+    {
+      key: 'works',
+      label: '作品',
+      icon: WorksIcon,
+      count: props.worksCount,
+    },
+    {
+      key: 'likes',
+      label: '点赞',
+      icon: LikesIcon,
+      count: props.likesCount,
+    },
+    {
+      key: 'favorites',
+      label: '收藏',
+      icon: FavoritesIcon,
+      count: props.favoritesCount,
+    },
+  ]
+  if (props.isCurrentUser) {
+    list.push({
+      key: 'pending',
+      label: '待审核',
+      icon: PendingIcon,
+      count: props.pendingCount,
+    })
+  }
+  return list
+})
 
 const handleTabChange = (tab: ProfileTab) => {
   emit('update:activeTab', tab)

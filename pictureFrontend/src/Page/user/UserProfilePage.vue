@@ -17,6 +17,8 @@
       :worksCount="worksCount"
       :likesCount="likesCount"
       :favoritesCount="favoritesCount"
+      :pendingCount="pendingCount"
+      :isCurrentUser="isCurrentUser"
       @update:activeTab="handleTabChange"
     />
 
@@ -40,6 +42,15 @@
       :isVisible="activeTab === 'favorites'"
     />
 
+    <PendingTabContent
+      v-if="isCurrentUser"
+      v-show="activeTab === 'pending'"
+      :userId="props.id"
+      :isVisible="activeTab === 'pending'"
+      :userPhone="loginUserStore.loginUser.userPhone ?? ''"
+      @bindSuccess="handleBindSuccess"
+    />
+
     <ShareModal v-model:open="shareModalOpen" :picture="sharePicture" />
   </div>
 </template>
@@ -48,12 +59,14 @@
 import { computed, ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { getUserProfileUsingGet } from '@/api/userController'
+import { queryPendingPicturesUsingPost } from '@/api/pictureController'
 import { userLoginUserStore } from '@/stores/user'
 import ProfileBanner from '@/layouts/scheme-1-immersive/components/ProfileBanner.vue'
 import ProfileTabSwitcher from '@/layouts/scheme-1-immersive/components/ProfileTabSwitcher.vue'
 import WorksTabContent from '@/components/UserProfile/Tabs/WorksTabContent.vue'
 import LikesTabContent from '@/components/UserProfile/Tabs/LikesTabContent.vue'
 import FavoritesTabContent from '@/components/UserProfile/Tabs/FavoritesTabContent.vue'
+import PendingTabContent from '@/components/UserProfile/Tabs/PendingTabContent.vue'
 import ShareModal from '@/components/ShareModal.vue'
 import type { ProfileTab } from '@/layouts/scheme-1-immersive/components/ProfileTabSwitcher.vue'
 
@@ -76,6 +89,20 @@ const activeTab = ref<ProfileTab>('works')
 const worksCount = computed(() => userInfo.value.uploadCount ?? 0)
 const likesCount = computed(() => userInfo.value.userLikeCount ?? 0)
 const favoritesCount = computed(() => userInfo.value.userFavoriteCount ?? 0)
+const pendingCount = ref(0)
+
+// 获取待审核图片数量（仅当前用户）
+const fetchPendingCount = async () => {
+  if (!isCurrentUser.value) return
+  try {
+    const res = await queryPendingPicturesUsingPost({ current: 1, pageSize: 1 })
+    if (res.data.code === 0 && res.data.data) {
+      pendingCount.value = res.data.data.total ?? 0
+    }
+  } catch {
+    // 静默失败，不影响页面
+  }
+}
 
 // 获取用户资料（包含聚合统计）
 const fetchUserInfo = async () => {
@@ -96,6 +123,11 @@ const handleTabChange = (tab: ProfileTab) => {
   activeTab.value = tab
 }
 
+// 手机号绑定成功后刷新用户信息
+const handleBindSuccess = async () => {
+  await loginUserStore.getLoginUser(true)
+}
+
 // 分类列表
 const categoryList = computed(() => userInfo.value.categories ?? [])
 
@@ -105,6 +137,7 @@ const sharePicture = ref<API.PictureVO>()
 
 onMounted(async () => {
   await fetchUserInfo()
+  fetchPendingCount()
 })
 </script>
 
