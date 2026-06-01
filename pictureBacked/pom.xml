@@ -31,6 +31,7 @@
         <knife4j.version>4.4.0</knife4j.version>
         <jsoup>1.15.3</jsoup>
         <caffeine>3.1.8</caffeine>
+
     </properties>
 
     <dependencyManagement>
@@ -93,7 +94,6 @@
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine}</version>
             </dependency>
-
 
         </dependencies>
     </dependencyManagement>

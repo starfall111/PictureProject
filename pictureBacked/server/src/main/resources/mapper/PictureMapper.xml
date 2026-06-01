@@ -36,4 +36,122 @@
         userId,createTime,editTime,updateTime,isDelete,
         reviewStatus,reviewMessage,reviewerId,reviewTime
     </sql>
+
+    <!-- PictureWithStats ResultMap -->
+    <resultMap id="PictureWithStatsMap" type="org.example.pojo.entity.PictureWithStats">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="url" column="url"/>
+        <result property="thumbnailUrl" column="thumbnailUrl"/>
+        <result property="picWidth" column="picWidth"/>
+        <result property="picHeight" column="picHeight"/>
+        <result property="categoryId" column="categoryId"/>
+        <result property="categoryName" column="categoryName"/>
+        <result property="spaceId" column="spaceId"/>
+        <result property="userId" column="userId"/>
+        <result property="tags" column="tags"/>
+        <result property="reviewStatus" column="reviewStatus"/>
+        <result property="createTime" column="createTime"/>
+        <result property="likeCount" column="likeCount"/>
+        <result property="favoriteCount" column="favoriteCount"/>
+        <result property="shareCount" column="shareCount"/>
+        <result property="viewCount" column="viewCount"/>
+        <result property="downloadCount" column="downloadCount"/>
+    </resultMap>
+
+    <!-- 批量查询图片及其统计数据 -->
+    <select id="selectWithStats" resultMap="PictureWithStatsMap">
+        SELECT
+            p.id,
+            p.name,
+            p.url,
+            p.thumbnailUrl,
+            p.picWidth,
+            p.picHeight,
+            p.categoryId,
+            c.name AS categoryName,
+            p.spaceId,
+            p.userId,
+            p.tags,
+            p.reviewStatus,
+            p.createTime,
+            COALESCE(ps.likeCount, 0) AS likeCount,
+            COALESCE(ps.favoriteCount, 0) AS favoriteCount,
+            COALESCE(ps.shareCount, 0) AS shareCount,
+            COALESCE(ps.viewCount, 0) AS viewCount,
+            COALESCE(ps.downloadCount, 0) AS downloadCount
+        FROM picture p
+        LEFT JOIN picture_statistics ps ON p.id = ps.pictureId
+        LEFT JOIN category c ON p.categoryId = c.id
+        WHERE p.id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+          AND p.isDelete = 0
+    </select>
+
+    <!-- 查询所有已审核通过的公开图片 ID -->
+    <select id="selectAllPublicPictureIds" resultType="java.lang.Long">
+        SELECT id
+        FROM picture
+        WHERE isDelete = 0
+          AND reviewStatus = 1
+          AND spaceId IS NULL
+    </select>
+
+    <!-- 批量更新热度分数 -->
+    <update id="batchUpdateHotScore">
+        UPDATE picture SET hotScore = CASE id
+        <foreach collection="list" item="item">
+            WHEN #{item.id} THEN #{item.score}
+        </foreach>
+        END
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!-- 热度降级查询：按 hotScore 降序，用于缓存失效时兜底 -->
+    <select id="selectHotPictures" resultMap="PictureWithStatsMap">
+        SELECT
+            p.id, p.name, p.url, p.thumbnailUrl, p.picWidth, p.picHeight,
+            p.categoryId, c.name AS categoryName, p.spaceId, p.userId, p.tags,
+            p.reviewStatus, p.createTime,
+            COALESCE(ps.likeCount, 0) AS likeCount,
+            COALESCE(ps.favoriteCount, 0) AS favoriteCount,
+            COALESCE(ps.shareCount, 0) AS shareCount,
+            COALESCE(ps.viewCount, 0) AS viewCount,
+            COALESCE(ps.downloadCount, 0) AS downloadCount
+        FROM picture p
+        LEFT JOIN picture_statistics ps ON p.id = ps.pictureId
+        LEFT JOIN category c ON p.categoryId = c.id
+        WHERE p.isDelete = 0
+          AND p.reviewStatus = 1
+          AND p.spaceId IS NULL
+        ORDER BY p.hotScore DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 分类热度降级查询：按 hotScore 降序 + 分类过滤 -->
+    <select id="selectHotPicturesByCategory" resultMap="PictureWithStatsMap">
+        SELECT
+            p.id, p.name, p.url, p.thumbnailUrl, p.picWidth, p.picHeight,
+            p.categoryId, c.name AS categoryName, p.spaceId, p.userId, p.tags,
+            p.reviewStatus, p.createTime,
+            COALESCE(ps.likeCount, 0) AS likeCount,
+            COALESCE(ps.favoriteCount, 0) AS favoriteCount,
+            COALESCE(ps.shareCount, 0) AS shareCount,
+            COALESCE(ps.viewCount, 0) AS viewCount,
+            COALESCE(ps.downloadCount, 0) AS downloadCount
+        FROM picture p
+        LEFT JOIN picture_statistics ps ON p.id = ps.pictureId
+        LEFT JOIN category c ON p.categoryId = c.id
+        WHERE p.isDelete = 0
+          AND p.reviewStatus = 1
+          AND p.spaceId IS NULL
+          AND p.categoryId = #{categoryId}
+        ORDER BY p.hotScore DESC
+        LIMIT #{offset}, #{limit}
+    </select>
 </mapper>

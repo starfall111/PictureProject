@@ -1,19 +1,28 @@
 package org.example.common.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.constants.RedisKeyConstants;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /**
@@ -57,6 +66,18 @@ public class RedisCacheUtil {
      */
     private static final int SPIN_RETRIES = 3;
 
+    // ==================== 缓存监控计数器 ====================
+
+    private final AtomicLong hitCount = new AtomicLong();
+    private final AtomicLong missCount = new AtomicLong();
+    private final AtomicLong lockFailCount = new AtomicLong();
+
+    /**
+     * 定时输出缓存统计日志（每 5 分钟）
+     */
+    // 使用 @Scheduled 需要依赖 Spring 的调度模块，这里用简单的方式
+    private long lastLogTime = System.currentTimeMillis();
+
     /**
      * 带分布式锁的缓存读取（防击穿 + 防穿透）
      *
@@ -71,8 +92,11 @@ public class RedisCacheUtil {
         // 1. 查缓存
         String cacheValue = ops.get(cacheKey);
         if (cacheValue != null) {
+            hitCount.incrementAndGet();
             return NULL_MARKER.equals(cacheValue) ? null : cacheValue;
         }
+        missCount.incrementAndGet();
+        maybeLogStats();
 
         // 2. 尝试获取分布式锁（使用 UUID 作为锁值，防止误解锁）
         String lockKey = "lock:" + cacheKey;
@@ -107,6 +131,7 @@ public class RedisCacheUtil {
             }
         } else {
             // 未获取锁，自旋重试等待锁持有者写入缓存
+            lockFailCount.incrementAndGet();
             for (int i = 0; i < SPIN_RETRIES; i++) {
                 try {
                     Thread.sleep(LOCK_WAIT_MS);
@@ -137,5 +162,84 @@ public class RedisCacheUtil {
         if (!keys.isEmpty()) {
             stringRedisTemplate.delete(keys);
         }
+    }
+
+    /**
+     * 使用 Pipeline 批量 INCR 未读计数，减少 Redis 网络往返
+     *
+     * @param userIds 用户 ID 列表
+     * @return userId → 最新未读计数的映射
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public Map<Long, Long> pipelineIncrementUnread(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // 第一阶段：pipeline 批量 INCR
+        List<Object> rawResults = stringRedisTemplate.executePipelined(
+                new SessionCallback<Object>() {
+                    @Override
+                    public <K, V> Object execute(RedisOperations<K, V> operations) throws DataAccessException {
+                        for (Long userId : userIds) {
+                            String unreadKey = String.format(RedisKeyConstants.NOTIFICATION_UNREAD_KEY, userId);
+                            operations.opsForValue().increment((K) unreadKey, 1);
+                        }
+                        return null;
+                    }
+                }
+        );
+
+        Map<Long, Long> result = new HashMap<>();
+        if (rawResults == null) {
+            return result;
+        }
+
+        // 收集需要设置 TTL 的 key（count == 1，即首次创建）
+        final List<String> ttlKeys = new ArrayList<>();
+        for (int i = 0; i < userIds.size() && i < rawResults.size(); i++) {
+            Object raw = rawResults.get(i);
+            Long count = raw instanceof Long ? (Long) raw : Long.parseLong(raw.toString());
+            result.put(userIds.get(i), count);
+
+            if (count == 1L) {
+                ttlKeys.add(String.format(RedisKeyConstants.NOTIFICATION_UNREAD_KEY, userIds.get(i)));
+            }
+        }
+
+        // 第二阶段：pipeline 批量设置 TTL（减少网络往返 + 防止中间崩溃导致 key 永不过期）
+        if (!ttlKeys.isEmpty()) {
+            stringRedisTemplate.executePipelined(
+                    new SessionCallback<Object>() {
+                        @Override
+                        public <K, V> Object execute(RedisOperations<K, V> operations) throws DataAccessException {
+                            for (String key : ttlKeys) {
+                                operations.expire((K) key, RedisKeyConstants.NOTIFICATION_UNREAD_TTL, TimeUnit.SECONDS);
+                            }
+                            return null;
+                        }
+                    }
+            );
+        }
+
+        return result;
+    }
+
+    /**
+     * 每 5 分钟输出一次缓存统计日志
+     * TODO: 上线前接入 Spring Boot Actuator + Prometheus，替换此简易方案
+     */
+    private void maybeLogStats() {
+        long now = System.currentTimeMillis();
+        if (now - lastLogTime < 300_000) {
+            return;
+        }
+        lastLogTime = now;
+        long hit = hitCount.get();
+        long miss = missCount.get();
+        long lockFail = lockFailCount.get();
+        long total = hit + miss;
+        String hitRate = total > 0 ? String.format("%.1f%%", hit * 100.0 / total) : "N/A";
+        log.info("[Cache Stats] hit={}, miss={}, hitRate={}, lockFail={}", hit, miss, hitRate, lockFail);
     }
 }

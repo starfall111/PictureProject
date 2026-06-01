@@ -62,8 +62,8 @@ public abstract class PictureUploadTemplate {
 
             String originImageUrl = url;
 
-            url = aliOssUtil.processPicture(format,url);
-            String thumbnailImageUrl = aliOssUtil.processPicture(resize,url);
+            url = aliOssUtil.processPicture(format,originImageUrl);
+            String thumbnailImageUrl = aliOssUtil.processPicture(resize,originImageUrl);
 
             //获取图片信息：宽度、高度、宽高比
             BufferedImage bufferedImage = ImageIO.read(tempFile);

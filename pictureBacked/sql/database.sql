@@ -60,7 +60,7 @@ ALTER TABLE picture
 ALTER TABLE picture
     -- 添加新列
     ADD COLUMN thumbnailUrl varchar(512) NULL COMMENT '缩略图 url',
-    ADD COLUMN originUrl varchar(512) NULL COMMENT '缩略图 url';
+    ADD COLUMN originUrl    varchar(512) NULL COMMENT '缩略图 url';
 -- 创建基于 reviewStatus 列的索引
 CREATE INDEX idx_reviewStatus ON picture (reviewStatus);
 
@@ -70,6 +70,13 @@ ALTER TABLE picture
 
 -- 创建索引
 CREATE INDEX idx_spaceId ON picture (spaceId);
+
+-- 添加热度分数字段（推荐系统持久化）
+ALTER TABLE picture
+    ADD COLUMN hotScore DOUBLE DEFAULT 0 NOT NULL COMMENT '热度分数（推荐算法计算）';
+
+-- 创建热度分数索引（热度降级查询）
+CREATE INDEX idx_hotScore ON picture (hotScore);
 
 
 create table if not exists category
@@ -123,45 +130,78 @@ create table if not exists space
 -- 点赞表
 CREATE TABLE IF NOT EXISTS picture_like
 (
-    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    picture_id  BIGINT NOT NULL,
-    user_id     BIGINT NOT NULL,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_picture_user (picture_id, user_id),
-    KEY idx_picture_id (picture_id),
-    KEY idx_user_id (user_id)
+    id         BIGINT PRIMARY KEY AUTO_INCREMENT,
+    pictureId  BIGINT NOT NULL,
+    userId     BIGINT NOT NULL,
+    createTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_picture_user (pictureId, userId),
+    KEY idx_picture_id (pictureId),
+    KEY idx_user_id (userId)
 ) COMMENT '图片点赞' COLLATE = utf8mb4_unicode_ci;
 
 -- 收藏表
 CREATE TABLE IF NOT EXISTS picture_favorite
 (
-    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    picture_id  BIGINT NOT NULL,
-    user_id     BIGINT NOT NULL,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_picture_user (picture_id, user_id),
-    KEY idx_picture_id (picture_id),
-    KEY idx_user_id (user_id)
+    id         BIGINT PRIMARY KEY AUTO_INCREMENT,
+    pictureId  BIGINT NOT NULL,
+    userId     BIGINT NOT NULL,
+    createTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_picture_user (pictureId, userId),
+    KEY idx_picture_id (pictureId),
+    KEY idx_user_id (userId)
 ) COMMENT '图片收藏' COLLATE = utf8mb4_unicode_ci;
-
--- 分享记录表
-CREATE TABLE IF NOT EXISTS picture_share
-(
-    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    picture_id  BIGINT      NOT NULL,
-    user_id     BIGINT      NOT NULL,
-    platform    VARCHAR(20) NOT NULL COMMENT 'wechat/weibo/qq',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    KEY idx_picture_id (picture_id)
-) COMMENT '图片分享记录' COLLATE = utf8mb4_unicode_ci;
 
 -- 图片统计表
 CREATE TABLE IF NOT EXISTS picture_statistics
 (
-    picture_id     BIGINT PRIMARY KEY,
-    like_count     INT DEFAULT 0,
-    favorite_count INT DEFAULT 0,
-    share_count    INT DEFAULT 0,
-    KEY idx_like_count (like_count),
-    KEY idx_favorite_count (favorite_count)
+    pictureId     BIGINT PRIMARY KEY,
+    likeCount     INT DEFAULT 0,
+    favoriteCount INT DEFAULT 0,
+    shareCount    INT DEFAULT 0,
+    viewCount     int default 0 null,
+    downloadCount int default 0 null,
+    KEY idx_like_count (likeCount),
+    KEY idx_favorite_count (favoriteCount)
 ) COMMENT '图片统计' COLLATE = utf8mb4_unicode_ci;
+
+-- 系统消息表
+CREATE TABLE IF NOT EXISTS systemMessage
+(
+    id                  BIGINT PRIMARY KEY AUTO_INCREMENT,
+    title               VARCHAR(255)  NOT NULL COMMENT '标题',
+    content             VARCHAR(2048) NOT NULL COMMENT '内容',
+    sendMode            VARCHAR(20)   NOT NULL DEFAULT 'DIRECT' COMMENT '发送模式: DIRECT=直接批量插入 / RABBITMQ=消息队列',
+    targetType          VARCHAR(20)   NOT NULL DEFAULT 'ALL' COMMENT '目标类型: ALL=全体用户 / FILTER=条件筛选',
+    filterRole          VARCHAR(20)            DEFAULT NULL COMMENT '按角色筛选: user / admin',
+    filterSpaceLevel    INT                    DEFAULT NULL COMMENT '按空间等级筛选: 0=普通 1=专业 2=旗舰',
+    filterRegisterStart DATETIME               DEFAULT NULL COMMENT '注册时间起始',
+    filterRegisterEnd   DATETIME               DEFAULT NULL COMMENT '注册时间截止',
+    status              TINYINT       NOT NULL DEFAULT 0 COMMENT '状态: 0=草稿 1=已发布 2=已下架',
+    publisherId         BIGINT        NOT NULL COMMENT '发布管理员ID',
+    publishTime         DATETIME               DEFAULT NULL COMMENT '发布时间',
+    createTime          DATETIME               DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updateTime          DATETIME               DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    isDelete            TINYINT(1)             DEFAULT 0 COMMENT '逻辑删除',
+    INDEX idx_status (status, isDelete)
+) COMMENT '系统消息' COLLATE = utf8mb4_unicode_ci;
+
+
+-- 站内通知表
+CREATE TABLE IF NOT EXISTS notification
+(
+    id           BIGINT PRIMARY KEY AUTO_INCREMENT,
+    receiverId   BIGINT       NOT NULL COMMENT '接收者用户ID',
+    senderId     BIGINT       DEFAULT NULL COMMENT '触发者用户ID',
+    senderName   VARCHAR(128) DEFAULT NULL COMMENT '触发者昵称(冗余)',
+    senderAvatar VARCHAR(512) DEFAULT NULL COMMENT '触发者头像(冗余)',
+    type         VARCHAR(20)  NOT NULL COMMENT 'LIKE/FAVORITE/COMMENT/FOLLOW/SYSTEM',
+    title        VARCHAR(255) NOT NULL COMMENT '通知标题',
+    content      VARCHAR(512) DEFAULT NULL COMMENT '通知内容',
+    resourceId   BIGINT       DEFAULT NULL COMMENT '关联资源ID',
+    resourceUrl  VARCHAR(512) DEFAULT NULL COMMENT '关联资源链接',
+    isRead       TINYINT(1)   DEFAULT 0 COMMENT '0=未读 1=已读',
+    createTime   DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    isDelete     TINYINT(1)   DEFAULT 0 COMMENT '逻辑删除',
+    INDEX idx_receiver_read (receiverId, isRead, isDelete),
+    INDEX idx_receiver_type (receiverId, type, isDelete)
+) COMMENT '站内通知' COLLATE = utf8mb4_unicode_ci;

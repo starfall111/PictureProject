@@ -53,23 +53,30 @@ public interface PictureService extends IService<Picture> {
     void pictureReview(PictureReviewDTO pictureReviewDTO);
     /**
      * todo 针对人工审核图片过于麻烦的问题，以下解决方案
-     * 1.项目智能化升级，后续项目开发完毕后添加智能模块：
-     * 智能客服：可直接查询当前用户图片未审核通过的图片、识别用户意图搜索图片（FunctionCalling）；添加 QA 问答系统（RAG）系统
-     * 智能审批系统：对接OCR技术来实现制动审批功能
-     * 2.分级策略
-     * 后续可开放vip或安全用户，针对这些用户不进行审批
-     * 3.手机号强制绑定（当前已实现）
-     * 当用户想要上传图片时，如果账号未绑定手机号，直接拒绝用户上传图片
-     * 4.举报机制
+     *  1.项目智能化升级，后续项目开发完毕后添加智能模块：
+     *  智能客服：可直接查询当前用户图片未审核通过的图片、识别用户意图搜索图片（FunctionCalling）；添加 QA 问答系统（RAG）系统
+     *  智能审批系统：对接OCR技术来实现制动审批功能
+     *  2.分级策略
+     *  后续可开放vip或安全用户，针对这些用户不进行审批
+     *  3.手机号强制绑定（当前已实现）
+     *  当用户想要上传图片时，如果账号未绑定手机号，直接拒绝用户上传图片
+     *   4.举报机制
      * */
 
     //管理员批量获取图片
     Integer pictureUploadByBatch(PictureUploadByBatchDTO pictureUploadByBatchDTO);
 
-    // todo 用户分页获取图片资源接口进行多级缓存改造（缓存暂时禁用）
-//    Page<PictureVO> queryPictureListUserCache(PictureQueryDTO queryDTO);
+    /**
+     * 查询当前用户待审批的图片列表（直接查 DB）
+     */
+    Page<PictureVO> queryPendingPictures(PictureQueryDTO queryDTO);
 
-    // todo 添加管理员缓存清理接口
-    // todo 分类和标签接口同理，进行redis缓存和提供管理员刷新缓存接口
+    /**
+     * 绑定手机号后自动过审最新 100 张待审批图片
+     *
+     * @param userId 用户ID
+     * @return 过审的图片数量
+     */
+    int autoApprovePicturesByBindPhone(Long userId);
 
 }

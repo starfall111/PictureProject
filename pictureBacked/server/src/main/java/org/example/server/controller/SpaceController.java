@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 /**
  * @author Zou
- */ //todo 图片模块下的空间权限校验还未完成
+ */
 @RestController
 @RequestMapping("/space")
 public class SpaceController {

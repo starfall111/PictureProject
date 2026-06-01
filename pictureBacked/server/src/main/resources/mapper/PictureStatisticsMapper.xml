@@ -16,4 +16,15 @@
     <sql id="Base_Column_List">
         pictureId,likeCount,favoriteCount,shareCount,viewCount,downloadCount
     </sql>
+
+    <insert id="insertOrUpdate" parameterType="org.example.pojo.entity.PictureStatistics">
+        INSERT INTO picture_statistics (pictureId, likeCount, favoriteCount, shareCount, viewCount, downloadCount)
+        VALUES (#{pictureId}, #{likeCount}, #{favoriteCount}, #{shareCount}, #{viewCount}, #{downloadCount})
+        ON DUPLICATE KEY UPDATE
+            likeCount = #{likeCount},
+            favoriteCount = #{favoriteCount},
+            shareCount = #{shareCount},
+            viewCount = #{viewCount},
+            downloadCount = #{downloadCount}
+    </insert>
 </mapper>

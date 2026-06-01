@@ -48,8 +48,7 @@ public class TagController {
         boolean result = tagService.save(tag);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
-        // 缓存暂时禁用
-//        tagService.clearTagCache();
+        tagService.clearTagCache();
 
         return ResultUtils.success(tag.getId());
     }

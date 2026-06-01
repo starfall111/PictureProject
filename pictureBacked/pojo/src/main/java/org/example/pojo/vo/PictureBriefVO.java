@@ -52,6 +52,16 @@ public class PictureBriefVO implements Serializable {
     private String categoryName;
 
     /**
+     * 图片上传者 id
+     */
+    private Long userId;
+
+    /**
+     * 图片上传者信息
+     */
+    private UserVO userVO;
+
+    /**
      * 标签列表
      */
     private List<String> tags;

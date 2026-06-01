@@ -48,8 +48,7 @@ public class CategoryController {
         boolean result = categoryService.save(category);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
-        // 缓存暂时禁用
-//        categoryService.clearCategoryCache();
+        categoryService.clearCategoryCache();
 
         return ResultUtils.success(category.getId());
     }

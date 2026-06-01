@@ -31,6 +31,7 @@ public class CheckAuthAop {
         UserEnum mustRoleEnum = UserEnum.getByValue(mustRole);
         //获取当前登录用户
         User user = UserContext.get();
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR, "请先登录");
         user = userService.getById(user.getId());
         //判断权限是否满足
         UserEnum userEnum = UserEnum.getByValue(user.getUserRole());

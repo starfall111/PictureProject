@@ -8,6 +8,14 @@ spring:
     port: 6379
     database: 5
     password: "125801"
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 50
+        max-idle: 20
+        min-idle: 5
+        max-wait: 3000ms
+      shutdown-timeout: 200ms
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/picture
@@ -18,6 +26,22 @@ spring:
     store-type: redis               # 存储类型
     redis:
         namespace: "myapp:session"    # Redis key 前缀
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:admin}
+    password: ${RABBITMQ_PASSWORD:125801}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 50
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000ms
 
   mail:
     host: ${MAIL_HOST:smtp.qq.com}

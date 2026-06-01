@@ -6,11 +6,15 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.example.common.constants.PictureConstant;
+import org.example.common.constants.RedisKeyConstants;
 import org.example.common.constants.UserConstant;
+import org.example.common.enums.NotificationTypeEnum;
 import org.example.pojo.dto.user.*;
 import org.example.pojo.dto.social.UserPictureQueryDTO;
 import org.example.pojo.entity.Category;
+import org.example.pojo.entity.Notification;
 import org.example.pojo.entity.Picture;
 import org.example.pojo.entity.User;
 import org.example.common.context.UserContext;
@@ -30,15 +34,20 @@ import org.example.server.mapper.PictureStatisticsMapper;
 import org.example.server.mapper.UserMapper;
 import org.example.server.service.CategoryService;
 import org.example.server.service.NoticeService;
+import org.example.server.service.NotificationService;
 import org.example.server.service.UserService;
 import org.example.server.template.user.login.AccountLoginUser;
 import org.example.server.template.user.login.EmailLoginUser;
 import org.example.server.template.user.login.PhoneLoginUser;
 import org.example.server.template.user.login.UserLoginTemplate;
+import org.example.server.service.event.BindPhoneEvent;
 import org.example.server.template.user.register.AccountRegisterUser;
 import org.example.server.template.user.register.EmailRegisterUser;
 import org.example.server.template.user.register.PhoneRegisterUser;
 import org.example.server.template.user.register.UserRegisterTemplate;
+import org.example.common.util.RateLimitUtil;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 import org.example.common.util.SnowflakeIdWorker;
@@ -57,7 +66,7 @@ import java.util.stream.Collectors;
  * @description 针对表【user(用户)】的数据库操作Service实现
  * @createDate 2026-05-11 20:54:16
  */
-
+@Slf4j
 @Service("dbUserService")
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {
@@ -101,6 +110,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Resource
     private PictureFavoriteMapper pictureFavoriteMapper;
 
+    @Resource
+    private RateLimitUtil rateLimitUtil;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Resource(name = "cachedNotificationService")
+    private NotificationService notificationService;
+
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
+
     @Override
     public long userRegister(UserRegisterDTO userRegisterDTO) {
         //1.校验数据 和 判断注册类型
@@ -131,24 +152,59 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         boolean result = this.save(user);
 
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
+
+        // 发送欢迎通知（附带初始密码提醒）
+        try {
+            Notification welcome = new Notification();
+            welcome.setReceiverId(user.getId());
+            welcome.setSenderId(null);
+            welcome.setSenderName("系统管理员");
+            welcome.setType(NotificationTypeEnum.SYSTEM.getType());
+            welcome.setTitle("欢迎注册 PictureProject");
+            welcome.setContent("感谢您的注册！您的初始密码为 123456，请尽快登录并修改密码以确保账号安全。");
+            welcome.setIsRead(0);
+            notificationService.save(welcome);
+        } catch (Exception e) {
+            log.warn("注册欢迎通知发送失败：userId={}", user.getId(), e);
+        }
+
         return user.getId();
     }
 
     @Override
     public LoginUserVO userLogin(UserLoginDTO userLoginDTO, HttpServletRequest request) {
 
-        //TODO 需要预留防撞库机制
-        //1.校验数据 数据结构不为空、type不为空、account不为空
+        //0.防撞库机制：滑动窗口限流
+        //0.1 校验数据
         Integer type = userLoginDTO.getType();
         String account = userLoginDTO.getAccount();
-        //主体数据判空
         ThrowUtils.throwIf(ObjUtil.hasNull(type, account), ErrorCode.PARAMS_ERROR);
+
+        //0.2 检查硬锁定（30 分钟窗口，连续触发后生效）
+        RateLimitUtil.Result lockResult = rateLimitUtil.checkRateLimit(
+                RedisKeyConstants.RATE_LIMIT_RESOURCE_LOGIN + ":lock", account,
+                RedisKeyConstants.LOGIN_LOCK_WINDOW, 5);
+        if (!lockResult.allowed()) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR,
+                    "账号已被锁定，请30分钟后重试");
+        }
+
+        //0.3 滑动窗口限流（5 分钟内最多 5 次失败）
+        RateLimitUtil.Result limitResult = rateLimitUtil.checkRateLimit(
+                RedisKeyConstants.RATE_LIMIT_RESOURCE_LOGIN, account,
+                RedisKeyConstants.LOGIN_RATE_LIMIT_WINDOW, RedisKeyConstants.LOGIN_RATE_LIMIT_MAX);
+        if (!limitResult.allowed()) {
+            // 触发锁定：设置 30 分钟硬锁
+            rateLimitUtil.checkRateLimit(
+                    RedisKeyConstants.RATE_LIMIT_RESOURCE_LOGIN + ":lock", account,
+                    RedisKeyConstants.LOGIN_LOCK_WINDOW, 1);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR,
+                    "登录失败次数过多，账号已被锁定30分钟");
+        }
 
         UserLoginTemplate userLogin = accountLoginUser;
 
         User user = new User();
-        //注： 抽象出校验格式方法
-        //2.1密码登录 根据account从数据库找到数据，进行常规对比
         switch (type) {
             case 0:
                 break;
@@ -162,14 +218,39 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "非法数据");
         }
 
-        user = userLogin.login(userLoginDTO);
-        //3.记录登录状态 session记录
+        try {
+            user = userLogin.login(userLoginDTO);
+            //登录成功：清除限流窗口（重置计数器）
+            clearLoginRateLimit(account);
+        } catch (BusinessException e) {
+            //登录失败：滑动窗口已自动记录，提示剩余次数
+            int remaining = Math.max(0, RedisKeyConstants.LOGIN_RATE_LIMIT_MAX - 1);
+            throw e;
+        }
+
+        //3.记录登录状态
         HttpSession session = request.getSession();
         session.setAttribute(UserConstant.USER_LOGIN_STATE, user);
-        //4.返回LoginUserVO数据结构
+        //4.返回LoginUserVO
         LoginUserVO userVO = new LoginUserVO();
         BeanUtil.copyProperties(user, userVO);
         return userVO;
+    }
+
+    /**
+     * 登录成功后清除该账号的限流记录
+     */
+    private void clearLoginRateLimit(String account) {
+        try {
+            stringRedisTemplate.delete(
+                    String.format("%s:%s:%s", RedisKeyConstants.RATE_LIMIT_KEY_PREFIX,
+                            RedisKeyConstants.RATE_LIMIT_RESOURCE_LOGIN, account));
+            stringRedisTemplate.delete(
+                    String.format("%s:%s:%s", RedisKeyConstants.RATE_LIMIT_KEY_PREFIX,
+                            RedisKeyConstants.RATE_LIMIT_RESOURCE_LOGIN + ":lock", account));
+        } catch (Exception e) {
+            log.warn("清除登录限流记录失败：account={}", account, e);
+        }
     }
 
     @Override
@@ -255,6 +336,40 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return userPageVO;
     }
 
+    @Override
+    public void updatePassword(UserPasswordUpdateDTO passwordUpdateDTO) {
+        String oldPassword = passwordUpdateDTO.getOldPassword();
+        String newPassword = passwordUpdateDTO.getNewPassword();
+        String confirmPassword = passwordUpdateDTO.getConfirmPassword();
+
+        //1.判空
+        ThrowUtils.throwIf(StrUtil.hasBlank(oldPassword, newPassword, confirmPassword),
+                ErrorCode.PARAMS_ERROR, "密码不能为空");
+        //2.校验新密码与确认密码一致
+        ThrowUtils.throwIf(!newPassword.equals(confirmPassword),
+                ErrorCode.PARAMS_ERROR, "两次密码输入不一致");
+        //3.校验新密码长度
+        ThrowUtils.throwIf(newPassword.length() < 6,
+                ErrorCode.PARAMS_ERROR, "密码长度不能小于6位");
+
+        //4.获取当前用户
+        User currentUser = UserContext.get();
+        ThrowUtils.throwIf(ObjUtil.isEmpty(currentUser), ErrorCode.NOT_LOGIN_ERROR);
+
+        //5.校验旧密码
+        String encryptOldPassword = getEncryptPassword(oldPassword);
+        User dbUser = this.getById(currentUser.getId());
+        ThrowUtils.throwIf(!encryptOldPassword.equals(dbUser.getUserPassword()),
+                ErrorCode.PARAMS_ERROR, "原密码错误");
+
+        //6.更新密码
+        User updateUser = new User();
+        updateUser.setId(currentUser.getId());
+        updateUser.setUserPassword(getEncryptPassword(newPassword));
+        boolean result = this.updateById(updateUser);
+        ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
+    }
+
     //密码加密
     private String getEncryptPassword(String password) {
         password = UserConstant.SALT + password;
@@ -319,6 +434,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         boolean result = this.updateById(updateUser);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
+
+        // 绑定手机号时触发自动过审事件
+        if (type == 1) {
+            eventPublisher.publishEvent(new BindPhoneEvent(this, currentUser.getId()));
+        }
     }
 
     @Override

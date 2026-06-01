@@ -13,6 +13,7 @@ import org.example.pojo.entity.Picture;
 import org.example.pojo.entity.PictureFavorite;
 import org.example.pojo.entity.PictureLike;
 import org.example.pojo.entity.PictureStatistics;
+import org.example.pojo.entity.User;
 import org.example.pojo.vo.PictureBriefVO;
 import org.example.pojo.vo.PictureStatisticsVO;
 import org.example.pojo.vo.ToggleFavoriteVO;
@@ -22,9 +23,13 @@ import org.example.server.mapper.PictureFavoriteMapper;
 import org.example.server.mapper.PictureLikeMapper;
 import org.example.server.mapper.PictureMapper;
 import org.example.server.mapper.PictureStatisticsMapper;
+import org.example.server.mapper.UserMapper;
 import org.example.server.service.SocialService;
+import org.example.server.service.event.NotificationEvent;
+import org.example.common.enums.NotificationTypeEnum;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -44,6 +49,7 @@ import java.util.stream.Collectors;
  *
  * @author Zou
  */
+// todo 添加关注功能 在用户主页面 可以看到该用户关注了多少人 和该用户拥有多少粉丝 相关列表在 UserService中实现 分页实现
 @Slf4j
 @Service("cachedSocialService")
 public class CachedSocialServiceImpl implements SocialService {
@@ -67,19 +73,33 @@ public class CachedSocialServiceImpl implements SocialService {
     private PictureStatisticsMapper pictureStatisticsMapper;
 
     @Resource
+    private UserMapper userMapper;
+
+    @Resource
     private DefaultRedisScript<Long> releaseLockScript;
 
     @Resource(name = "dbSocialService")
     private SocialService dbSocialService;
+
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
     /**
      * 分布式锁超时时间（秒）
      */
     private static final int LOCK_TIMEOUT_SECONDS = 10;
 
+    /**
+     * TODO: 优化方向 — 当前 DB 写操作在分布式锁内执行（锁 TTL 10s）。
+     *       如果未来 DB 写入延迟成为瓶颈，可考虑将 DB 操作移到锁外：
+     *       先完成 Redis 操作 + 释放锁，再同步写 DB（需处理 DB 失败时的回补逻辑）。
+     *       当前业务量级下单行 INSERT/DELETE 正常 < 100ms，暂不需要优化。
+     *       DB 写入延迟成为瓶颈后，采用 rabbitMQ 削峰
+     *
+     */
     @Override
     public ToggleLikeVO toggleLike(Long pictureId, Long userId) {
-        validPicturePublic(pictureId);
+        Picture picture = validPicturePublic(pictureId);
 
         String lockKey = String.format(RedisKeyConstants.SOCIAL_LOCK_KEY, "like", userId, pictureId);
         String lockValue = UUID.randomUUID().toString();
@@ -116,6 +136,9 @@ public class CachedSocialServiceImpl implements SocialService {
                 pictureLike.setUserId(userId);
                 pictureLikeMapper.insert(pictureLike);
                 liked = true;
+
+                // 发布点赞通知事件
+                publishNotification(picture, userId, NotificationTypeEnum.LIKE, "赞了你的图片");
             }
 
             // 标记脏数据
@@ -184,9 +207,12 @@ public class CachedSocialServiceImpl implements SocialService {
         return result;
     }
 
+    /**
+     * TODO: 同 toggleLike — DB 写操作在锁内，当前可接受，未来按需优化
+     */
     @Override
     public ToggleFavoriteVO toggleFavorite(Long pictureId, Long userId) {
-        validPicturePublic(pictureId);
+        Picture picture = validPicturePublic(pictureId);
 
         String lockKey = String.format(RedisKeyConstants.SOCIAL_LOCK_KEY, "fav", userId, pictureId);
         String lockValue = UUID.randomUUID().toString();
@@ -223,8 +249,12 @@ public class CachedSocialServiceImpl implements SocialService {
                 pictureFavorite.setUserId(userId);
                 pictureFavoriteMapper.insert(pictureFavorite);
                 favorited = true;
+
+                // 发布收藏通知事件
+                publishNotification(picture, userId, NotificationTypeEnum.FAVORITE, "收藏了你的图片");
             }
 
+            // todo 在点赞收藏阶段 用户重复点击 导致违背数据库唯一索引 需要捕获异常并提示前端点击过快
             // 标记脏数据
             stringRedisTemplate.opsForSet().add(RedisKeyConstants.SOCIAL_STATS_DIRTY_KEY, String.valueOf(pictureId));
 
@@ -376,6 +406,12 @@ public class CachedSocialServiceImpl implements SocialService {
         return result;
     }
 
+    /**
+     * 获取指定用户点赞图片列表
+     * @param userId   目标用户 id
+     * @param queryDTO 查询条件（分页、筛选、排序）
+     * @return
+     */
     @Override
     public Page<PictureBriefVO> getUserLikedPictures(Long userId, UserPictureQueryDTO queryDTO) {
         String md5 = buildPageMd5(queryDTO.getCurrent(), queryDTO.getPageSize());
@@ -384,15 +420,26 @@ public class CachedSocialServiceImpl implements SocialService {
 
         String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
             Page<PictureBriefVO> result = dbSocialService.getUserLikedPictures(userId, queryDTO);
+            // 缓存前移除社交统计，只存图片基本信息
+            stripSocialStats(result.getRecords());
             return JSONUtil.toJsonStr(result);
         });
 
         if (json == null) {
             return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
         }
-        return deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        Page<PictureBriefVO> page = deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        // 反序列化后通过 batchStatistics 实时填充社交数据
+        fillSocialStats(page.getRecords());
+        return page;
     }
 
+    /**
+     *  获取指定用户收藏图片列表
+     * @param userId   目标用户 id
+     * @param queryDTO 查询条件（分页、筛选、排序）
+     * @return
+     */
     @Override
     public Page<PictureBriefVO> getUserFavoritedPictures(Long userId, UserPictureQueryDTO queryDTO) {
         String md5 = buildPageMd5(queryDTO.getCurrent(), queryDTO.getPageSize());
@@ -401,15 +448,27 @@ public class CachedSocialServiceImpl implements SocialService {
 
         String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
             Page<PictureBriefVO> result = dbSocialService.getUserFavoritedPictures(userId, queryDTO);
+            // 缓存前移除社交统计，只存图片基本信息
+            stripSocialStats(result.getRecords());
             return JSONUtil.toJsonStr(result);
         });
 
         if (json == null) {
             return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
         }
-        return deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        Page<PictureBriefVO> page = deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        // 反序列化后通过 batchStatistics 实时填充社交数据
+        fillSocialStats(page.getRecords());
+        return page;
     }
 
+    /**
+     * 获取用户上传图片列表
+     * @param userId   目标用户 id
+     * @param queryDTO 查询条件（分页）
+     * @return
+     */
+    // todo 这里的三个图片相关的方法应该移动到 Picture 模块下 ；三个方法流程一致 可抽象为模板方法
     @Override
     public Page<PictureBriefVO> getUserUploadedPictures(Long userId, UserPictureQueryDTO queryDTO) {
         String md5 = buildPageMd5(queryDTO.getCurrent(), queryDTO.getPageSize());
@@ -418,13 +477,18 @@ public class CachedSocialServiceImpl implements SocialService {
 
         String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
             Page<PictureBriefVO> result = dbSocialService.getUserUploadedPictures(userId, queryDTO);
+            // 缓存前移除社交统计，只存图片基本信息
+            stripSocialStats(result.getRecords());
             return JSONUtil.toJsonStr(result);
         });
 
         if (json == null) {
             return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
         }
-        return deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        Page<PictureBriefVO> page = deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        // 反序列化后通过 batchStatistics 实时填充社交数据
+        fillSocialStats(page.getRecords());
+        return page;
     }
 
     // ==================== 私有方法 ====================
@@ -449,11 +513,40 @@ public class CachedSocialServiceImpl implements SocialService {
         return page;
     }
 
-    private void validPicturePublic(Long pictureId) {
+    private Picture validPicturePublic(Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR, "图片 id 不合法");
         Picture picture = pictureMapper.selectById(pictureId);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
         ThrowUtils.throwIf(picture.getSpaceId() != null, ErrorCode.NO_AUTH_ERROR, "仅公共图库支持社交功能");
+        return picture;
+    }
+
+    /**
+     * 发布通知事件（异步处理）
+     */
+    // todo 如果要考虑高并发场景下的点赞收藏模式下，需要加入 rabbitMQ 进行削峰即可
+    private void publishNotification(Picture picture, Long senderId, NotificationTypeEnum type, String action) {
+        try {
+            // 获取触发者信息
+            User sender = userMapper.selectById(senderId);
+            String senderName = sender != null ? sender.getUserName() : "匿名用户";
+            String senderAvatar = sender != null ? sender.getUserAvatar() : null;
+
+            eventPublisher.publishEvent(new NotificationEvent(
+                    this,
+                    picture.getUserId(),  // 接收者 = 图片作者
+                    senderId,
+                    senderName,
+                    senderAvatar,
+                    type,
+                    action,
+                    null,
+                    picture.getId(),
+                    "/picture/" + picture.getId()
+            ));
+        } catch (Exception e) {
+            log.warn("发布通知事件失败：pictureId={}, senderId={}, type={}", picture.getId(), senderId, type, e);
+        }
     }
 
     /**
@@ -581,5 +674,40 @@ public class CachedSocialServiceImpl implements SocialService {
         vo.setViewCount(0);
         vo.setDownloadCount(0);
         return vo;
+    }
+
+    /**
+     * 缓存前移除社交统计（缓存只存图片基本信息）
+     */
+    private void stripSocialStats(List<PictureBriefVO> records) {
+        if (records == null) {
+            return;
+        }
+        for (PictureBriefVO vo : records) {
+            vo.setLikeCount(null);
+            vo.setFavoriteCount(null);
+            vo.setViewCount(null);
+            vo.setDownloadCount(null);
+        }
+    }
+
+    /**
+     * 反序列化后通过 batchStatistics 实时填充社交统计
+     */
+    private void fillSocialStats(List<PictureBriefVO> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        List<Long> pictureIds = records.stream()
+                .map(PictureBriefVO::getId)
+                .collect(Collectors.toList());
+        Map<Long, PictureStatisticsVO> statsMap = batchStatistics(pictureIds);
+        for (PictureBriefVO vo : records) {
+            PictureStatisticsVO stats = statsMap.getOrDefault(vo.getId(), defaultStats());
+            vo.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
+            vo.setFavoriteCount(stats.getFavoriteCount() != null ? stats.getFavoriteCount() : 0);
+            vo.setViewCount(stats.getViewCount() != null ? stats.getViewCount() : 0);
+            vo.setDownloadCount(stats.getDownloadCount() != null ? stats.getDownloadCount() : 0);
+        }
     }
 }

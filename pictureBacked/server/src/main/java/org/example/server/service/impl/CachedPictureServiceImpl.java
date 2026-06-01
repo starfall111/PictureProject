@@ -4,6 +4,8 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -78,6 +80,12 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
     @Qualifier("dbPictureService")
     private PictureService dbPictureService;
 
+    /**
+     * 用户查询图片列表
+     *
+     * @param queryDTO
+     * @return
+     */
     @Override
     public Page<PictureVO> queryPictureListUser(PictureQueryDTO queryDTO) {
         Long spaceId = queryDTO.getSpaceId();
@@ -85,15 +93,19 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
 
         // 空间图片 → 不缓存（涉及权限校验）
         if (ObjUtil.isNotEmpty(spaceId)) {
-            return doQueryPictureListUser(queryDTO);
+            Page<PictureVO> result = doQueryPictureListUser(queryDTO);
+            fillSocialData(result.getRecords());
+            return result;
         }
 
         // 深度分页 → 不缓存
         if (queryDTO.getCurrent() > 10) {
-            return doQueryPictureListUser(queryDTO);
+            Page<PictureVO> result = doQueryPictureListUser(queryDTO);
+            fillSocialData(result.getRecords());
+            return result;
         }
 
-        // 判断是否为热门查询
+        //判断是否为热门查询
         boolean isHot = isHotQuery(queryDTO);
         String md5Key = buildQueryMd5(queryDTO, isHot);
 
@@ -115,9 +127,26 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         if (json == null) {
             return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
         }
-        return JSONUtil.toBean(json, Page.class);
+        // 手动反序列化，避免 Page<PictureVO> 泛型擦除导致 records 类型丢失
+        JSONObject jsonObj = JSONUtil.parseObj(json);
+        Page<PictureVO> result = new Page<>();
+        result.setCurrent(jsonObj.getLong("current"));
+        result.setSize(jsonObj.getLong("size"));
+        result.setTotal(jsonObj.getLong("total"));
+        JSONArray recordsArr = jsonObj.getJSONArray("records");
+        if (recordsArr != null) {
+            result.setRecords(recordsArr.toList(PictureVO.class));
+        }
+        fillSocialData(result.getRecords());
+        return result;
     }
 
+    /**
+     * 用户查询图片详情
+     *
+     * @param id 图片ID
+     * @return
+     */
     @Override
     public PictureVO getByPictureIdUser(long id) {
         // 1. 查 DB 判断是否存在及是否空间图片
@@ -153,6 +182,13 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
 
     // ==================== 写操作：委托 dbPictureService + 后置缓存失效 ====================
 
+    /**
+     * 用户上传图片
+     *
+     * @param inputResource 上传文件资源
+     * @param fileDTO       上传文件DTO
+     * @return 上传的图片实体
+     */
     @Override
     public Picture upload(Object inputResource, FileDTO fileDTO) throws Exception {
         Picture picture = dbPictureService.upload(inputResource, fileDTO);
@@ -164,11 +200,23 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         return picture;
     }
 
+    /**
+     * 用户下载图片
+     *
+     * @param picture 图片实体
+     * @return 图片字节数组
+     */
     @Override
     public byte[] download(Picture picture) throws FileNotFoundException, ClientException {
         return dbPictureService.download(picture);
     }
 
+    /**
+     * 管理员更新图片
+     *
+     * @param pictureUpdateDTO 更新图片DTO
+     * @return 是否更新成功
+     */
     @Override
     public boolean updatePicture(PictureUpdateDTO pictureUpdateDTO) {
         boolean result = dbPictureService.updatePicture(pictureUpdateDTO);
@@ -183,6 +231,12 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         return result;
     }
 
+    /**
+     * 用户编辑图片
+     *
+     * @param pictureEditDTO 编辑图片DTO
+     * @return 是否编辑成功
+     */
     @Override
     public boolean editPicture(PictureEditDTO pictureEditDTO) {
         boolean result = dbPictureService.editPicture(pictureEditDTO);
@@ -197,6 +251,12 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         return result;
     }
 
+    /**
+     * 用户删除图片
+     *
+     * @param id 图片ID
+     * @return 是否删除成功
+     */
     @Override
     public Boolean deletePicture(long id) throws Exception {
         Picture picture = this.getById(id);
@@ -211,16 +271,61 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
         return result;
     }
 
+    /**
+     * 管理员查询图片列表
+     *
+     * @param queryDTO 查询图片列表DTO
+     * @return 图片列表分页VO
+     */
     @Override
     public Page<PictureEntityVO> queryPictureListAdmin(PictureQueryDTO queryDTO) {
         return dbPictureService.queryPictureListAdmin(queryDTO);
     }
 
+    /**
+     * 管理员根据图片ID查询图片详情
+     *
+     * @param id 图片ID
+     * @return 图片实体
+     */
     @Override
     public Picture getByPictureIdAdmin(long id) {
         return dbPictureService.getByPictureIdAdmin(id);
     }
 
+    /**
+     * 用户查询待审批图片列表
+     *
+     * @param queryDTO 查询待审批图片列表DTO
+     * @return 待审批图片列表分页VO
+     */
+    @Override
+    public Page<PictureVO> queryPendingPictures(PictureQueryDTO queryDTO) {
+        // 待审批列表直接查 DB，不缓存
+        return dbPictureService.queryPendingPictures(queryDTO);
+    }
+
+    /**
+     * 用户自动审批待审批图片
+     *
+     * @param userId 用户ID
+     * @return 审批成功图片数量
+     */
+    @Override
+    public int autoApprovePicturesByBindPhone(Long userId) {
+        int count = dbPictureService.autoApprovePicturesByBindPhone(userId);
+        if (count > 0) {
+            invalidateUploadedListCache(userId);
+        }
+        return count;
+    }
+
+    /**
+     * 管理员审批待审批图片
+     *
+     * @param pictureReviewDTO 审批图片DTO
+     * @return 是否审批成功
+     */
     @Override
     public void pictureReview(PictureReviewDTO pictureReviewDTO) {
         dbPictureService.pictureReview(pictureReviewDTO);
@@ -298,31 +403,31 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
      * 构建查询 MD5 Key
      */
     private String buildQueryMd5(PictureQueryDTO queryDTO, boolean isHot) {
-        String raw;
-        if (isHot) {
-            // 热门查询：精确参数
-            raw = String.format("cat=%s|tags=%s|uid=%s|rs=%s|cur=%d|ps=%d",
-                    queryDTO.getCategoryId(),
-                    queryDTO.getTags(),
-                    queryDTO.getUserId(),
-                    queryDTO.getReviewStatus(),
-                    queryDTO.getCurrent(),
-                    queryDTO.getPageSize());
-        } else {
-            // 普通查询：宽松参数
-            List<String> tags = queryDTO.getTags();
-            String tagsPart = "";
-            if (tags != null && !tags.isEmpty()) {
-                tagsPart = tags.stream().limit(3).sorted().collect(Collectors.joining(","));
-            }
-            raw = String.format("cat=%s|rs=%s|tags=%s|cur=%d|ps=%d",
-                    queryDTO.getCategoryId(),
-                    queryDTO.getReviewStatus(),
-                    tagsPart,
-                    queryDTO.getCurrent(),
-                    queryDTO.getPageSize());
+        List<String> tags = queryDTO.getTags();
+        String tagsPart = "";
+        if (tags != null && !tags.isEmpty()) {
+            tagsPart = tags.stream().sorted().collect(Collectors.joining(","));
         }
+        // 包含所有影响查询结果的参数，防止缓存串数据
+        String raw = String.format(
+                "cat=%s|" +
+                        "search=%s|sf=%s|so=%s|" +
+                        "cur=%d|ps=%d",
+                queryDTO.getCategoryId(),
+                truncate(queryDTO.getSearchText(), 100),
+                queryDTO.getSortField(),
+                queryDTO.getSortOrder(),
+                queryDTO.getCurrent(),
+                queryDTO.getPageSize());
         return DigestUtils.md5DigestAsHex(raw.getBytes());
+    }
+
+    /**
+     * 截断过长字符串防止缓存 key 过大
+     */
+    private static String truncate(String s, int maxLen) {
+        if (s == null) return null;
+        return s.length() <= maxLen ? s : s.substring(0, maxLen);
     }
 
     /**
@@ -377,9 +482,6 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
                 pictureVO.setCategoryName(categoryMap.get(categoryId).getName());
             }
         });
-
-        // 填充社交数据
-        fillSocialData(pictureVOList);
 
         result = result.setRecords(pictureVOList);
         return result;
@@ -457,11 +559,17 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
      */
     private static class PictureServiceImplHelper {
         static com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Picture> getQueryWrapper(PictureQueryDTO pictureQueryDTO) {
+            // 输入校验：防 DoS
+            List<String> tags = pictureQueryDTO.getTags();
+            ThrowUtils.throwIf(tags != null && tags.size() > 20, ErrorCode.PARAMS_ERROR, "标签数量不能超过20个");
+            String searchText = pictureQueryDTO.getSearchText();
+            ThrowUtils.throwIf(StrUtil.isNotBlank(searchText) && searchText.length() > 200,
+                    ErrorCode.PARAMS_ERROR, "搜索文本不能超过200个字符");
+
             Long id = pictureQueryDTO.getId();
             String name = pictureQueryDTO.getName();
             String introduction = pictureQueryDTO.getIntroduction();
             Long categoryId = pictureQueryDTO.getCategoryId();
-            List<String> tags = pictureQueryDTO.getTags();
             Long picSize = pictureQueryDTO.getPicSize();
             Integer picWidth = pictureQueryDTO.getPicWidth();
             Integer picHeight = pictureQueryDTO.getPicHeight();
@@ -469,7 +577,6 @@ public class CachedPictureServiceImpl extends ServiceImpl<PictureMapper, Picture
             Long userId = pictureQueryDTO.getUserId();
             Long spaceId = pictureQueryDTO.getSpaceId();
             Boolean nullSpaceId = pictureQueryDTO.getNullSpaceId();
-            String searchText = pictureQueryDTO.getSearchText();
             Integer reviewStatus = pictureQueryDTO.getReviewStatus();
             Date startEditTime = pictureQueryDTO.getStartEditTime();
             Date endEditTime = pictureQueryDTO.getEndEditTime();

@@ -134,6 +134,11 @@ public class Picture implements Serializable {
     private Date updateTime;
 
     /**
+     * 热度分数（推荐算法计算）
+     */
+    private Double hotScore;
+
+    /**
      * 是否删除
      */
     @TableLogic

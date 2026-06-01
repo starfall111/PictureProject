@@ -27,6 +27,11 @@ public class PictureBrief implements Serializable {
     private String categoryName;
 
     /**
+     * 图片上传者 id
+     */
+    private Long userId;
+
+    /**
      * 标签（JSON 字符串，数据库原始值）
      */
     private String tags;

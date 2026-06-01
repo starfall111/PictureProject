@@ -66,4 +66,9 @@ public interface UserService extends IService<User> {
      */
     UserProfileVO getUserProfile(Long userId);
 
+    /**
+     * 修改密码
+     */
+    void updatePassword(UserPasswordUpdateDTO passwordUpdateDTO);
+
 }
