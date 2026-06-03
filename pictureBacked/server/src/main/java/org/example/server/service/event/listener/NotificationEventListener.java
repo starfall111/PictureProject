@@ -1,10 +1,11 @@
-package org.example.server.service.event;
+package org.example.server.service.event.listener;
 
 import cn.hutool.core.util.ObjUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.constants.RedisKeyConstants;
 import org.example.pojo.entity.Notification;
 import org.example.server.service.NotificationService;
+import org.example.server.service.event.NotificationEvent;
 import org.example.server.service.sse.SsePushService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;

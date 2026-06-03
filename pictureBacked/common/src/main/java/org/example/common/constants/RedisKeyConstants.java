@@ -10,6 +10,13 @@ public class RedisKeyConstants {
     private RedisKeyConstants() {
     }
 
+    /**
+     * 计算 TTL 基础时间 + 随机抖动，防止缓存雪崩
+     */
+    public static int ttlWithJitter(int base, int jitter) {
+        return base + cn.hutool.core.util.RandomUtil.randomInt(0, jitter);
+    }
+
 
     // todo 列举缓存时机
     //  多级缓存使用场景 人们搜索、推荐图片、图片社交数据
@@ -210,4 +217,82 @@ public class RedisKeyConstants {
      * Type: SET
      */
     public static final String REC_HOT_DIRTY_KEY = "rec:hot:dirty";
+
+    // ==================== 关注功能 Key ====================
+
+    /**
+     * 关注状态标记（是否关注某用户）
+     * Value: STRING "1"(关注) 或 "0"(未关注)
+     * 格式: follow:status:{followerId}:{followeeId}
+     */
+    public static final String FOLLOW_STATUS_KEY = "follow:status:%d:%d";
+
+    /**
+     * 关注数缓存
+     * Value: STRING count
+     * 格式: follow:count:{userId}:following
+     */
+    public static final String FOLLOW_COUNT_KEY = "follow:count:%d:following";
+
+    /**
+     * 粉丝数缓存
+     * Value: STRING count
+     * 格式: follow:count:{userId}:followers
+     */
+    public static final String FOLLOWER_COUNT_KEY = "follow:count:%d:followers";
+
+    /**
+     * 关注操作分布式锁
+     * Value: STRING, TTL 10s
+     */
+    public static final String FOLLOW_LOCK_KEY = "lock:follow:%d:%d";
+
+    /**
+     * 关注计数同步分布式锁
+     */
+    public static final String FOLLOW_SYNC_LOCK_KEY = "lock:follow:sync";
+
+    // ==================== 关注功能 TTL ====================
+
+    /** 关注状态缓存 TTL 基础时间（秒）= 7 天 */
+    public static final int FOLLOW_STATUS_TTL_BASE = 7 * 24 * 3600;
+    /** 关注状态缓存 TTL 随机抖动上限（秒）= 60 分钟 */
+    public static final int FOLLOW_STATUS_TTL_JITTER = 3600;
+    /** 关注计数缓存 TTL 基础时间（秒）= 7 天 */
+    public static final int FOLLOW_COUNT_TTL_BASE = 7 * 24 * 3600;
+    /** 关注计数缓存 TTL 随机抖动上限（秒）= 60 分钟 */
+    public static final int FOLLOW_COUNT_TTL_JITTER = 3600;
+
+    // ==================== 动态功能 Key ====================
+
+    /**
+     * 动态数据缓存（含 items + unreadCount + latestTime + total）
+     * Value: STRING (JSON)
+     * 格式: feed:cache:{userId}
+     */
+    public static final String FEED_CACHE_KEY = "feed:cache:%d";
+
+    /**
+     * 动态阅读水位线（用户最后阅读时间戳）
+     * Value: STRING (毫秒时间戳)
+     * 格式: feed:watermark:{userId}
+     */
+    public static final String FEED_WATERMARK_KEY = "feed:watermark:%d";
+
+    /**
+     * 动态缓存分布式锁
+     * Value: STRING, TTL 10s
+     */
+    public static final String FEED_LOCK_KEY = "lock:feed:%d";
+
+    // ==================== 动态功能 TTL ====================
+
+    /** 动态缓存 TTL 基础时间（秒）= 3 分钟 */
+    public static final int FEED_CACHE_TTL_BASE = 3 * 60;
+
+    /** 动态缓存 TTL 随机抖动上限（秒）= 3 分钟 */
+    public static final int FEED_CACHE_TTL_JITTER = 3 * 60;
+
+    /** 动态水位线 TTL（秒）= 30 天 */
+    public static final int FEED_WATERMARK_TTL = 30 * 24 * 3600;
 }

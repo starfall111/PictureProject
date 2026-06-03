@@ -25,6 +25,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
+import org.example.common.exception.ErrorCode;
+import org.example.common.exception.ThrowUtils;
+
 /**
  * Redis 缓存工具类
  * 提供分布式锁缓存读取（防击穿 + 防穿透）和 SCAN 模式删除（替代 keys）
@@ -145,6 +148,28 @@ public class RedisCacheUtil {
             }
             throw new org.example.common.exception.BusinessException(
                     org.example.common.exception.ErrorCode.OPERATION_ERROR, "当前请求过多，请稍后重试");
+        }
+    }
+
+    /**
+     * 分布式锁执行器（写操作场景）
+     * 封装 lock-acquire → action → lock-release 生命周期，避免重复编写锁模板代码
+     *
+     * @param lockKey   锁 key
+     * @param action    业务逻辑
+     * @param errorMsg  获取锁失败时的错误提示
+     * @return 业务逻辑返回值
+     */
+    public <T> T executeWithLock(String lockKey, Supplier<T> action, String errorMsg) {
+        String lockValue = UUID.randomUUID().toString();
+        Boolean locked = stringRedisTemplate.opsForValue()
+                .setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        ThrowUtils.throwIf(!Boolean.TRUE.equals(locked), ErrorCode.OPERATION_ERROR, errorMsg);
+        try {
+            return action.get();
+        } finally {
+            stringRedisTemplate.execute(releaseLockScript,
+                    Collections.singletonList(lockKey), lockValue);
         }
     }
 

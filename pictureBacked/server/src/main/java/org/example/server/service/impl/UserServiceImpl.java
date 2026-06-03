@@ -33,6 +33,7 @@ import org.example.server.mapper.PictureMapper;
 import org.example.server.mapper.PictureStatisticsMapper;
 import org.example.server.mapper.UserMapper;
 import org.example.server.service.CategoryService;
+import org.example.server.service.FollowService;
 import org.example.server.service.NoticeService;
 import org.example.server.service.NotificationService;
 import org.example.server.service.UserService;
@@ -121,6 +122,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Resource
     private ApplicationEventPublisher eventPublisher;
+
+    @Resource
+    private FollowService followService;
 
     @Override
     public long userRegister(UserRegisterDTO userRegisterDTO) {
@@ -605,6 +609,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                 .collect(Collectors.toList());
 
         profile.setCategories(categoryVOList);
+
+        // 7. 查询关注数据
+        org.example.pojo.vo.FollowCountVO followCount = followService.getFollowCount(userId);
+        profile.setFollowCount(followCount.getFollowCount());
+        profile.setFollowerCount(followCount.getFollowerCount());
+
+        // 8. 查询当前登录用户是否关注了该用户
+        try {
+            User currentUser = UserContext.get();
+            if (currentUser != null) {
+                boolean isFollowed = followService.isFollowing(currentUser.getId(), userId);
+                profile.setIsFollowed(isFollowed);
+            } else {
+                profile.setIsFollowed(false);
+            }
+        } catch (Exception e) {
+            log.warn("查询关注状态失败: targetUserId={}", userId, e);
+            profile.setIsFollowed(false);
+        }
 
         return profile;
     }

@@ -1,7 +1,8 @@
-package org.example.server.service.event;
+package org.example.server.service.event.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.server.service.PictureService;
+import org.example.server.service.event.BindPhoneEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
