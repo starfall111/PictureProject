@@ -77,6 +77,7 @@ import {
   FolderOutlined,
   UserOutlined,
   SafetyCertificateOutlined,
+  ThunderboltOutlined,
   TeamOutlined,
   FileImageOutlined,
   AppstoreOutlined,
@@ -112,6 +113,7 @@ const userNavItems = computed(() => {
     { path: '/home', icon: PictureOutlined, label: '公共图库' },
     { path: '/my_space', icon: FolderOutlined, label: '个人空间' },
     { path: `/user/${loginUserStore.loginUser.id}`, icon: UserOutlined, label: '用户主页' },
+    { path: '/feed', icon: ThunderboltOutlined, label: '动态' }, 
   ]
   // 如果用户未登录，隐藏个人空间和用户主页
   if (!loginUserStore.loginUser.id) {

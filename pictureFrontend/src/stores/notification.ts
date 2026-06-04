@@ -1,5 +1,5 @@
 import {
-  getUnreadCountUsingGet,
+  getUnreadCountUsingGet1,
   listNotificationsUsingGet,
   markAsReadUsingPut,
   markAllAsReadUsingPut,
@@ -25,7 +25,7 @@ export const useNotificationStore = defineStore('notification', () => {
    */
   async function fetchUnreadCount() {
     try {
-      const res = await getUnreadCountUsingGet()
+      const res = await getUnreadCountUsingGet1()
       if (res.data.code === 0) {
         unreadCount.value = res.data.data ?? 0
       }
@@ -144,7 +144,7 @@ export const useNotificationStore = defineStore('notification', () => {
   function connectSSE() {
     disconnectSSE()
     try {
-      eventSource = new EventSource('/api/notification/sse', {
+      eventSource = new EventSource('${SSE_BASE}/api/notification/sse', {
         withCredentials: true,
       })
 

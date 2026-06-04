@@ -8,7 +8,13 @@
       :viewCount="userInfo.totalViews ?? 0"
       :shareCount="userInfo.totalShares ?? 0"
       :downloadCount="userInfo.totalDownloads ?? 0"
+      :followCount="followCount"
+      :followerCount="followerCount"
+      :isFollowed="isFollowed"
       :isCurrentUser="isCurrentUser"
+      @showFollowing="showFollowing"
+      @showFollowers="showFollowers"
+      @followChange="handleFollowChange"
     />
 
     <!-- Tab切换器 -->
@@ -52,6 +58,14 @@
     />
 
     <ShareModal v-model:open="shareModalOpen" :picture="sharePicture" />
+
+    <!-- 关注/粉丝列表抽屉 -->
+    <UserFollowListDrawer
+      v-model:open="drawerOpen"
+      :userId="props.id"
+      :type="drawerType"
+      @followChange="handleDrawerFollowChange"
+    />
   </div>
 </template>
 
@@ -68,6 +82,7 @@ import LikesTabContent from '@/components/UserProfile/Tabs/LikesTabContent.vue'
 import FavoritesTabContent from '@/components/UserProfile/Tabs/FavoritesTabContent.vue'
 import PendingTabContent from '@/components/UserProfile/Tabs/PendingTabContent.vue'
 import ShareModal from '@/components/ShareModal.vue'
+import UserFollowListDrawer from '@/components/UserProfile/UserFollowListDrawer.vue'
 import type { ProfileTab } from '@/layouts/scheme-1-immersive/components/ProfileTabSwitcher.vue'
 
 const props = defineProps<{
@@ -91,6 +106,15 @@ const likesCount = computed(() => userInfo.value.userLikeCount ?? 0)
 const favoritesCount = computed(() => userInfo.value.userFavoriteCount ?? 0)
 const pendingCount = ref(0)
 
+// 关注相关状态
+const isFollowed = ref(false)
+const followCount = ref(0)
+const followerCount = ref(0)
+
+// 抽屉控制
+const drawerOpen = ref(false)
+const drawerType = ref<'following' | 'followers'>('following')
+
 // 获取待审核图片数量（仅当前用户）
 const fetchPendingCount = async () => {
   if (!isCurrentUser.value) return
@@ -110,6 +134,10 @@ const fetchUserInfo = async () => {
     const res = await getUserProfileUsingGet({ id: props.id })
     if (res.data.code === 0 && res.data.data) {
       userInfo.value = res.data.data
+      // 更新关注相关数据
+      followCount.value = res.data.data.followCount ?? 0
+      followerCount.value = res.data.data.followerCount ?? 0
+      isFollowed.value = res.data.data.isFollowed ?? false
     } else {
       message.error('获取用户信息失败')
     }
@@ -126,6 +154,36 @@ const handleTabChange = (tab: ProfileTab) => {
 // 手机号绑定成功后刷新用户信息
 const handleBindSuccess = async () => {
   await loginUserStore.getLoginUser(true)
+}
+
+// 打开关注列表
+const showFollowing = () => {
+  drawerType.value = 'following'
+  drawerOpen.value = true
+}
+
+// 打开粉丝列表
+const showFollowers = () => {
+  drawerType.value = 'followers'
+  drawerOpen.value = true
+}
+
+// 关注状态变化（来自 ProfileBanner 的 FollowButton）
+const handleFollowChange = (userId: number, isFollowing: boolean) => {
+  isFollowed.value = isFollowing
+  if (isFollowing) {
+    followCount.value = followCount.value + 1
+  } else {
+    followCount.value = Math.max(0, followCount.value - 1)
+  }
+}
+
+// 关注状态变化（来自抽屉列表）
+const handleDrawerFollowChange = (userId: number, isFollowing: boolean) => {
+  // 如果是当前页面用户被关注/取关，更新粉丝数
+  if (Number(userId) === Number(props.id)) {
+    followerCount.value = isFollowing ? followerCount.value + 1 : Math.max(0, followerCount.value - 1)
+  }
 }
 
 // 分类列表

@@ -35,7 +35,23 @@
           <span class="stat-value">{{ formatCount(downloadCount) }}</span>
           <span class="stat-label">下载</span>
         </div>
+        <!-- 新增：关注数和粉丝数 -->
+        <div
+          class="stat-item clickable"
+          @click="handleShowFollowing"
+        >
+          <span class="stat-value">{{ formatCount(followerCount) }}</span>
+          <span class="stat-label">关注</span>
+        </div>
+        <div
+          class="stat-item clickable"
+          @click="handleShowFollowers"
+        >
+          <span class="stat-value">{{ formatCount(followCount) }}</span>
+          <span class="stat-label">粉丝</span>
+        </div>
       </div>
+      <!-- 自己的主页：编辑资料按钮 -->
       <a-button
         v-if="isCurrentUser"
         type="primary"
@@ -44,6 +60,13 @@
       >
         编辑资料
       </a-button>
+      <!-- 别人的主页：关注按钮 -->
+      <FollowButton
+        v-else
+        :target-user-id="userInfo.id"
+        :is-following="isFollowed"
+        @follow-change="handleFollowChange"
+      />
     </div>
   </div>
 </template>
@@ -51,6 +74,7 @@
 <script setup lang="ts">
 import { formatCount } from '@/utils/formatCount'
 import { useRouter } from 'vue-router'
+import FollowButton from '@/components/UserProfile/FollowButton.vue'
 
 const router = useRouter()
 
@@ -62,6 +86,9 @@ interface Props {
   viewCount?: number
   shareCount?: number
   downloadCount?: number
+  followCount?: number
+  followerCount?: number
+  isFollowed?: boolean
   isCurrentUser?: boolean
 }
 
@@ -72,11 +99,32 @@ withDefaults(defineProps<Props>(), {
   viewCount: 0,
   shareCount: 0,
   downloadCount: 0,
+  followCount: 0,
+  followerCount: 0,
+  isFollowed: false,
   isCurrentUser: false,
 })
 
+const emit = defineEmits<{
+  (e: 'showFollowing'): void
+  (e: 'showFollowers'): void
+  (e: 'followChange', userId: number, isFollowing: boolean): void
+}>()
+
 const handleEditProfile = () => {
   router.push('/user/center')
+}
+
+const handleShowFollowing = () => {
+  emit('showFollowing')
+}
+
+const handleShowFollowers = () => {
+  emit('showFollowers')
+}
+
+const handleFollowChange = (userId: number, isFollowing: boolean) => {
+  emit('followChange', userId, isFollowing)
 }
 </script>
 
@@ -129,7 +177,7 @@ const handleEditProfile = () => {
 
 .profile-banner-stats {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 16px;
 }
 
@@ -174,5 +222,18 @@ const handleEditProfile = () => {
   .profile-banner-stats {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+.stat-item.clickable {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.stat-item.clickable:hover {
+  transform: scale(1.05);
+}
+
+.stat-item.clickable:hover .stat-value {
+  color: var(--accent, #635BFF);
 }
 </style>
