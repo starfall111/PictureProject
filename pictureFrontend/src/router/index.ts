@@ -20,6 +20,7 @@ import SpaceDetailPage from '@/Page/space/SpaceDetailPage.vue'
 import PictureSearchPage from '@/Page/picture/PictureSearchPage.vue'
 import UserProfilePage from '@/Page/user/UserProfilePage.vue'
 import NotificationPage from '@/Page/notification/NotificationPage.vue'
+import FeedPage from '@/Page/feed/FeedPage.vue'
 import SystemMessageManagePage from '@/Page/systemMessage/SystemMessageManagePage.vue'
 
 
@@ -164,6 +165,14 @@ const router = createRouter({
           path: '/notifications',
           name: '通知中心',
           component: NotificationPage,
+          meta: {
+            access: ACCESS_ENUM.USER,
+          },
+        },
+        {
+          path: '/feed',
+          name: '动态',
+          component: FeedPage,
           meta: {
             access: ACCESS_ENUM.USER,
           },
