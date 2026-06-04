@@ -54,6 +54,7 @@ public class FollowServiceImpl extends ServiceImpl<UserFollowMapper, UserFollow>
 
     @Override
     @Transactional
+    // todo 关注时更新用户 feed 的readline 为当前时间
     public boolean toggleFollow(Long currentUserId, Long targetUserId) {
         // 1. 参数校验
         ThrowUtils.throwIf(ObjUtil.equal(currentUserId, targetUserId),
