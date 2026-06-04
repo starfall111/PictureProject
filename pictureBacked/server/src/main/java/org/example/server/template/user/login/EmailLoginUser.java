@@ -9,7 +9,7 @@ import org.example.pojo.entity.User;
 import org.example.server.template.user.register.EmailRegisterUser;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 @Service
 public class EmailLoginUser extends UserLoginTemplate{

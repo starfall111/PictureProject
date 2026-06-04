@@ -13,7 +13,7 @@ import org.example.server.mapper.UserMapper;
 import org.example.server.service.NoticeService;
 import org.springframework.util.DigestUtils;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 public abstract class UserLoginTemplate {
 

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.example.common.result.BaseResponse;
 import org.example.common.result.ResultUtils;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.concurrent.ExecutionException;
 
 @RestController

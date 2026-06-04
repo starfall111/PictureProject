@@ -11,8 +11,6 @@ import java.util.Date;
 
 import lombok.Data;
 
-import javax.swing.*;
-
 /**
  * 空间
  *

@@ -10,7 +10,7 @@ import org.example.common.exception.ThrowUtils;
 import org.example.common.util.AliOssUtil;
 import org.example.pojo.dto.picture.UploadPictureDTO;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;

@@ -17,7 +17,7 @@ import org.example.pojo.entity.Tag;
 import org.example.server.service.TagService;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 /**

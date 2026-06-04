@@ -205,3 +205,14 @@ CREATE TABLE IF NOT EXISTS notification
     INDEX idx_receiver_read (receiverId, isRead, isDelete),
     INDEX idx_receiver_type (receiverId, type, isDelete)
 ) COMMENT '站内通知' COLLATE = utf8mb4_unicode_ci;
+
+-- 用户关注表
+CREATE TABLE IF NOT EXISTS user_follow (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT 'id',
+    followerId  BIGINT NOT NULL COMMENT '关注者用户ID',
+    followeeId  BIGINT NOT NULL COMMENT '被关注者用户ID',
+    createTime  DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '关注时间',
+    UNIQUE KEY uk_follower_followee (followerId, followeeId),
+    KEY idx_follower (followerId),
+    KEY idx_followee (followeeId)
+) COMMENT '用户关注关系' COLLATE = utf8mb4_unicode_ci;

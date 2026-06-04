@@ -154,4 +154,29 @@
         ORDER BY p.hotScore DESC
         LIMIT #{offset}, #{limit}
     </select>
+
+    <!-- 动态查询公共条件片段（关注用户 + 自己的图片） -->
+    <sql id="feedPictureConditions">
+        FROM picture p
+        WHERE (p.userId = #{followerId}
+               OR p.userId IN (
+                   SELECT followeeId FROM user_follow
+                   WHERE followerId = #{followerId}
+               ))
+          AND p.reviewStatus = 1
+          AND (p.spaceId IS NULL OR p.spaceId = 0)
+          AND p.isDelete = 0
+    </sql>
+
+    <!-- 分页查询关注用户的动态图片 -->
+    <select id="selectFeedPictures" resultType="org.example.pojo.entity.Picture">
+        SELECT p.* <include refid="feedPictureConditions"/>
+        ORDER BY p.createTime DESC
+    </select>
+
+    <!-- 统计关注用户的新动态数量（createTime > watermark） -->
+    <select id="countFeedUnread" resultType="java.lang.Long">
+        SELECT COUNT(*) <include refid="feedPictureConditions"/>
+        AND p.createTime &gt; #{watermark}
+    </select>
 </mapper>

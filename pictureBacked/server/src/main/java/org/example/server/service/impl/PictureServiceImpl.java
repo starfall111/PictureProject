@@ -9,6 +9,7 @@ import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.constants.PictureConstant;
 import org.example.common.constants.RedisKeyConstants;
@@ -48,7 +49,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -110,7 +111,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     private Map<String, ImageSearchStrategy> imageSearchStrategyMap;
 
-    @javax.annotation.PostConstruct
+    @PostConstruct
     private void initStrategyMap() {
         imageSearchStrategyMap = imageSearchStrategyList.stream()
                 .collect(Collectors.toMap(ImageSearchStrategy::getSourceType, s -> s));

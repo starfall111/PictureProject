@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.server.mapper.UserFollowMapper">
+
+    <!-- 用户简要信息 ResultMap -->
+    <resultMap id="FollowUserVOMap" type="org.example.pojo.vo.FollowUserVO">
+        <id property="id" column="id"/>
+        <result property="userName" column="userName"/>
+        <result property="userAvatar" column="userAvatar"/>
+        <result property="isFollowing" column="isFollowing"/>
+        <result property="followTime" column="followTime"/>
+    </resultMap>
+
+    <!-- 查询关注关系是否存在 -->
+    <select id="selectByFollowerAndFollowee" resultType="org.example.pojo.entity.UserFollow">
+        SELECT id, followerId, followeeId, createTime
+        FROM user_follow
+        WHERE followerId = #{followerId} AND followeeId = #{followeeId}
+        LIMIT 1
+    </select>
+
+    <!-- 统计关注关系是否存在 -->
+    <select id="countByFollowerAndFollowee" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user_follow
+        WHERE followerId = #{followerId} AND followeeId = #{followeeId}
+    </select>
+
+    <!-- 统计关注数 -->
+    <select id="countFollowing" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user_follow
+        WHERE followerId = #{userId}
+    </select>
+
+    <!-- 统计粉丝数 -->
+    <select id="countFollowers" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user_follow
+        WHERE followeeId = #{userId}
+    </select>
+
+    <!-- 分页查询关注列表 -->
+    <select id="selectFollowingList" resultMap="FollowUserVOMap">
+        SELECT
+            u.id,
+            u.userName,
+            u.userAvatar,
+            uf.createTime AS followTime
+        FROM user_follow uf
+        INNER JOIN user u ON uf.followeeId = u.id
+        WHERE uf.followerId = #{userId}
+          AND u.isDelete = 0
+        ORDER BY uf.createTime DESC
+    </select>
+
+    <!-- 分页查询粉丝列表 -->
+    <select id="selectFollowersList" resultMap="FollowUserVOMap">
+        SELECT
+            u.id,
+            u.userName,
+            u.userAvatar,
+            uf.createTime AS followTime,
+            EXISTS(
+                SELECT 1 FROM user_follow uf2
+                WHERE uf2.followerId = #{currentUserId}
+                  AND uf2.followeeId = u.id
+            ) AS isFollowing
+        FROM user_follow uf
+        INNER JOIN user u ON uf.followerId = u.id
+        WHERE uf.followeeId = #{userId}
+          AND u.isDelete = 0
+        ORDER BY uf.createTime DESC
+    </select>
+
+    <!-- 查询用户关注的所有用户ID -->
+    <select id="selectFolloweeIds" resultType="java.lang.Long">
+        SELECT followeeId FROM user_follow WHERE followerId = #{followerId}
+    </select>
+
+    <!-- 按关注者和被关注者直接删除 -->
+    <delete id="deleteByFollowerAndFollowee">
+        DELETE FROM user_follow
+        WHERE followerId = #{followerId} AND followeeId = #{followeeId}
+    </delete>
+
+</mapper>

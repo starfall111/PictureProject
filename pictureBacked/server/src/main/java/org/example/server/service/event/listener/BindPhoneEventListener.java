@@ -1,12 +1,13 @@
-package org.example.server.service.event;
+package org.example.server.service.event.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.server.service.PictureService;
+import org.example.server.service.event.BindPhoneEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * 绑定手机号事件监听器 — 异步触发自动过审

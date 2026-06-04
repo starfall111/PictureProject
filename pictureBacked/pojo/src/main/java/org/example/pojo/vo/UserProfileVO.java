@@ -88,6 +88,21 @@ public class UserProfileVO implements Serializable {
      */
     private List<CategoryBriefVO> categories;
 
+    /**
+     * 关注数（正在关注多少人）
+     */
+    private Integer followCount;
+
+    /**
+     * 粉丝数（被多少人关注）
+     */
+    private Integer followerCount;
+
+    /**
+     * 当前登录用户是否关注了该用户
+     */
+    private Boolean isFollowed;
+
     @Serial
     private static final long serialVersionUID = 1L;
 }

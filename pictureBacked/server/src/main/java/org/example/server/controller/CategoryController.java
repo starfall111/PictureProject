@@ -17,7 +17,7 @@ import org.example.pojo.dto.category.CategoryUpdateDTO;
 import org.example.server.service.CategoryService;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 /**
