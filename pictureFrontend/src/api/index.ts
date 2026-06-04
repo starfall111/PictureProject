@@ -5,6 +5,8 @@
 import * as adminCacheController from "./adminCacheController";
 import * as adminSystemMessageController from "./adminSystemMessageController";
 import * as categoryController from "./categoryController";
+import * as feedController from "./feedController";
+import * as followController from "./followController";
 import * as mainController from "./mainController";
 import * as notificationController from "./notificationController";
 import * as pictureController from "./pictureController";
@@ -17,6 +19,8 @@ export default {
   adminCacheController,
   adminSystemMessageController,
   categoryController,
+  feedController,
+  followController,
   mainController,
   notificationController,
   pictureController,

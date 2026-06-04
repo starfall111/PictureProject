@@ -75,7 +75,9 @@ export async function connectSseUsingGet(options?: { [key: string]: any }) {
 }
 
 /** getUnreadCount GET /api/notification/unread/count */
-export async function getUnreadCountUsingGet(options?: { [key: string]: any }) {
+export async function getUnreadCountUsingGet1(options?: {
+  [key: string]: any;
+}) {
   return request<API.BaseResponseLong_>("/api/notification/unread/count", {
     method: "GET",
     ...(options || {}),

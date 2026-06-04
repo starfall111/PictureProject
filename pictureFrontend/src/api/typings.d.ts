@@ -19,6 +19,24 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseFeedTimelineVO_ = {
+    code?: number;
+    data?: FeedTimelineVO;
+    message?: string;
+  };
+
+  type BaseResponseFeedUnreadVO_ = {
+    code?: number;
+    data?: FeedUnreadVO;
+    message?: string;
+  };
+
+  type BaseResponseFollowCountVO_ = {
+    code?: number;
+    data?: FollowCountVO;
+    message?: string;
+  };
+
   type BaseResponseInt_ = {
     code?: number;
     data?: number;
@@ -76,6 +94,12 @@ declare namespace API {
   type BaseResponsePageCategory_ = {
     code?: number;
     data?: PageCategory_;
+    message?: string;
+  };
+
+  type BaseResponsePageFollowUserVO_ = {
+    code?: number;
+    data?: PageFollowUserVO_;
     message?: string;
   };
 
@@ -248,6 +272,37 @@ declare namespace API {
     id?: number;
   };
 
+  type FeedTimelineVO = {
+    current?: number;
+    records?: FeedVO[];
+    size?: number;
+    total?: number;
+    unreadCount?: number;
+  };
+
+  type FeedUnreadVO = {
+    unreadCount?: number;
+  };
+
+  type FeedVO = {
+    categoryId?: number;
+    categoryName?: string;
+    createTime?: string;
+    id?: number;
+    introduction?: string;
+    isNew?: boolean;
+    name?: string;
+    picHeight?: number;
+    picWidth?: number;
+    socialInfo?: PictureSocialVO;
+    tags?: string[];
+    thumbnailUrl?: string;
+    url?: string;
+    userAvatar?: string;
+    userId?: number;
+    userName?: string;
+  };
+
   type FileDTO = {
     categoryId?: number;
     fileUrl?: string;
@@ -258,9 +313,31 @@ declare namespace API {
     tags?: string;
   };
 
+  type FollowActionDTO = {
+    targetUserId?: number;
+  };
+
+  type FollowCountVO = {
+    followCount?: number;
+    followerCount?: number;
+  };
+
+  type FollowUserVO = {
+    followTime?: string;
+    id?: number;
+    isFollowing?: boolean;
+    userAvatar?: string;
+    userName?: string;
+  };
+
   type getCategoryByIdUsingGETParams = {
     /** id */
     id: number;
+  };
+
+  type getFollowCountUsingGETParams = {
+    /** userId */
+    userId: number;
   };
 
   type getPictureByIdAdminUsingGETParams = {
@@ -291,6 +368,11 @@ declare namespace API {
   type getTagByIdUsingGETParams = {
     /** id */
     id: number;
+  };
+
+  type getTimelineUsingGETParams = {
+    current?: number;
+    pageSize?: number;
   };
 
   type getUserFavoritedPicturesCacheUsingPOSTParams = {
@@ -336,6 +418,29 @@ declare namespace API {
   type ImageSearchResult = {
     fromUrl?: string;
     thumbUrl?: string;
+  };
+
+  type isFollowingUsingGETParams = {
+    /** targetUserId */
+    targetUserId: number;
+  };
+
+  type listFollowersUsingGETParams = {
+    /** current */
+    current?: number;
+    /** pageSize */
+    pageSize?: number;
+    /** userId */
+    userId: number;
+  };
+
+  type listFollowingUsingGETParams = {
+    /** current */
+    current?: number;
+    /** pageSize */
+    pageSize?: number;
+    /** userId */
+    userId: number;
   };
 
   type listNotificationsUsingGETParams = {
@@ -396,6 +501,14 @@ declare namespace API {
     current?: number;
     pages?: number;
     records?: Category[];
+    size?: number;
+    total?: number;
+  };
+
+  type PageFollowUserVO_ = {
+    current?: number;
+    pages?: number;
+    records?: FollowUserVO[];
     size?: number;
     total?: number;
   };
@@ -927,7 +1040,10 @@ declare namespace API {
   type UserProfileVO = {
     categories?: CategoryBriefVO[];
     createTime?: string;
+    followCount?: number;
+    followerCount?: number;
     id?: number;
+    isFollowed?: boolean;
     totalDownloads?: number;
     totalFavorites?: number;
     totalLikes?: number;
