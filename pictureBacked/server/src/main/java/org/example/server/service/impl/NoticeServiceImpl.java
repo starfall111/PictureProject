@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.example.common.util.AliSMSUtil;
 import org.example.common.util.EmailUtil;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;

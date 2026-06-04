@@ -15,7 +15,7 @@ import org.example.common.result.BaseResponse;
 import org.example.common.result.ResultUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * 用户关注控制器

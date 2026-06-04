@@ -4,12 +4,11 @@ package org.example.server.controller;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import net.bytebuddy.implementation.bytecode.Throw;
 import org.example.common.annotation.CheckAuth;
 import org.example.pojo.DeleteRequest;
 import org.example.pojo.dto.user.*;
 import org.example.pojo.entity.User;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.example.common.constants.UserConstant;
 import org.example.common.context.UserContext;
 import org.example.common.exception.ErrorCode;
@@ -23,9 +22,7 @@ import org.example.common.result.ResultUtils;
 import org.example.pojo.vo.LoginUserVO;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.transform.Result;
+import jakarta.annotation.Resource;
 
 /**
  * @author Zou

@@ -12,7 +12,7 @@ import org.example.common.exception.ThrowUtils;
 import org.example.server.service.UserService;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * @author Zou

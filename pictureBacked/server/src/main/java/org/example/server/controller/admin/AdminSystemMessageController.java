@@ -17,7 +17,7 @@ import org.example.pojo.vo.SystemMessageVO;
 import org.example.server.service.SystemMessageService;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * 管理员 — 系统消息管理 Controller

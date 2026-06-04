@@ -8,7 +8,7 @@ import org.example.pojo.vo.LoginUserVO;
 import org.example.pojo.vo.UserProfileVO;
 import org.example.pojo.vo.UserVO;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
 * @author Zou

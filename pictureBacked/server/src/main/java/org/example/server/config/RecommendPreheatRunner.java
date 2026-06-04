@@ -5,7 +5,7 @@ import org.example.server.service.RecommendService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * 推荐缓存预热 Runner
