@@ -49,7 +49,6 @@ import java.util.stream.Collectors;
  *
  * @author Zou
  */
-// todo 添加关注功能 在用户主页面 可以看到该用户关注了多少人 和该用户拥有多少粉丝 相关列表在 UserService中实现 分页实现
 @Slf4j
 @Service("cachedSocialService")
 public class CachedSocialServiceImpl implements SocialService {

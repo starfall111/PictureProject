@@ -37,5 +37,6 @@ public class InterceptorConfig implements WebMvcConfigurer {
                         "/picture/user/{id}"
 //                        "/picture/view/{pictureId}"
                 );
+        // 新增模块不需要排除路径，均走登录拦截
     }
 }

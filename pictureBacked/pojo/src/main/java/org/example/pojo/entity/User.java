@@ -70,6 +70,26 @@ public class User implements Serializable {
     private String userRole;
 
     /**
+     * 封禁状态：NONE/TEMP/PERMANENT
+     */
+    private String banStatus;
+
+    /**
+     * 封禁结束时间
+     */
+    private Date banEndTime;
+
+    /**
+     * 累计违规次数（6个月滚动窗口）
+     */
+    private Integer violationCount;
+
+    /**
+     * 最近一次违规时间
+     */
+    private Date lastViolationTime;
+
+    /**
      * 编辑时间
      */
     private Date editTime;

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.server.mapper.FeedbackStatusLogMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.pojo.entity.FeedbackStatusLog">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="feedbackId" column="feedbackId" jdbcType="BIGINT"/>
+            <result property="fromStatus" column="fromStatus" jdbcType="VARCHAR"/>
+            <result property="toStatus" column="toStatus" jdbcType="VARCHAR"/>
+            <result property="operatorId" column="operatorId" jdbcType="BIGINT"/>
+            <result property="operatorType" column="operatorType" jdbcType="VARCHAR"/>
+            <result property="remark" column="remark" jdbcType="VARCHAR"/>
+            <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,feedbackId,fromStatus,toStatus,operatorId,operatorType,remark,createTime
+    </sql>
+</mapper>

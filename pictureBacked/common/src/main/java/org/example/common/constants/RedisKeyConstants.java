@@ -295,4 +295,163 @@ public class RedisKeyConstants {
 
     /** 动态水位线 TTL（秒）= 30 天 */
     public static final int FEED_WATERMARK_TTL = 30 * 24 * 3600;
+
+    // ==================== Feedback 反馈模块 Key ====================
+
+    /**
+     * 反馈提交限流计数
+     * Value: STRING(INT), TTL 到当天23:59:59
+     * 格式: feedback:submit:count:{userId}
+     */
+    public static final String FEEDBACK_SUBMIT_COUNT = "feedback:submit:count:";
+
+    /**
+     * 反馈每日统计缓存
+     * Value: STRING(JSON), TTL 7天
+     */
+    public static final String FEEDBACK_STATS_DAILY = "feedback:stats:daily:";
+
+    /**
+     * 管理端待处理反馈计数
+     * Value: STRING(INT), TTL 5分钟
+     */
+    public static final String FEEDBACK_ADMIN_PENDING_COUNT = "feedback:admin:pending:count";
+
+    /**
+     * 反馈详情缓存
+     * Value: HASH, TTL 30分钟
+     */
+    public static final String FEEDBACK_DETAIL = "feedback:detail:";
+
+    /**
+     * 反馈提交防重锁
+     * Value: STRING, TTL 10秒
+     */
+    public static final String LOCK_FEEDBACK_SUBMIT = "lock:feedback:submit:";
+
+    /**
+     * 反馈自动关闭检查队列
+     * Value: ZSET (member=feedbackId, score=autoCloseTimestamp)
+     */
+    public static final String FEEDBACK_AUTO_CLOSE_CHECK = "feedback:auto:close:check";
+
+    /**
+     * 用户端反馈统计缓存
+     * Value: STRING(JSON), TTL 5分钟
+     * 格式: feedback:stats:user:{userId}
+     */
+    public static final String FEEDBACK_USER_STATS_KEY = "feedback:stats:user:%d";
+
+    /**
+     * 管理端反馈统计缓存
+     * Value: STRING(JSON), TTL 5分钟
+     */
+    public static final String FEEDBACK_ADMIN_STATS_KEY = "feedback:stats:admin";
+
+    /** 反馈统计缓存 TTL（秒）= 5 分钟 */
+    public static final int FEEDBACK_STATS_TTL = 5 * 60;
+
+    // ==================== Report 举报模块 Key ====================
+
+    /**
+     * 举报限流
+     * Value: STRING(INT), TTL 60秒
+     * 格式: rate_limit:report:{userId}
+     */
+    public static final String REPORT_RATE_LIMIT_KEY = "rate_limit:report:%d";
+
+    /**
+     * 举报防重复
+     * Value: STRING, TTL 7天
+     * 格式: report:dup:{reporterId}:{targetType}:{targetId}
+     */
+    public static final String REPORT_DUPLICATE_KEY = "report:dup:%d:%s:%d";
+
+    /**
+     * 举报人信誉分
+     * Value: STRING(JSON), TTL 24小时
+     * 格式: report:credit:{userId}
+     */
+    public static final String REPORT_CREDIT_KEY = "report:credit:%d";
+
+    /**
+     * 举报统计缓存
+     * Value: STRING(JSON), TTL 5分钟
+     */
+    public static final String REPORT_STATS_KEY = "report:stats";
+
+    /**
+     * 今日新增举报脏集合
+     * Type: SET, member=reportId
+     */
+    public static final String REPORT_TODAY_DIRTY_KEY = "report:stats:today:dirty";
+
+    /**
+     * 今日新增举报计数
+     * Value: STRING(INT)
+     */
+    public static final String REPORT_TODAY_COUNT_KEY = "report:stats:today:count";
+
+    /** 举报统计缓存 TTL（秒）= 5 分钟 */
+    public static final int REPORT_STATS_TTL = 5 * 60;
+
+    // ==================== Ban 封禁模块 Key ====================
+
+    /**
+     * 单用户封禁状态缓存
+     * Value: STRING(JSON), TTL 30分钟
+     * 格式: ban:status:{userId}
+     */
+    public static final String BAN_STATUS_KEY = "ban:status:%d";
+
+    /**
+     * 封禁黑名单 ZSET
+     * Value: ZSET (member=userId, score=banEndTime timestamp)
+     */
+    public static final String BAN_BLACKLIST_ZSET = "ban:blacklist";
+
+    // ==================== Feedback TTL ====================
+
+    /** 反馈提交限流计数器 TTL（秒）= 24 小时 */
+    public static final int FEEDBACK_SUBMIT_COUNT_TTL = 24 * 3600;
+
+    /** 反馈详情缓存 TTL（秒）= 30 分钟 */
+    public static final int FEEDBACK_DETAIL_TTL = 30 * 60;
+
+    /** 反馈防重锁 TTL（秒）= 10 秒 */
+    public static final int FEEDBACK_LOCK_TTL = 10;
+
+    /** 管理端待处理计数 TTL（秒）= 5 分钟 */
+    public static final int FEEDBACK_ADMIN_PENDING_TTL = 5 * 60;
+
+    // ==================== Report TTL ====================
+
+    /** 举报限流窗口（秒）= 60 秒 */
+    public static final int REPORT_RATE_LIMIT_WINDOW = 60;
+
+    /** 举报限流最大次数 */
+    public static final int REPORT_RATE_LIMIT_MAX = 3;
+
+    /** 举报防重复 TTL（秒）= 7 天 */
+    public static final int REPORT_DUPLICATE_TTL = 7 * 24 * 3600;
+
+    /** 举报人信誉分 TTL（秒）= 24 小时 */
+    public static final int REPORT_CREDIT_TTL = 24 * 3600;
+
+    // ==================== Ban TTL ====================
+
+    /** 封禁状态缓存 TTL（秒）= 30 分钟 */
+    public static final int BAN_STATUS_TTL = 30 * 60;
+
+    /** 封禁自动解封扫描间隔（秒）= 5 分钟 */
+    public static final int BAN_SCHEDULE_INTERVAL = 5 * 60;
+
+    /** 封禁统计缓存 TTL（秒）= 5 分钟 */
+    public static final int BAN_STATS_TTL = 5 * 60;
+
+    /**
+     * 封禁统计缓存
+     * Value: STRING(JSON), TTL 5分钟
+     */
+    public static final String BAN_STATS_KEY = "ban:stats";
 }

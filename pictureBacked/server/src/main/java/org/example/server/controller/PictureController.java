@@ -4,6 +4,8 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
 import org.example.common.annotation.CheckAuth;
 import org.example.common.api.imagesearch.ImageSearchApiFacade;
 import org.example.common.api.imagesearch.model.ImageSearchResult;
@@ -31,6 +33,7 @@ import org.example.server.service.PictureService;
 import org.example.server.service.SocialService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -62,9 +65,9 @@ public class PictureController {
     /**
      * 图片上传
      */
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public BaseResponse<PictureVO> upload(
-            @RequestParam("files") MultipartFile file,
+            @RequestPart("file") MultipartFile file,
             FileDTO fileDTO) throws Exception {
         //认证检查
         User user = UserContext.get();

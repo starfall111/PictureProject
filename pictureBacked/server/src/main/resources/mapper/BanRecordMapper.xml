@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.server.mapper.BanRecordMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.pojo.entity.BanRecord">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="userId" column="userId" jdbcType="BIGINT"/>
+            <result property="banType" column="banType" jdbcType="VARCHAR"/>
+            <result property="banDuration" column="banDuration" jdbcType="INTEGER"/>
+            <result property="banStartTime" column="banStartTime" jdbcType="TIMESTAMP"/>
+            <result property="banEndTime" column="banEndTime" jdbcType="TIMESTAMP"/>
+            <result property="banReason" column="banReason" jdbcType="VARCHAR"/>
+            <result property="violationCount" column="violationCount" jdbcType="INTEGER"/>
+            <result property="unbanned" column="unbanned" jdbcType="TINYINT"/>
+            <result property="unbanTime" column="unbanTime" jdbcType="TIMESTAMP"/>
+            <result property="unbanReason" column="unbanReason" jdbcType="VARCHAR"/>
+            <result property="unbanOperatorId" column="unbanOperatorId" jdbcType="BIGINT"/>
+            <result property="banOperatorId" column="banOperatorId" jdbcType="BIGINT"/>
+            <result property="banOperatorName" column="banOperatorName" jdbcType="VARCHAR"/>
+            <result property="reportId" column="reportId" jdbcType="BIGINT"/>
+            <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
+            <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,userId,banType,banDuration,banStartTime,banEndTime,
+        banReason,violationCount,unbanned,unbanTime,unbanReason,
+        unbanOperatorId,banOperatorId,banOperatorName,reportId,
+        createTime,updateTime,isDelete
+    </sql>
+
+    <!-- 查询用户活跃封禁记录（未解封） -->
+    <select id="selectActiveByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM ban_record
+        WHERE userId = #{userId}
+          AND unbanned = 0
+          AND isDelete = 0
+        ORDER BY banStartTime DESC
+    </select>
+</mapper>

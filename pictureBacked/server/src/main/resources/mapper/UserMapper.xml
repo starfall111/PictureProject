@@ -14,6 +14,10 @@
             <result property="userAvatar" column="userAvatar" />
             <result property="userProfile" column="userProfile" />
             <result property="userRole" column="userRole" />
+            <result property="banStatus" column="banStatus" />
+            <result property="banEndTime" column="banEndTime" />
+            <result property="violationCount" column="violationCount" />
+            <result property="lastViolationTime" column="lastViolationTime" />
             <result property="editTime" column="editTime" />
             <result property="createTime" column="createTime" />
             <result property="updateTime" column="updateTime" />
@@ -22,7 +26,8 @@
 
     <sql id="Base_Column_List">
         id,userAccount,userPhone,userEmail,userPassword,userName,
-        userAvatar,userProfile,userRole,editTime,createTime,
+        userAvatar,userProfile,userRole,banStatus,banEndTime,
+        violationCount,lastViolationTime,editTime,createTime,
         updateTime,isDelete
     </sql>
 
