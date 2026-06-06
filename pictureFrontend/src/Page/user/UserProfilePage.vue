@@ -16,6 +16,13 @@
       @showFollowers="showFollowers"
       @followChange="handleFollowChange"
     />
+    <!-- 举报按钮（非本人时显示） -->
+    <div v-if="!isCurrentUser && loginUserStore.loginUser.id" class="report-bar">
+      <a-button danger ghost @click="reportModalOpen = true">
+        <template #icon><WarningOutlined /></template>
+        举报用户
+      </a-button>
+    </div>
 
     <!-- Tab切换器 -->
     <ProfileTabSwitcher
@@ -66,14 +73,24 @@
       :type="drawerType"
       @followChange="handleDrawerFollowChange"
     />
+
+    <!-- 举报弹窗 -->
+    <ReportModal
+      v-if="!isCurrentUser && loginUserStore.loginUser.id"
+      v-model:open="reportModalOpen"
+      targetType="USER"
+      :targetId="Number(props.id)"
+      :targetPreview="userInfo.userName"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
+import { WarningOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
-import { getUserProfileUsingGet } from '@/api/userController'
-import { queryPendingPicturesUsingPost } from '@/api/pictureController'
+import { userControllerGetUserProfile } from '@/api/userController'
+import { pictureControllerQueryPendingPictures } from '@/api/pictureController'
 import { userLoginUserStore } from '@/stores/user'
 import ProfileBanner from '@/layouts/scheme-1-immersive/components/ProfileBanner.vue'
 import ProfileTabSwitcher from '@/layouts/scheme-1-immersive/components/ProfileTabSwitcher.vue'
@@ -83,6 +100,7 @@ import FavoritesTabContent from '@/components/UserProfile/Tabs/FavoritesTabConte
 import PendingTabContent from '@/components/UserProfile/Tabs/PendingTabContent.vue'
 import ShareModal from '@/components/ShareModal.vue'
 import UserFollowListDrawer from '@/components/UserProfile/UserFollowListDrawer.vue'
+import ReportModal from '@/Page/report/ReportModal.vue'
 import type { ProfileTab } from '@/layouts/scheme-1-immersive/components/ProfileTabSwitcher.vue'
 
 const props = defineProps<{
@@ -119,7 +137,7 @@ const drawerType = ref<'following' | 'followers'>('following')
 const fetchPendingCount = async () => {
   if (!isCurrentUser.value) return
   try {
-    const res = await queryPendingPicturesUsingPost({ current: 1, pageSize: 1 })
+    const res = await pictureControllerQueryPendingPictures({ current: 1, pageSize: 1 })
     if (res.data.code === 0 && res.data.data) {
       pendingCount.value = res.data.data.total ?? 0
     }
@@ -131,7 +149,7 @@ const fetchPendingCount = async () => {
 // 获取用户资料（包含聚合统计）
 const fetchUserInfo = async () => {
   try {
-    const res = await getUserProfileUsingGet({ id: props.id })
+    const res = await userControllerGetUserProfile({ id: props.id })
     if (res.data.code === 0 && res.data.data) {
       userInfo.value = res.data.data
       // 更新关注相关数据
@@ -193,6 +211,9 @@ const categoryList = computed(() => userInfo.value.categories ?? [])
 const shareModalOpen = ref(false)
 const sharePicture = ref<API.PictureVO>()
 
+// 举报弹窗
+const reportModalOpen = ref(false)
+
 onMounted(async () => {
   await fetchUserInfo()
   fetchPendingCount()
@@ -204,5 +225,10 @@ onMounted(async () => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px 24px;
+}
+.report-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
 }
 </style>

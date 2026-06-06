@@ -60,7 +60,7 @@ import { message } from 'ant-design-vue';
 import { LogoutOutlined } from '@ant-design/icons-vue';
 import { useRouter } from 'vue-router';
 import { userLoginUserStore } from '@/stores/user';
-import { logOutUsingPost, getUserProfileUsingGet } from '@/api/userController';
+import { userControllerLogOut, userControllerGetUserProfile } from '@/api/userController';
 import ProfileCard from '@/components/userCenter/ProfileCard.vue';
 import StatsCard from '@/components/userCenter/StatsCard.vue';
 import UserInfoTab from '@/components/userCenter/UserInfoTab.vue';
@@ -86,7 +86,7 @@ const fetchUserStats = async () => {
   if (!userId) return;
 
   try {
-    const res = await getUserProfileUsingGet({ id: userId });
+    const res = await userControllerGetUserProfile({ id: userId });
     if (res.data.code === 0 && res.data.data) {
       userStats.value = res.data.data;
     }
@@ -119,7 +119,7 @@ const handleUpdateSuccess = async () => {
 /** 退出登录 */
 const handleLogout = async () => {
   try {
-    const res = await logOutUsingPost();
+    const res = await userControllerLogOut();
     if (res.data.code === 0 && res.data.data) {
       loginUserStore.setLoginUser({});
       message.success('退出登录成功');

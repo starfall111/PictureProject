@@ -18,12 +18,14 @@
         :isLiked="detailIsLiked"
         :isFavorited="detailIsFavorited"
         :canEdit="canEdit"
+        :showReport="!canEdit && !!loginUserStore.loginUser.id"
         @toggle-like="handleDetailLike"
         @toggle-favorite="handleDetailFavorite"
         @share="handleDetailShare"
         @download="doDownload"
         @edit="doEdit"
         @delete="doDelete"
+        @report="reportModalOpen = true"
       />
 
       <!-- 标签 -->
@@ -35,11 +37,19 @@
 
     <!-- 分享弹窗 -->
     <ShareModal v-model:open="shareModalOpen" :picture="picture" />
+
+    <!-- 举报弹窗 -->
+    <ReportModal
+      v-model:open="reportModalOpen"
+      targetType="PICTURE"
+      :targetId="Number(props.id)"
+      :targetPreview="picture.url"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { deletePictureUsingDelete, getPictureByIdUserCacheUsingGet, toggleLikeCacheUsingPost, toggleFavoriteCacheUsingPost, recordShareCacheUsingPost, recordViewCacheUsingPost, recordDownloadCountCacheUsingPost } from '@/api/pictureController';
+import { pictureControllerDeletePicture, pictureControllerGetPictureByIdUserCache, pictureControllerToggleLikeCache, pictureControllerToggleFavoriteCache, pictureControllerRecordShareCache, pictureControllerRecordViewCache, pictureControllerRecordDownloadCountCache } from '@/api/pictureController';
 import router from '@/router';
 import { userLoginUserStore } from '@/stores/user';
 import { downloadImage } from '@/util/download';
@@ -51,6 +61,7 @@ import DetailAuthorBar from '@/components/PictureDetail/DetailAuthorBar.vue'
 import DetailActionBar from '@/components/PictureDetail/DetailActionBar.vue'
 import DetailTagsBar from '@/components/PictureDetail/DetailTagsBar.vue'
 import DetailMetaPanel from '@/components/PictureDetail/DetailMetaPanel.vue'
+import ReportModal from '@/Page/report/ReportModal.vue'
 
 const props = defineProps<{
   id: string | number
@@ -62,11 +73,12 @@ const picture = ref<API.PictureVO>({})
 const detailIsLiked = ref(false)
 const detailIsFavorited = ref(false)
 const shareModalOpen = ref(false)
+const reportModalOpen = ref(false)
 
 // 获取图片详情
 const fetchPictureDetail = async () => {
   try {
-    const res = await getPictureByIdUserCacheUsingGet({
+    const res = await pictureControllerGetPictureByIdUserCache({
       id: props.id,
     })
     if (res.data.code === 0 && res.data.data) {
@@ -75,7 +87,7 @@ const fetchPictureDetail = async () => {
       detailIsFavorited.value = res.data.data.socialInfo?.isFavorited ?? false
       // 记录浏览量
       try {
-        await recordViewCacheUsingPost({ pictureId: props.id })
+        await pictureControllerRecordViewCache({ pictureId: props.id })
         if (picture.value.socialInfo) {
           picture.value.socialInfo.viewCount = (picture.value.socialInfo.viewCount ?? 0) + 1
         }
@@ -104,7 +116,7 @@ const canEdit = computed(() => {
 // 点赞
 const handleDetailLike = async () => {
   try {
-    const res = await toggleLikeCacheUsingPost({ pictureId: props.id })
+    const res = await pictureControllerToggleLikeCache({ pictureId: props.id })
     if (res.data.code === 0 && res.data.data) {
       detailIsLiked.value = res.data.data.liked ?? false
       if (picture.value.socialInfo) {
@@ -121,7 +133,7 @@ const handleDetailLike = async () => {
 // 收藏
 const handleDetailFavorite = async () => {
   try {
-    const res = await toggleFavoriteCacheUsingPost({ pictureId: props.id })
+    const res = await pictureControllerToggleFavoriteCache({ pictureId: props.id })
     if (res.data.code === 0 && res.data.data) {
       detailIsFavorited.value = res.data.data.favorited ?? false
       if (picture.value.socialInfo) {
@@ -138,7 +150,7 @@ const handleDetailFavorite = async () => {
 // 分享
 const handleDetailShare = async () => {
   try {
-    await recordShareCacheUsingPost({ pictureId: props.id })
+    await pictureControllerRecordShareCache({ pictureId: props.id })
     if (picture.value.socialInfo) {
       picture.value.socialInfo.shareCount = (picture.value.socialInfo.shareCount ?? 0) + 1
     }
@@ -166,7 +178,7 @@ const doDelete = () => {
       if (!id) {
         return
       }
-      const res = await deletePictureUsingDelete({ id })
+      const res = await pictureControllerDeletePicture({ id })
       if (res.data.code === 0) {
         message.success('删除成功')
       } else {
@@ -181,7 +193,7 @@ const doDownload = async () => {
   downloadImage(picture.value.originUrl)
   // 记录下载量
   try {
-    await recordDownloadCountCacheUsingPost({ pictureId: props.id })
+    await pictureControllerRecordDownloadCountCache({ pictureId: props.id })
     if (picture.value.socialInfo) {
       picture.value.socialInfo.downloadCount = (picture.value.socialInfo.downloadCount ?? 0) + 1
     }

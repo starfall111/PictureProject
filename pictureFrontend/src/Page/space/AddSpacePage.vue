@@ -38,7 +38,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { addSpaceUsingPost, editSpaceUsingPost, getSpaceByIdUsingGet, listSpaceLevelUsingGet, updateSpaceUsingPost } from '@/api/spaceController';
+import { spaceControllerAddSpace, spaceControllerEditSpace, spaceControllerGetSpaceById, spaceControllerListSpaceLevel, spaceControllerUpdateSpace } from '@/api/spaceController';
 import { message, Modal } from 'ant-design-vue';
 import { userLoginUserStore } from '@/stores/user';
 import { SPACE_LEVEL_OPTIONS } from '@/constants/space';
@@ -55,7 +55,7 @@ const spaceLevelList = ref<API.SpaceLevel[]>([])
 
 // 获取空间级别
 const fetchSpaceLevelList = async () => {
-    const res = await listSpaceLevelUsingGet()
+    const res = await spaceControllerListSpaceLevel()
     if (res.data.code === 0 && res.data.data) {
         spaceLevelList.value = res.data.data
     } else {
@@ -77,12 +77,12 @@ const handleSubmit = async (values: any) => {
     console.log(values)
     let res = null
     if (spaceId) {
-        res = await updateSpaceUsingPost({
+        res = await spaceControllerUpdateSpace({
             id: spaceId,
             ...values,
         })
     } else {
-        res = await addSpaceUsingPost({
+        res = await spaceControllerAddSpace({
             ...values,
         })
     }
@@ -107,7 +107,7 @@ const route = useRoute()
 const getOldSpace = async () => {
     const id = route.query?.id
     if (id) {
-        const res = await getSpaceByIdUsingGet({
+        const res = await spaceControllerGetSpaceById({
             id: id,
         })
         if (res.data.code === 0 && res.data.data) {

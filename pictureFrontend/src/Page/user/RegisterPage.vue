@@ -65,8 +65,8 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
-import { registerUsingPost } from '@/api/userController';
-import { sendVerificationCodeUsingPost } from '@/api/noticeController';
+import { userControllerRegister } from '@/api/userController';
+import { noticeControllerSendVerificationCode } from '@/api/noticeController';
 import { useAliyunCaptcha } from '@/access/useAliyunCaptcha';
 import router from '@/router';
 
@@ -135,7 +135,7 @@ const register = async (DTO: any) => {
     DTO.account = DTO.account?.trim();
     registerLoading.value = true;
     try {
-        const res = await registerUsingPost(DTO);
+        const res = await userControllerRegister(DTO);
         if (res.data.code === 0 && res.data.data) {
             message.success('注册成功');
             router.push({

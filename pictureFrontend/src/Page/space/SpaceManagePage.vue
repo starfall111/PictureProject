@@ -66,7 +66,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import dayjs from 'dayjs';
-import { deleteSpaceUsingDelete, querySpaceListAdminUsingPost } from '@/api/spaceController';
+import { spaceControllerDeleteSpace, spaceControllerQuerySpaceListAdmin } from '@/api/spaceController';
 import { SPACE_LEVEL_MAP, SPACE_LEVEL_OPTIONS } from '@/constants/space';
 import { formatSize } from '@/util/format';
 
@@ -136,7 +136,7 @@ const pagination = computed(() => {
 
 // 获取数据  
 const fetchData = async () => {
-    const res = await querySpaceListAdminUsingPost({
+    const res = await spaceControllerQuerySpaceListAdmin({
         ...searchParams,
     })
     if (res.data.data) {
@@ -174,7 +174,7 @@ const doDelete = (id: any) => {
         okType: 'danger',
         cancelText: '取消',
         onOk: async () => {
-            const res = await deleteSpaceUsingDelete({ id: id })
+            const res = await spaceControllerDeleteSpace({ id: id })
             if (res.data.code === 0) {
                 message.success('删除成功')
                 fetchData()

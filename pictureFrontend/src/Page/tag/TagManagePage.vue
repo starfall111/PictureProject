@@ -57,11 +57,11 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { message } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import {
-  queryTagPageUsingPost,
-  addTagUsingPost,
-  updateTagUsingPost,
-  deleteTagUsingDelete,
-  getTagByIdUsingGet,
+  tagControllerQueryTagPage,
+  tagControllerAddTag,
+  tagControllerUpdateTag,
+  tagControllerDeleteTag,
+  tagControllerGetTagById,
 } from '@/api/tagController';
 
 // ==================== 列表相关 ====================
@@ -83,7 +83,7 @@ const columns = [
 ];
 
 const fetchData = async () => {
-  const res = await queryTagPageUsingPost({ ...searchParams });
+  const res = await tagControllerQueryTagPage({ ...searchParams });
   if (res.data.code === 0 && res.data.data) {
     dataList.value = res.data.data.records ?? [];
     total.value = res.data.data.total ?? 0;
@@ -137,7 +137,7 @@ const openAddModal = () => {
 
 const openEditModal = async (id: number) => {
   try {
-    const res = await getTagByIdUsingGet({ id });
+    const res = await tagControllerGetTagById({ id });
     if (res.data.code === 0 && res.data.data) {
       isEdit.value = true;
       formData.id = res.data.data.id;
@@ -158,7 +158,7 @@ const handleModalOk = async () => {
   }
   try {
     if (isEdit.value) {
-      const res = await updateTagUsingPost({ id: formData.id, name: formData.name });
+      const res = await tagControllerUpdateTag({ id: formData.id, name: formData.name });
       if (res.data.code === 0) {
         message.success('编辑成功');
         modalVisible.value = false;
@@ -167,7 +167,7 @@ const handleModalOk = async () => {
         message.error(res.data.message || '编辑失败');
       }
     } else {
-      const res = await addTagUsingPost({ name: formData.name });
+      const res = await tagControllerAddTag({ name: formData.name });
       if (res.data.code === 0) {
         message.success('新增成功');
         modalVisible.value = false;
@@ -188,7 +188,7 @@ const handleModalCancel = () => {
 // ==================== 删除 ====================
 
 const handleDelete = async (id: number) => {
-  const res = await deleteTagUsingDelete({ id });
+  const res = await tagControllerDeleteTag({ id });
   if (res.data.code === 0) {
     message.success('删除成功');
     fetchData();

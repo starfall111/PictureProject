@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { getUserUploadedPicturesCacheUsingPost, queryPictureUserUsingPost } from '@/api/pictureController'
+import { pictureControllerGetUserUploadedPicturesCache, pictureControllerQueryPictureUser } from '@/api/pictureController'
 import PictureList from '@/components/PictureList/index.vue'
 import FilterRow from '@/layouts/scheme-1-immersive/components/FilterRow.vue'
 import { useTabContent, type TabContentFilters } from './useTabContent'
@@ -122,7 +122,7 @@ const fetchWorksPictures = async (params: {
     queryParams.categoryId = selectedCategory.value
   }
 
-  return await getUserUploadedPicturesCacheUsingPost({ userId: props.userId }, queryParams)
+  return await pictureControllerGetUserUploadedPicturesCache({ userId: props.userId }, queryParams)
 }
 
 const { dataList, hasMore, isLoading, fetchData } = useTabContent({

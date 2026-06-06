@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { getTimelineUsingGet, getUnreadCountUsingGet } from '@/api/feedController'
+import { feedControllerGetTimeline, feedControllerGetUnreadCount } from '@/api/feedController'
 import FeedHeader from '@/components/Feed/FeedHeader.vue'
 import FeedCard from '@/components/Feed/FeedCard.vue'
 
@@ -72,7 +72,7 @@ const hasMore = ref(true)
 // 获取动态列表
 const fetchFeed = async (page: number, append = false) => {
   try {
-    const res = await getTimelineUsingGet({ current: page, pageSize })
+    const res = await feedControllerGetTimeline({ current: page, pageSize })
     if (res.data.code === 0 && res.data.data) {
       const data = res.data.data
       if (append) {
@@ -92,7 +92,7 @@ const fetchFeed = async (page: number, append = false) => {
 // 获取未读数（独立接口）
 const fetchUnreadCount = async () => {
   try {
-    const res = await getUnreadCountUsingGet()
+    const res = await feedControllerGetUnreadCount()
     if (res.data.code === 0 && res.data.data) {
       unreadCount.value = res.data.data.unreadCount ?? 0
     }

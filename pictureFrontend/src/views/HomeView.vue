@@ -108,10 +108,10 @@
 
 
 <script setup lang="ts">
-import { listCategoryUsingGet } from '@/api/categoryController'
-import { queryPictureUserCacheUsingPost } from '@/api/pictureController'
-import { recommendUsingPost } from '@/api/recommendController'
-import { listTagUsingGet } from '@/api/tagController'
+import { categoryControllerListCategory } from '@/api/categoryController'
+import { pictureControllerQueryPictureUserCache } from '@/api/pictureController'
+import { recommendControllerRecommend } from '@/api/recommendController'
+import { tagControllerListTag } from '@/api/tagController'
 import { message } from 'ant-design-vue'
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -180,7 +180,7 @@ const fetchRecommendData = async (reset = false) => {
   }
 
   try {
-    const res = await recommendUsingPost(params)
+    const res = await recommendControllerRecommend(params)
     if (res.data.data) {
       const records = res.data.data.pictures ?? []
       hasMore.value = res.data.data.hasMore ?? false
@@ -237,7 +237,7 @@ const fetchData = async (reset = false) => {
   }
 
   try {
-    const res = await queryPictureUserCacheUsingPost(params)
+    const res = await pictureControllerQueryPictureUserCache(params)
     if (res.data.data) {
       const records = res.data.data.records ?? []
       total.value = res.data.data.total ?? 0
@@ -383,8 +383,8 @@ const clearAllFilters = () => {
 }
 
 const getTagCategoryOptions = async () => {
-  const res_tag = await listTagUsingGet()
-  const res_category = await listCategoryUsingGet()
+  const res_tag = await tagControllerListTag()
+  const res_category = await categoryControllerListCategory()
   if (res_category.data.code === 0 && res_category.data.data) {
     categoryList.value = (res_category.data.data ?? []).map((data: any) => ({
       value: data.id,

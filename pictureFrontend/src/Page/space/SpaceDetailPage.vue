@@ -38,8 +38,8 @@
 </template>
 
 <script setup lang="ts">
-import { queryPictureUserUsingPost } from '@/api/pictureController';
-import { getSpaceByIdUsingGet } from '@/api/spaceController';
+import { pictureControllerQueryPictureUser } from '@/api/pictureController';
+import { spaceControllerGetSpaceById } from '@/api/spaceController';
 import { formatSize } from '@/util/format';
 import { message } from 'ant-design-vue';
 import { computed, onMounted, reactive, ref } from 'vue';
@@ -59,7 +59,7 @@ const space = ref<API.SpaceVO>({})
 // 获取空间详情
 const fetchSpaceDetail = async () => {
   try {
-    const res = await getSpaceByIdUsingGet({
+    const res = await spaceControllerGetSpaceById({
       id: props.id,
     })
     if (res.data.code === 0 && res.data.data) {
@@ -115,7 +115,7 @@ const fetchData = async () => {
       spaceId: props.id,
       ...searchParams.value,
     }
-    const res = await queryPictureUserUsingPost(params)
+    const res = await pictureControllerQueryPictureUser(params)
     if (res.data.data) {
       dataList.value = res.data.data.records ?? []
       total.value = res.data.data.total ?? 0

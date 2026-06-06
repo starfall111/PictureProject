@@ -2,12 +2,12 @@
 /* eslint-disable */
 import request from "@/request";
 
-/** addCategory POST /api/category/add */
-export async function addCategoryUsingPost(
+/** 此处后端没有提供注释 POST /category/add */
+export async function categoryControllerAddCategory(
   body: API.CategoryAddDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseLong_>("/api/category/add", {
+  return request<API.BaseResponseLong>("/category/add", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -17,12 +17,12 @@ export async function addCategoryUsingPost(
   });
 }
 
-/** deleteCategory DELETE /api/category/delete */
-export async function deleteCategoryUsingDelete(
+/** 此处后端没有提供注释 DELETE /category/delete */
+export async function categoryControllerDeleteCategory(
   body: API.DeleteRequest,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean_>("/api/category/delete", {
+  return request<API.BaseResponseBoolean>("/category/delete", {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -32,34 +32,36 @@ export async function deleteCategoryUsingDelete(
   });
 }
 
-/** getCategoryById GET /api/category/get/${param0} */
-export async function getCategoryByIdUsingGet(
+/** 此处后端没有提供注释 GET /category/get/${param0} */
+export async function categoryControllerGetCategoryById(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getCategoryByIdUsingGETParams,
+  params: API.CategoryControllerGetCategoryByIdParams,
   options?: { [key: string]: any }
 ) {
   const { id: param0, ...queryParams } = params;
-  return request<API.BaseResponseCategory_>(`/api/category/get/${param0}`, {
+  return request<API.BaseResponseCategory>(`/category/get/${param0}`, {
     method: "GET",
     params: { ...queryParams },
     ...(options || {}),
   });
 }
 
-/** listCategory GET /api/category/list */
-export async function listCategoryUsingGet(options?: { [key: string]: any }) {
-  return request<API.BaseResponseListCategory_>("/api/category/list", {
+/** 此处后端没有提供注释 GET /category/list */
+export async function categoryControllerListCategory(options?: {
+  [key: string]: any;
+}) {
+  return request<API.BaseResponseListCategory>("/category/list", {
     method: "GET",
     ...(options || {}),
   });
 }
 
-/** queryCategoryPage POST /api/category/page/query */
-export async function queryCategoryPageUsingPost(
+/** 此处后端没有提供注释 POST /category/page/query */
+export async function categoryControllerQueryCategoryPage(
   body: API.CategoryQueryDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePageCategory_>("/api/category/page/query", {
+  return request<API.BaseResponsePageCategory>("/category/page/query", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -69,12 +71,12 @@ export async function queryCategoryPageUsingPost(
   });
 }
 
-/** updateCategory POST /api/category/update */
-export async function updateCategoryUsingPost(
+/** 此处后端没有提供注释 POST /category/update */
+export async function categoryControllerUpdateCategory(
   body: API.CategoryUpdateDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean_>("/api/category/update", {
+  return request<API.BaseResponseBoolean>("/category/update", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

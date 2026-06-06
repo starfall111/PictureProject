@@ -61,9 +61,9 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
-  listFollowingUsingGet,
-  listFollowersUsingGet,
-  toggleFollowUsingPost,
+  followControllerListFollowing,
+  followControllerListFollowers,
+  followControllerToggleFollow,
 } from '@/api/followController'
 import { userLoginUserStore } from '@/stores/user'
 import FollowButton from './FollowButton.vue'
@@ -122,8 +122,8 @@ const fetchUserList = async () => {
   try {
     const apiFunc =
       props.type === 'following'
-        ? listFollowingUsingGet
-        : listFollowersUsingGet
+        ? followControllerListFollowing
+        : followControllerListFollowers
 
     const res = await apiFunc({
       userId: props.userId as string,

@@ -22,6 +22,13 @@ import UserProfilePage from '@/Page/user/UserProfilePage.vue'
 import NotificationPage from '@/Page/notification/NotificationPage.vue'
 import FeedPage from '@/Page/feed/FeedPage.vue'
 import SystemMessageManagePage from '@/Page/systemMessage/SystemMessageManagePage.vue'
+import FeedbackSubmitPage from '@/Page/feedback/FeedbackSubmitPage.vue'
+import FeedbackListPage from '@/Page/feedback/FeedbackListPage.vue'
+import FeedbackDetailPage from '@/Page/feedback/FeedbackDetailPage.vue'
+import MyReportListPage from '@/Page/report/MyReportListPage.vue'
+import AdminFeedbackManagePage from '@/Page/admin/AdminFeedbackManagePage.vue'
+import AdminReportManagePage from '@/Page/admin/AdminReportManagePage.vue'
+import AdminBanManagePage from '@/Page/admin/AdminBanManagePage.vue'
 
 
 const router = createRouter({
@@ -175,6 +182,63 @@ const router = createRouter({
           component: FeedPage,
           meta: {
             access: ACCESS_ENUM.USER,
+          },
+        },
+        // 反馈路由
+        {
+          path: '/feedback/submit',
+          name: '提交反馈',
+          component: FeedbackSubmitPage,
+          meta: {
+            access: ACCESS_ENUM.USER,
+          },
+        },
+        {
+          path: '/feedback/list',
+          name: '我的反馈',
+          component: FeedbackListPage,
+          meta: {
+            access: ACCESS_ENUM.USER,
+          },
+        },
+        {
+          path: '/feedback/:id',
+          name: '反馈详情',
+          component: FeedbackDetailPage,
+          props: true,
+        },
+        // 举报路由
+        {
+          path: '/report/list',
+          name: '我的举报',
+          component: MyReportListPage,
+          meta: {
+            access: ACCESS_ENUM.USER,
+          },
+        },
+        // 管理端 — 反馈 / 举报 / 封禁
+        {
+          path: '/admin/feedbackManage',
+          name: '反馈管理',
+          component: AdminFeedbackManagePage,
+          meta: {
+            access: ACCESS_ENUM.ADMIN,
+          },
+        },
+        {
+          path: '/admin/reportManage',
+          name: '举报管理',
+          component: AdminReportManagePage,
+          meta: {
+            access: ACCESS_ENUM.ADMIN,
+          },
+        },
+        {
+          path: '/admin/banManage',
+          name: '封禁管理',
+          component: AdminBanManagePage,
+          meta: {
+            access: ACCESS_ENUM.ADMIN,
           },
         },
       ],

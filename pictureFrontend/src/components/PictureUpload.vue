@@ -17,7 +17,7 @@ import { ref } from 'vue';
 import { PlusOutlined, LoadingOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import type { UploadProps } from 'ant-design-vue';
-import { uploadUsingPost, uploadUsingPost1 } from '@/api/pictureController';
+import { pictureControllerUpload1, pictureControllerUpload } from '@/api/pictureController';
 
 interface Props {
     picture?: API.PictureVO
@@ -47,14 +47,14 @@ const loading = ref<boolean>(false)
 const handleUpload = async ({ file }: any) => {
     loading.value = true
     try {
-        const params: API.uploadUsingPOST1Params = props.picture ? { id: props.picture.id } : {};
+        const params: API.FileDTO = props.picture ? { id: props.picture.id } : {};
         if (props.spaceId) {
             params.spaceId = props.spaceId
         }
 
         console.log(params)
     
-        const res = await uploadUsingPost1(params, {}, file)
+        const res = await pictureControllerUpload(params, file)
         if (res.data.code === 0 && res.data.data) {
             message.success('图片上传成功')
             // 将上传成功的图片信息传递给父组件  

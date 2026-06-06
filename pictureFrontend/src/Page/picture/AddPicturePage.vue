@@ -84,9 +84,9 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import PictureUpload from '@/components/PictureUpload.vue'
 import UrlPictureUpload from '@/components/UrlPictureUpload.vue'
 import { useRoute, useRouter } from 'vue-router';
-import { editPictureUsingPost, getPictureByIdUserUsingGet } from '@/api/pictureController';
-import { listTagUsingGet } from '@/api/tagController';
-import { listCategoryUsingGet } from '@/api/categoryController';
+import { pictureControllerEditPicture, pictureControllerGetPictureByIdUser } from '@/api/pictureController';
+import { tagControllerListTag } from '@/api/tagController';
+import { categoryControllerListCategory } from '@/api/categoryController';
 import { message, Modal } from 'ant-design-vue';
 import { userLoginUserStore } from '@/stores/user';
 import { useLayoutScheme } from '@/composables/useLayoutScheme';
@@ -122,7 +122,7 @@ const handleSubmit = async (values: any) => {
     if (!pictureId) {
         return
     }
-    const res = await editPictureUsingPost({
+    const res = await pictureControllerEditPicture({
         id: pictureId,
         spaceId: spaceId.value,
         ...values,
@@ -144,8 +144,8 @@ const tagOptions = ref<string[]>([])
 
 // 获取标签和分类选项  
 const getTagCategoryOptions = async () => {
-    const res_tag = await listTagUsingGet()
-    const res_category = await listCategoryUsingGet()
+    const res_tag = await tagControllerListTag()
+    const res_category = await categoryControllerListCategory()
     if (res_category.data.code === 0 && res_category.data.data) {
         // 转换成下拉选项组件接受的格式  
         categoryOptions.value = (res_category.data.data ?? []).map((data: any) => {
@@ -176,7 +176,7 @@ const route = useRoute()
 const getOldPicture = async () => {
     const id = route.query?.id
     if (id) {
-        const res = await getPictureByIdUserUsingGet({
+        const res = await pictureControllerGetPictureByIdUser({
             id: id,
         })
         if (res.data.code === 0 && res.data.data) {

@@ -2,47 +2,44 @@
 /* eslint-disable */
 import request from "@/request";
 
-/** getPictureByIdAdmin GET /api/picture/admin/${param0} */
-export async function getPictureByIdAdminUsingGet(
+/** 此处后端没有提供注释 GET /picture/admin/${param0} */
+export async function pictureControllerGetPictureByIdAdmin(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getPictureByIdAdminUsingGETParams,
+  params: API.PictureControllerGetPictureByIdAdminParams,
   options?: { [key: string]: any }
 ) {
   const { id: param0, ...queryParams } = params;
-  return request<API.BaseResponsePicture_>(`/api/picture/admin/${param0}`, {
+  return request<API.BaseResponsePicture>(`/picture/admin/${param0}`, {
     method: "GET",
     params: { ...queryParams },
     ...(options || {}),
   });
 }
 
-/** queryPictureAdmin POST /api/picture/admin/query */
-export async function queryPictureAdminUsingPost(
+/** 此处后端没有提供注释 POST /picture/admin/query */
+export async function pictureControllerQueryPictureAdmin(
   body: API.PictureQueryDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePagePictureEntityVO_>(
-    "/api/picture/admin/query",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      data: body,
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponsePagePictureEntityVO>("/picture/admin/query", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
 }
 
-/** recordDownloadCountCache POST /api/picture/cache/download/count/${param0} */
-export async function recordDownloadCountCacheUsingPost(
+/** 此处后端没有提供注释 POST /picture/cache/download/count/${param0} */
+export async function pictureControllerRecordDownloadCountCache(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.recordDownloadCountCacheUsingPOSTParams,
+  params: API.PictureControllerRecordDownloadCountCacheParams,
   options?: { [key: string]: any }
 ) {
   const { pictureId: param0, ...queryParams } = params;
-  return request<API.BaseResponseBoolean_>(
-    `/api/picture/cache/download/count/${param0}`,
+  return request<API.BaseResponseBoolean>(
+    `/picture/cache/download/count/${param0}`,
     {
       method: "POST",
       params: { ...queryParams },
@@ -51,15 +48,15 @@ export async function recordDownloadCountCacheUsingPost(
   );
 }
 
-/** toggleFavoriteCache POST /api/picture/cache/favorite/${param0} */
-export async function toggleFavoriteCacheUsingPost(
+/** 此处后端没有提供注释 POST /picture/cache/favorite/${param0} */
+export async function pictureControllerToggleFavoriteCache(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.toggleFavoriteCacheUsingPOSTParams,
+  params: API.PictureControllerToggleFavoriteCacheParams,
   options?: { [key: string]: any }
 ) {
   const { pictureId: param0, ...queryParams } = params;
-  return request<API.BaseResponseToggleFavoriteVO_>(
-    `/api/picture/cache/favorite/${param0}`,
+  return request<API.BaseResponseToggleFavoriteVO>(
+    `/picture/cache/favorite/${param0}`,
     {
       method: "POST",
       params: { ...queryParams },
@@ -68,13 +65,13 @@ export async function toggleFavoriteCacheUsingPost(
   );
 }
 
-/** batchFavoriteStatusCache POST /api/picture/cache/favorite/status */
-export async function batchFavoriteStatusCacheUsingPost(
+/** 此处后端没有提供注释 POST /picture/cache/favorite/status */
+export async function pictureControllerBatchFavoriteStatusCache(
   body: API.BatchStatusQueryDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseMapLongBoolean_>(
-    "/api/picture/cache/favorite/status",
+  return request<API.BaseResponseMapLongBoolean>(
+    "/picture/cache/favorite/status",
     {
       method: "POST",
       headers: {
@@ -86,16 +83,16 @@ export async function batchFavoriteStatusCacheUsingPost(
   );
 }
 
-/** getUserFavoritedPicturesCache POST /api/picture/cache/favorited/user/${param0}/query */
-export async function getUserFavoritedPicturesCacheUsingPost(
+/** 此处后端没有提供注释 POST /picture/cache/favorited/user/${param0}/query */
+export async function pictureControllerGetUserFavoritedPicturesCache(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getUserFavoritedPicturesCacheUsingPOSTParams,
+  params: API.PictureControllerGetUserFavoritedPicturesCacheParams,
   body: API.UserPictureQueryDTO,
   options?: { [key: string]: any }
 ) {
   const { userId: param0, ...queryParams } = params;
-  return request<API.BaseResponsePagePictureBriefVO_>(
-    `/api/picture/cache/favorited/user/${param0}/query`,
+  return request<API.BaseResponsePagePictureBriefVO>(
+    `/picture/cache/favorited/user/${param0}/query`,
     {
       method: "POST",
       headers: {
@@ -108,15 +105,15 @@ export async function getUserFavoritedPicturesCacheUsingPost(
   );
 }
 
-/** toggleLikeCache POST /api/picture/cache/like/${param0} */
-export async function toggleLikeCacheUsingPost(
+/** 此处后端没有提供注释 POST /picture/cache/like/${param0} */
+export async function pictureControllerToggleLikeCache(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.toggleLikeCacheUsingPOSTParams,
+  params: API.PictureControllerToggleLikeCacheParams,
   options?: { [key: string]: any }
 ) {
   const { pictureId: param0, ...queryParams } = params;
-  return request<API.BaseResponseToggleLikeVO_>(
-    `/api/picture/cache/like/${param0}`,
+  return request<API.BaseResponseToggleLikeVO>(
+    `/picture/cache/like/${param0}`,
     {
       method: "POST",
       params: { ...queryParams },
@@ -125,34 +122,31 @@ export async function toggleLikeCacheUsingPost(
   );
 }
 
-/** batchLikeStatusCache POST /api/picture/cache/like/status */
-export async function batchLikeStatusCacheUsingPost(
+/** 此处后端没有提供注释 POST /picture/cache/like/status */
+export async function pictureControllerBatchLikeStatusCache(
   body: API.BatchStatusQueryDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseMapLongBoolean_>(
-    "/api/picture/cache/like/status",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      data: body,
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponseMapLongBoolean>("/picture/cache/like/status", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
 }
 
-/** getUserLikedPicturesCache POST /api/picture/cache/liked/user/${param0}/query */
-export async function getUserLikedPicturesCacheUsingPost(
+/** 此处后端没有提供注释 POST /picture/cache/liked/user/${param0}/query */
+export async function pictureControllerGetUserLikedPicturesCache(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getUserLikedPicturesCacheUsingPOSTParams,
+  params: API.PictureControllerGetUserLikedPicturesCacheParams,
   body: API.UserPictureQueryDTO,
   options?: { [key: string]: any }
 ) {
   const { userId: param0, ...queryParams } = params;
-  return request<API.BaseResponsePagePictureBriefVO_>(
-    `/api/picture/cache/liked/user/${param0}/query`,
+  return request<API.BaseResponsePagePictureBriefVO>(
+    `/picture/cache/liked/user/${param0}/query`,
     {
       method: "POST",
       headers: {
@@ -165,33 +159,30 @@ export async function getUserLikedPicturesCacheUsingPost(
   );
 }
 
-/** recordShareCache POST /api/picture/cache/share/${param0} */
-export async function recordShareCacheUsingPost(
+/** 此处后端没有提供注释 POST /picture/cache/share/${param0} */
+export async function pictureControllerRecordShareCache(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.recordShareCacheUsingPOSTParams,
+  params: API.PictureControllerRecordShareCacheParams,
   options?: { [key: string]: any }
 ) {
   const { pictureId: param0, ...queryParams } = params;
-  return request<API.BaseResponseBoolean_>(
-    `/api/picture/cache/share/${param0}`,
-    {
-      method: "POST",
-      params: { ...queryParams },
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponseBoolean>(`/picture/cache/share/${param0}`, {
+    method: "POST",
+    params: { ...queryParams },
+    ...(options || {}),
+  });
 }
 
-/** getUserUploadedPicturesCache POST /api/picture/cache/uploaded/user/${param0}/query */
-export async function getUserUploadedPicturesCacheUsingPost(
+/** 此处后端没有提供注释 POST /picture/cache/uploaded/user/${param0}/query */
+export async function pictureControllerGetUserUploadedPicturesCache(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getUserUploadedPicturesCacheUsingPOSTParams,
+  params: API.PictureControllerGetUserUploadedPicturesCacheParams,
   body: API.UserPictureQueryDTO,
   options?: { [key: string]: any }
 ) {
   const { userId: param0, ...queryParams } = params;
-  return request<API.BaseResponsePagePictureBriefVO_>(
-    `/api/picture/cache/uploaded/user/${param0}/query`,
+  return request<API.BaseResponsePagePictureBriefVO>(
+    `/picture/cache/uploaded/user/${param0}/query`,
     {
       method: "POST",
       headers: {
@@ -204,64 +195,55 @@ export async function getUserUploadedPicturesCacheUsingPost(
   );
 }
 
-/** getPictureByIdUserCache GET /api/picture/cache/user/${param0} */
-export async function getPictureByIdUserCacheUsingGet(
+/** 此处后端没有提供注释 GET /picture/cache/user/${param0} */
+export async function pictureControllerGetPictureByIdUserCache(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getPictureByIdUserCacheUsingGETParams,
+  params: API.PictureControllerGetPictureByIdUserCacheParams,
   options?: { [key: string]: any }
 ) {
   const { id: param0, ...queryParams } = params;
-  return request<API.BaseResponsePictureVO_>(
-    `/api/picture/cache/user/${param0}`,
-    {
-      method: "GET",
-      params: { ...queryParams },
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponsePictureVO>(`/picture/cache/user/${param0}`, {
+    method: "GET",
+    params: { ...queryParams },
+    ...(options || {}),
+  });
 }
 
-/** queryPictureUserCache POST /api/picture/cache/user/query */
-export async function queryPictureUserCacheUsingPost(
+/** 此处后端没有提供注释 POST /picture/cache/user/query */
+export async function pictureControllerQueryPictureUserCache(
   body: API.PictureQueryDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePagePictureVO_>(
-    "/api/picture/cache/user/query",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      data: body,
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponsePagePictureVO>("/picture/cache/user/query", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
 }
 
-/** recordViewCache POST /api/picture/cache/view/${param0} */
-export async function recordViewCacheUsingPost(
+/** 此处后端没有提供注释 POST /picture/cache/view/${param0} */
+export async function pictureControllerRecordViewCache(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.recordViewCacheUsingPOSTParams,
+  params: API.PictureControllerRecordViewCacheParams,
   options?: { [key: string]: any }
 ) {
   const { pictureId: param0, ...queryParams } = params;
-  return request<API.BaseResponseBoolean_>(
-    `/api/picture/cache/view/${param0}`,
-    {
-      method: "POST",
-      params: { ...queryParams },
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponseBoolean>(`/picture/cache/view/${param0}`, {
+    method: "POST",
+    params: { ...queryParams },
+    ...(options || {}),
+  });
 }
 
-/** deletePicture DELETE /api/picture/delete */
-export async function deletePictureUsingDelete(
+/** 此处后端没有提供注释 DELETE /picture/delete */
+export async function pictureControllerDeletePicture(
   body: API.DeleteRequest,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean_>("/api/picture/delete", {
+  return request<API.BaseResponseBoolean>("/picture/delete", {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -271,13 +253,13 @@ export async function deletePictureUsingDelete(
   });
 }
 
-/** download GET /api/picture/download */
-export async function downloadUsingGet(
+/** 此处后端没有提供注释 GET /picture/download */
+export async function pictureControllerDownload(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.downloadUsingGETParams,
+  params: API.PictureControllerDownloadParams,
   options?: { [key: string]: any }
 ) {
-  return request<any>("/api/picture/download", {
+  return request<any>("/picture/download", {
     method: "GET",
     params: {
       ...params,
@@ -286,29 +268,26 @@ export async function downloadUsingGet(
   });
 }
 
-/** recordDownloadCount POST /api/picture/download/count/${param0} */
-export async function recordDownloadCountUsingPost(
+/** 此处后端没有提供注释 POST /picture/download/count/${param0} */
+export async function pictureControllerRecordDownloadCount(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.recordDownloadCountUsingPOSTParams,
+  params: API.PictureControllerRecordDownloadCountParams,
   options?: { [key: string]: any }
 ) {
   const { pictureId: param0, ...queryParams } = params;
-  return request<API.BaseResponseBoolean_>(
-    `/api/picture/download/count/${param0}`,
-    {
-      method: "POST",
-      params: { ...queryParams },
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponseBoolean>(`/picture/download/count/${param0}`, {
+    method: "POST",
+    params: { ...queryParams },
+    ...(options || {}),
+  });
 }
 
-/** editPicture POST /api/picture/edit */
-export async function editPictureUsingPost(
+/** 此处后端没有提供注释 POST /picture/edit */
+export async function pictureControllerEditPicture(
   body: API.PictureEditDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean_>("/api/picture/edit", {
+  return request<API.BaseResponseBoolean>("/picture/edit", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -318,15 +297,15 @@ export async function editPictureUsingPost(
   });
 }
 
-/** toggleFavorite POST /api/picture/favorite/${param0} */
-export async function toggleFavoriteUsingPost(
+/** 此处后端没有提供注释 POST /picture/favorite/${param0} */
+export async function pictureControllerToggleFavorite(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.toggleFavoriteUsingPOSTParams,
+  params: API.PictureControllerToggleFavoriteParams,
   options?: { [key: string]: any }
 ) {
   const { pictureId: param0, ...queryParams } = params;
-  return request<API.BaseResponseToggleFavoriteVO_>(
-    `/api/picture/favorite/${param0}`,
+  return request<API.BaseResponseToggleFavoriteVO>(
+    `/picture/favorite/${param0}`,
     {
       method: "POST",
       params: { ...queryParams },
@@ -335,34 +314,31 @@ export async function toggleFavoriteUsingPost(
   );
 }
 
-/** batchFavoriteStatus POST /api/picture/favorite/status */
-export async function batchFavoriteStatusUsingPost(
+/** 此处后端没有提供注释 POST /picture/favorite/status */
+export async function pictureControllerBatchFavoriteStatus(
   body: API.BatchStatusQueryDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseMapLongBoolean_>(
-    "/api/picture/favorite/status",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      data: body,
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponseMapLongBoolean>("/picture/favorite/status", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
 }
 
-/** getUserFavoritedPictures POST /api/picture/favorited/user/${param0}/query */
-export async function getUserFavoritedPicturesUsingPost(
+/** 此处后端没有提供注释 POST /picture/favorited/user/${param0}/query */
+export async function pictureControllerGetUserFavoritedPictures(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getUserFavoritedPicturesUsingPOSTParams,
+  params: API.PictureControllerGetUserFavoritedPicturesParams,
   body: API.UserPictureQueryDTO,
   options?: { [key: string]: any }
 ) {
   const { userId: param0, ...queryParams } = params;
-  return request<API.BaseResponsePagePictureBriefVO_>(
-    `/api/picture/favorited/user/${param0}/query`,
+  return request<API.BaseResponsePagePictureBriefVO>(
+    `/picture/favorited/user/${param0}/query`,
     {
       method: "POST",
       headers: {
@@ -375,26 +351,26 @@ export async function getUserFavoritedPicturesUsingPost(
   );
 }
 
-/** toggleLike POST /api/picture/like/${param0} */
-export async function toggleLikeUsingPost(
+/** 此处后端没有提供注释 POST /picture/like/${param0} */
+export async function pictureControllerToggleLike(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.toggleLikeUsingPOSTParams,
+  params: API.PictureControllerToggleLikeParams,
   options?: { [key: string]: any }
 ) {
   const { pictureId: param0, ...queryParams } = params;
-  return request<API.BaseResponseToggleLikeVO_>(`/api/picture/like/${param0}`, {
+  return request<API.BaseResponseToggleLikeVO>(`/picture/like/${param0}`, {
     method: "POST",
     params: { ...queryParams },
     ...(options || {}),
   });
 }
 
-/** batchLikeStatus POST /api/picture/like/status */
-export async function batchLikeStatusUsingPost(
+/** 此处后端没有提供注释 POST /picture/like/status */
+export async function pictureControllerBatchLikeStatus(
   body: API.BatchStatusQueryDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseMapLongBoolean_>("/api/picture/like/status", {
+  return request<API.BaseResponseMapLongBoolean>("/picture/like/status", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -404,16 +380,16 @@ export async function batchLikeStatusUsingPost(
   });
 }
 
-/** getUserLikedPictures POST /api/picture/liked/user/${param0}/query */
-export async function getUserLikedPicturesUsingPost(
+/** 此处后端没有提供注释 POST /picture/liked/user/${param0}/query */
+export async function pictureControllerGetUserLikedPictures(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getUserLikedPicturesUsingPOSTParams,
+  params: API.PictureControllerGetUserLikedPicturesParams,
   body: API.UserPictureQueryDTO,
   options?: { [key: string]: any }
 ) {
   const { userId: param0, ...queryParams } = params;
-  return request<API.BaseResponsePagePictureBriefVO_>(
-    `/api/picture/liked/user/${param0}/query`,
+  return request<API.BaseResponsePagePictureBriefVO>(
+    `/picture/liked/user/${param0}/query`,
     {
       method: "POST",
       headers: {
@@ -426,12 +402,12 @@ export async function getUserLikedPicturesUsingPost(
   );
 }
 
-/** reviewPicture POST /api/picture/review */
-export async function reviewPictureUsingPost(
+/** 此处后端没有提供注释 POST /picture/review */
+export async function pictureControllerReviewPicture(
   body: API.PictureReviewDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean_>("/api/picture/review", {
+  return request<API.BaseResponseBoolean>("/picture/review", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -441,13 +417,13 @@ export async function reviewPictureUsingPost(
   });
 }
 
-/** searchPictureByPicture POST /api/picture/search/picture */
-export async function searchPictureByPictureUsingPost(
+/** 此处后端没有提供注释 POST /picture/search/picture */
+export async function pictureControllerSearchPictureByPicture(
   body: API.SearchPictureByPictureDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseListImageSearchResult_>(
-    "/api/picture/search/picture",
+  return request<API.BaseResponseListImageSearchResult>(
+    "/picture/search/picture",
     {
       method: "POST",
       headers: {
@@ -459,26 +435,26 @@ export async function searchPictureByPictureUsingPost(
   );
 }
 
-/** recordShare POST /api/picture/share/${param0} */
-export async function recordShareUsingPost(
+/** 此处后端没有提供注释 POST /picture/share/${param0} */
+export async function pictureControllerRecordShare(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.recordShareUsingPOSTParams,
+  params: API.PictureControllerRecordShareParams,
   options?: { [key: string]: any }
 ) {
   const { pictureId: param0, ...queryParams } = params;
-  return request<API.BaseResponseBoolean_>(`/api/picture/share/${param0}`, {
+  return request<API.BaseResponseBoolean>(`/picture/share/${param0}`, {
     method: "POST",
     params: { ...queryParams },
     ...(options || {}),
   });
 }
 
-/** updatePicture POST /api/picture/update */
-export async function updatePictureUsingPost(
+/** 此处后端没有提供注释 POST /picture/update */
+export async function pictureControllerUpdatePicture(
   body: API.PictureUpdateDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean_>("/api/picture/update", {
+  return request<API.BaseResponseBoolean>("/picture/update", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -488,18 +464,18 @@ export async function updatePictureUsingPost(
   });
 }
 
-/** upload POST /api/picture/upload */
-export async function uploadUsingPost1(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.uploadUsingPOST1Params,
-  body: {},
-  files?: File,
+/** 此处后端没有提供注释 POST /picture/upload */
+export async function pictureControllerUpload(
+  body: {
+    fileDTO?: API.FileDTO;
+  },
+  file?: File,
   options?: { [key: string]: any }
 ) {
   const formData = new FormData();
 
-  if (files) {
-    formData.append("files", files);
+  if (file) {
+    formData.append("file", file);
   }
 
   Object.keys(body).forEach((ele) => {
@@ -521,23 +497,20 @@ export async function uploadUsingPost1(
     }
   });
 
-  return request<API.BaseResponsePictureVO_>("/api/picture/upload", {
+  return request<API.BaseResponsePictureVO>("/picture/upload", {
     method: "POST",
-    params: {
-      ...params,
-    },
     data: formData,
     requestType: "form",
     ...(options || {}),
   });
 }
 
-/** pictureUploadByBatch POST /api/picture/upload/batch */
-export async function pictureUploadByBatchUsingPost(
+/** 此处后端没有提供注释 POST /picture/upload/batch */
+export async function pictureControllerPictureUploadByBatch(
   body: API.PictureUploadByBatchDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseInt_>("/api/picture/upload/batch", {
+  return request<API.BaseResponseInteger>("/picture/upload/batch", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -547,12 +520,12 @@ export async function pictureUploadByBatchUsingPost(
   });
 }
 
-/** upload POST /api/picture/upload/url */
-export async function uploadUsingPost(
+/** 此处后端没有提供注释 POST /picture/upload/url */
+export async function pictureControllerUpload1(
   body: API.FileDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePictureVO_>("/api/picture/upload/url", {
+  return request<API.BaseResponsePictureVO>("/picture/upload/url", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -562,44 +535,26 @@ export async function uploadUsingPost(
   });
 }
 
-/** getPictureByIdUser GET /api/picture/user/${param0} */
-export async function getPictureByIdUserUsingGet(
+/** 此处后端没有提供注释 GET /picture/user/${param0} */
+export async function pictureControllerGetPictureByIdUser(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getPictureByIdUserUsingGETParams,
+  params: API.PictureControllerGetPictureByIdUserParams,
   options?: { [key: string]: any }
 ) {
   const { id: param0, ...queryParams } = params;
-  return request<API.BaseResponsePictureVO_>(`/api/picture/user/${param0}`, {
+  return request<API.BaseResponsePictureVO>(`/picture/user/${param0}`, {
     method: "GET",
     params: { ...queryParams },
     ...(options || {}),
   });
 }
 
-/** queryPendingPictures POST /api/picture/user/pending/query */
-export async function queryPendingPicturesUsingPost(
+/** 此处后端没有提供注释 POST /picture/user/pending/query */
+export async function pictureControllerQueryPendingPictures(
   body: API.PictureQueryDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePagePictureVO_>(
-    "/api/picture/user/pending/query",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      data: body,
-      ...(options || {}),
-    }
-  );
-}
-
-/** queryPictureUser POST /api/picture/user/query */
-export async function queryPictureUserUsingPost(
-  body: API.PictureQueryDTO,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponsePagePictureVO_>("/api/picture/user/query", {
+  return request<API.BaseResponsePagePictureVO>("/picture/user/pending/query", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -609,14 +564,29 @@ export async function queryPictureUserUsingPost(
   });
 }
 
-/** recordView POST /api/picture/view/${param0} */
-export async function recordViewUsingPost(
+/** 此处后端没有提供注释 POST /picture/user/query */
+export async function pictureControllerQueryPictureUser(
+  body: API.PictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponsePagePictureVO>("/picture/user/query", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 此处后端没有提供注释 POST /picture/view/${param0} */
+export async function pictureControllerRecordView(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.recordViewUsingPOSTParams,
+  params: API.PictureControllerRecordViewParams,
   options?: { [key: string]: any }
 ) {
   const { pictureId: param0, ...queryParams } = params;
-  return request<API.BaseResponseBoolean_>(`/api/picture/view/${param0}`, {
+  return request<API.BaseResponseBoolean>(`/picture/view/${param0}`, {
     method: "POST",
     params: { ...queryParams },
     ...(options || {}),

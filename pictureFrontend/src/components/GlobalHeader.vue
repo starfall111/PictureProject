@@ -35,6 +35,10 @@
                                                 我的空间
                                             </router-link>
                                         </a-menu-item>
+                                        <a-menu-item @click="router.push('/feedback/list')">
+                                            <CommentOutlined />
+                                            我的反馈
+                                        </a-menu-item>
                                         <a-menu-item @click="logout()">
                                             <LogoutOutlined />
                                             退出登录
@@ -61,8 +65,8 @@ import { HomeOutlined } from '@ant-design/icons-vue'
 import { message, type MenuProps } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { userLoginUserStore } from '@/stores/user'
-import { LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
-import { logOutUsingPost } from '@/api/userController'
+import { LogoutOutlined, UserOutlined, CommentOutlined } from '@ant-design/icons-vue'
+import { userControllerLogOut } from '@/api/userController'
 import checkAccess from '@/access/checkAccess'
 import SchemeSwitcher from '@/layouts/scheme-1-immersive/components/SchemeSwitcher.vue'
 import NotificationBell from '@/components/notification/NotificationBell.vue'
@@ -129,7 +133,7 @@ router.afterEach((to, from, next) => {
 })
 
 const logout = async () => {
-    const res = await logOutUsingPost();
+    const res = await userControllerLogOut();
     if (res.data.code === 0 && res.data.data) {
         loginUserStore.setLoginUser({});
         message.success('退出登录成功');

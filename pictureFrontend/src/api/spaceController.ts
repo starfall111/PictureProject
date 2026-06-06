@@ -2,26 +2,26 @@
 /* eslint-disable */
 import request from "@/request";
 
-/** getSpaceById GET /api/space/${param0} */
-export async function getSpaceByIdUsingGet(
+/** 此处后端没有提供注释 GET /space/${param0} */
+export async function spaceControllerGetSpaceById(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getSpaceByIdUsingGETParams,
+  params: API.SpaceControllerGetSpaceByIdParams,
   options?: { [key: string]: any }
 ) {
   const { id: param0, ...queryParams } = params;
-  return request<API.BaseResponseSpace_>(`/api/space/${param0}`, {
+  return request<API.BaseResponseSpace>(`/space/${param0}`, {
     method: "GET",
     params: { ...queryParams },
     ...(options || {}),
   });
 }
 
-/** addSpace POST /api/space/add */
-export async function addSpaceUsingPost(
+/** 此处后端没有提供注释 POST /space/add */
+export async function spaceControllerAddSpace(
   body: API.SpaceAddDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseLong_>("/api/space/add", {
+  return request<API.BaseResponseLong>("/space/add", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -31,12 +31,12 @@ export async function addSpaceUsingPost(
   });
 }
 
-/** deleteSpace DELETE /api/space/delete */
-export async function deleteSpaceUsingDelete(
+/** 此处后端没有提供注释 DELETE /space/delete */
+export async function spaceControllerDeleteSpace(
   body: API.DeleteRequest,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean_>("/api/space/delete", {
+  return request<API.BaseResponseBoolean>("/space/delete", {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -46,12 +46,12 @@ export async function deleteSpaceUsingDelete(
   });
 }
 
-/** editSpace POST /api/space/edit */
-export async function editSpaceUsingPost(
+/** 此处后端没有提供注释 POST /space/edit */
+export async function spaceControllerEditSpace(
   body: API.SpaceEditDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean_>("/api/space/edit", {
+  return request<API.BaseResponseBoolean>("/space/edit", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -61,20 +61,22 @@ export async function editSpaceUsingPost(
   });
 }
 
-/** listSpaceLevel GET /api/space/list/level */
-export async function listSpaceLevelUsingGet(options?: { [key: string]: any }) {
-  return request<API.BaseResponseListSpaceLevel_>("/api/space/list/level", {
+/** 此处后端没有提供注释 GET /space/list/level */
+export async function spaceControllerListSpaceLevel(options?: {
+  [key: string]: any;
+}) {
+  return request<API.BaseResponseListSpaceLevel>("/space/list/level", {
     method: "GET",
     ...(options || {}),
   });
 }
 
-/** querySpaceListAdmin POST /api/space/query */
-export async function querySpaceListAdminUsingPost(
+/** 此处后端没有提供注释 POST /space/query */
+export async function spaceControllerQuerySpaceListAdmin(
   body: API.SpaceQueryDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePageSpace_>("/api/space/query", {
+  return request<API.BaseResponsePageSpace>("/space/query", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -84,12 +86,12 @@ export async function querySpaceListAdminUsingPost(
   });
 }
 
-/** updateSpace POST /api/space/update */
-export async function updateSpaceUsingPost(
+/** 此处后端没有提供注释 POST /space/update */
+export async function spaceControllerUpdateSpace(
   body: API.SpaceUpdateDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean_>("/api/space/update", {
+  return request<API.BaseResponseBoolean>("/space/update", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -99,19 +101,16 @@ export async function updateSpaceUsingPost(
   });
 }
 
-/** getSpaceByUserId GET /api/space/userSpace/${param0} */
-export async function getSpaceByUserIdUsingGet(
+/** 此处后端没有提供注释 GET /space/userSpace/${param0} */
+export async function spaceControllerGetSpaceByUserId(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getSpaceByUserIdUsingGETParams,
+  params: API.SpaceControllerGetSpaceByUserIdParams,
   options?: { [key: string]: any }
 ) {
   const { id: param0, ...queryParams } = params;
-  return request<API.BaseResponseListSpaceVO_>(
-    `/api/space/userSpace/${param0}`,
-    {
-      method: "GET",
-      params: { ...queryParams },
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponseListSpaceVO>(`/space/userSpace/${param0}`, {
+    method: "GET",
+    params: { ...queryParams },
+    ...(options || {}),
+  });
 }

@@ -9,6 +9,9 @@
       <div class="search-area">
         <input class="search-box" type="text" placeholder="搜索图片..." @keyup.enter="handleSearch" />
       </div>
+
+
+
       <button class="upload-btn" @click="goUpload">+ 上传</button>
 
       <NotificationBell style="margin-right: 24px" />
@@ -20,6 +23,10 @@
               <a-menu>
                 <a-menu-item @click="router.push('/user/center')">个人中心</a-menu-item>
                 <a-menu-item @click="router.push('/my_space')">我的空间</a-menu-item>
+                <a-menu-item @click="router.push('/feedback/list')">
+                  <CommentOutlined />
+                  我的反馈
+                </a-menu-item>
                 <a-menu-item @click="logout()">退出登录</a-menu-item>
               </a-menu>
             </template>
@@ -39,8 +46,9 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import { CommentOutlined } from '@ant-design/icons-vue'
 import { userLoginUserStore } from '@/stores/user'
-import { logOutUsingPost } from '@/api/userController'
+import { userControllerLogOut } from '@/api/userController'
 import SchemeSwitcher from '@/layouts/scheme-1-immersive/components/SchemeSwitcher.vue'
 import FloatingSidebar from '@/layouts/scheme-1-immersive/components/FloatingSidebar.vue'
 import NotificationBell from '@/components/notification/NotificationBell.vue'
@@ -60,7 +68,7 @@ const goUpload = () => {
 }
 
 const logout = async () => {
-  const res = await logOutUsingPost()
+  const res = await userControllerLogOut()
   if (res.data.code === 0 && res.data.data) {
     loginUserStore.setLoginUser({})
     message.success('退出登录成功')

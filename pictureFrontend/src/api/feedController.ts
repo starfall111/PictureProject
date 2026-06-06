@@ -2,32 +2,36 @@
 /* eslint-disable */
 import request from "@/request";
 
-/** markRead POST /api/feed/mark-read */
-export async function markReadUsingPost(options?: { [key: string]: any }) {
-  return request<API.BaseResponseBoolean_>("/api/feed/mark-read", {
+/** 此处后端没有提供注释 POST /feed/mark-read */
+export async function feedControllerMarkRead(options?: { [key: string]: any }) {
+  return request<API.BaseResponseBoolean>("/feed/mark-read", {
     method: "POST",
     ...(options || {}),
   });
 }
 
-/** getTimeline GET /api/feed/timeline */
-export async function getTimelineUsingGet(
+/** 此处后端没有提供注释 GET /feed/timeline */
+export async function feedControllerGetTimeline(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getTimelineUsingGETParams,
+  params: API.FeedControllerGetTimelineParams,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseFeedTimelineVO_>("/api/feed/timeline", {
+  return request<API.BaseResponseFeedTimelineVO>("/feed/timeline", {
     method: "GET",
     params: {
       ...params,
+      queryDTO: undefined,
+      ...params["queryDTO"],
     },
     ...(options || {}),
   });
 }
 
-/** getUnreadCount GET /api/feed/unread-count */
-export async function getUnreadCountUsingGet(options?: { [key: string]: any }) {
-  return request<API.BaseResponseFeedUnreadVO_>("/api/feed/unread-count", {
+/** 此处后端没有提供注释 GET /feed/unread-count */
+export async function feedControllerGetUnreadCount(options?: {
+  [key: string]: any;
+}) {
+  return request<API.BaseResponseFeedUnreadVO>("/feed/unread-count", {
     method: "GET",
     ...(options || {}),
   });

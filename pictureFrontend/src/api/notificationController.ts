@@ -2,83 +2,86 @@
 /* eslint-disable */
 import request from "@/request";
 
-/** deleteNotification DELETE /api/notification/${param0} */
-export async function deleteNotificationUsingDelete(
+/** 此处后端没有提供注释 DELETE /notification/${param0} */
+export async function notificationControllerDeleteNotification(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.deleteNotificationUsingDELETEParams,
+  params: API.NotificationControllerDeleteNotificationParams,
   options?: { [key: string]: any }
 ) {
   const { id: param0, ...queryParams } = params;
-  return request<API.BaseResponseBoolean_>(`/api/notification/${param0}`, {
+  return request<API.BaseResponseBoolean>(`/notification/${param0}`, {
     method: "DELETE",
     params: { ...queryParams },
     ...(options || {}),
   });
 }
 
-/** cleanReadNotifications DELETE /api/notification/clean/read */
-export async function cleanReadNotificationsUsingDelete(options?: {
+/** 此处后端没有提供注释 DELETE /notification/clean/read */
+export async function notificationControllerCleanReadNotifications(options?: {
   [key: string]: any;
 }) {
-  return request<API.BaseResponseInt_>("/api/notification/clean/read", {
+  return request<API.BaseResponseInteger>("/notification/clean/read", {
     method: "DELETE",
     ...(options || {}),
   });
 }
 
-/** listNotifications GET /api/notification/list */
-export async function listNotificationsUsingGet(
+/** 此处后端没有提供注释 GET /notification/list */
+export async function notificationControllerListNotifications(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.listNotificationsUsingGETParams,
+  params: API.NotificationControllerListNotificationsParams,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePageNotificationVO_>(
-    "/api/notification/list",
-    {
-      method: "GET",
-      params: {
-        ...params,
-      },
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponsePageNotificationVO>("/notification/list", {
+    method: "GET",
+    params: {
+      ...params,
+      queryDTO: undefined,
+      ...params["queryDTO"],
+    },
+    ...(options || {}),
+  });
 }
 
-/** markAsRead PUT /api/notification/read/${param0} */
-export async function markAsReadUsingPut(
+/** 此处后端没有提供注释 PUT /notification/read/${param0} */
+export async function notificationControllerMarkAsRead(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.markAsReadUsingPUTParams,
+  params: API.NotificationControllerMarkAsReadParams,
   options?: { [key: string]: any }
 ) {
   const { id: param0, ...queryParams } = params;
-  return request<API.BaseResponseBoolean_>(`/api/notification/read/${param0}`, {
+  return request<API.BaseResponseBoolean>(`/notification/read/${param0}`, {
     method: "PUT",
     params: { ...queryParams },
     ...(options || {}),
   });
 }
 
-/** markAllAsRead PUT /api/notification/read/all */
-export async function markAllAsReadUsingPut(options?: { [key: string]: any }) {
-  return request<API.BaseResponseBoolean_>("/api/notification/read/all", {
+/** 此处后端没有提供注释 PUT /notification/read/all */
+export async function notificationControllerMarkAllAsRead(options?: {
+  [key: string]: any;
+}) {
+  return request<API.BaseResponseBoolean>("/notification/read/all", {
     method: "PUT",
     ...(options || {}),
   });
 }
 
-/** connectSse GET /api/notification/sse */
-export async function connectSseUsingGet(options?: { [key: string]: any }) {
-  return request<API.SseEmitter>("/api/notification/sse", {
+/** 此处后端没有提供注释 GET /notification/sse */
+export async function notificationControllerConnectSse(options?: {
+  [key: string]: any;
+}) {
+  return request<API.SseEmitter>("/notification/sse", {
     method: "GET",
     ...(options || {}),
   });
 }
 
-/** getUnreadCount GET /api/notification/unread/count */
-export async function getUnreadCountUsingGet1(options?: {
+/** 此处后端没有提供注释 GET /notification/unread/count */
+export async function notificationControllerGetUnreadCount(options?: {
   [key: string]: any;
 }) {
-  return request<API.BaseResponseLong_>("/api/notification/unread/count", {
+  return request<API.BaseResponseLong>("/notification/unread/count", {
     method: "GET",
     ...(options || {}),
   });

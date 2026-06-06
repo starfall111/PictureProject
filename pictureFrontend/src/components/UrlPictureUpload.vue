@@ -9,7 +9,7 @@
 </template>
 
 <script setup lang="ts">
-import { uploadUsingPost } from '@/api/pictureController'
+import { pictureControllerUpload1 } from '@/api/pictureController'
 import { message } from 'ant-design-vue'
 import { ref } from 'vue'
 
@@ -36,7 +36,7 @@ const handleUpload = async () => {
     if (props.spaceId) {  
       params.spaceId = props.spaceId  
     }  
-    const res = await uploadUsingPost(params)  
+    const res = await pictureControllerUpload1(params)  
     if (res.data.code === 0 && res.data.data) {  
       message.success('图片上传成功')  
       // 将上传成功的图片信息传递给父组件  

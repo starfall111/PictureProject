@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { message } from 'ant-design-vue';
 import { UserOutlined, CameraOutlined, CalendarOutlined } from '@ant-design/icons-vue';
-import { updateUserUsingPost1, uploadAvatarUsingPost } from '@/api/userController';
+import { userControllerUpdateUser, userControllerUploadAvatar } from '@/api/userController';
 import { userLoginUserStore } from '@/stores/user';
 
 interface Props {
@@ -83,7 +83,7 @@ const beforeAvatarUpload = async (file: File) => {
   reader.onload = async (e) => {
     const avatarUrl = e.target?.result as string;
     try {
-      const res = await uploadAvatarUsingPost({
+      const res = await userControllerUploadAvatar({
         file,
       });
       if (res.data.code === 0) {

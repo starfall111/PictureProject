@@ -21,11 +21,11 @@
 </template>
 
 <script setup lang="ts">
-import { healthUsingGet } from '@/api/mainController';
+import { mainControllerHealth } from '@/api/mainController';
 import GlobalHeader from '@/components/GlobalHeader.vue';
 import GlobalSider from '@/components/GlobalSider.vue';
 
-healthUsingGet().then(res => {
+mainControllerHealth().then(res => {
   console.log('后端健康检查结果:', res.data.data);
 }).catch(err => {
   console.error('后端健康检查失败:', err);

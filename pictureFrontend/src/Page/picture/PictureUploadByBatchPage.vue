@@ -39,9 +39,9 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { pictureUploadByBatchUsingPost } from '@/api/pictureController';
-import { listTagUsingGet } from '@/api/tagController';
-import { listCategoryUsingGet } from '@/api/categoryController';
+import { pictureControllerPictureUploadByBatch } from '@/api/pictureController';
+import { tagControllerListTag } from '@/api/tagController';
+import { categoryControllerListCategory } from '@/api/categoryController';
 import { message, } from 'ant-design-vue';
 
 const formData = reactive<API.PictureUploadByBatchDTO>({
@@ -57,7 +57,7 @@ const loading = ref(false)
 const handleSubmit = async (values: any) => {
     loading.value = true
     
-    const res = await pictureUploadByBatchUsingPost({
+    const res = await pictureControllerPictureUploadByBatch({
         ...values,
     })
     if (res.data.code === 0 && res.data.data) {
@@ -73,8 +73,8 @@ const tagOptions = ref<string[]>([])
 
 // 获取标签和分类选项  
 const getTagCategoryOptions = async () => {
-    const res_tag = await listTagUsingGet()
-    const res_category = await listCategoryUsingGet()
+    const res_tag = await tagControllerListTag()
+    const res_category = await categoryControllerListCategory()
     if (res_category.data.code === 0 && res_category.data.data) {
         // 转换成下拉选项组件接受的格式  
         categoryOptions.value = (res_category.data.data ?? []).map((data: any) => {

@@ -92,7 +92,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { message } from 'ant-design-vue';
 import dayjs from 'dayjs';
-import { deleteUserUsingDelete, getUserInfoUsingGet, listUserVoByQueryUsingPost, addUserUsingPost } from '@/api/userController';
+import { userControllerDeleteUser, userControllerGetUserInfo, userControllerListUserVoByQuery, userControllerAddUser } from '@/api/userController';
 import UserEditModal from '@/components/UserEditModal.vue';
 
 // ==================== 列表相关 ====================
@@ -117,7 +117,7 @@ const columns = [
 ];
 
 const fetchData = async () => {
-  const res = await listUserVoByQueryUsingPost({ ...searchParams });
+  const res = await userControllerListUserVoByQuery({ ...searchParams });
   if (res.data.code === 0 && res.data.data) {
     dataList.value = res.data.data.records ?? [];
     total.value = res.data.data.total ?? 0;
@@ -129,7 +129,7 @@ const fetchData = async () => {
 };
 
 const deleteUser = async (id: number) => {
-  const res = await deleteUserUsingDelete({ id });
+  const res = await userControllerDeleteUser({ id });
   if (res.data.code === 0) {
     message.success('删除成功');
     fetchData();
@@ -177,7 +177,7 @@ const currentRecord = ref<API.UserVO | null>(null);
 
 const openEditModal = async (id: number) => {
   try {
-    const res = await getUserInfoUsingGet({ id });
+    const res = await userControllerGetUserInfo({ id });
     if (res.data.code === 0 && res.data.data) {
       currentRecord.value = res.data.data;
       editModalVisible.value = true;
@@ -209,7 +209,7 @@ const handleAddOk = async () => {
     return;
   }
   try {
-    const res = await addUserUsingPost({ ...addForm });
+    const res = await userControllerAddUser({ ...addForm });
     if (res.data.code === 0) {
       message.success('新增成功');
       addModalVisible.value = false;

@@ -2,20 +2,22 @@
 /* eslint-disable */
 import request from "@/request";
 
-/** adminRebuild POST /api/recommend/admin/rebuild */
-export async function adminRebuildUsingPost(options?: { [key: string]: any }) {
-  return request<API.BaseResponseInt_>("/api/recommend/admin/rebuild", {
+/** 此处后端没有提供注释 POST /recommend/admin/rebuild */
+export async function recommendControllerAdminRebuild(options?: {
+  [key: string]: any;
+}) {
+  return request<API.BaseResponseInteger>("/recommend/admin/rebuild", {
     method: "POST",
     ...(options || {}),
   });
 }
 
-/** recommend POST /api/recommend/query */
-export async function recommendUsingPost(
+/** 此处后端没有提供注释 POST /recommend/query */
+export async function recommendControllerRecommend(
   body: API.RecommendQueryDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseRecommendVO_>("/api/recommend/query", {
+  return request<API.BaseResponseRecommendVO>("/recommend/query", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

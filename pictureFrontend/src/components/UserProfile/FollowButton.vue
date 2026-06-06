@@ -17,7 +17,7 @@
 import { ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { PlusOutlined, CheckOutlined } from '@ant-design/icons-vue'
-import { toggleFollowUsingPost } from '@/api/followController'
+import { followControllerToggleFollow } from '@/api/followController'
 
 interface Props {
   targetUserId: string
@@ -35,7 +35,7 @@ const loading = ref(false)
 const handleClick = async () => {
   loading.value = true
   try {
-    const res = await toggleFollowUsingPost({
+    const res = await followControllerToggleFollow({
       targetUserId: props.targetUserId,
     })
 

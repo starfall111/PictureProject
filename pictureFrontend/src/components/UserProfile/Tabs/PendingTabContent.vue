@@ -69,9 +69,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { queryPendingPicturesUsingPost } from '@/api/pictureController'
-import { bindAccountUsingPost } from '@/api/userController'
-import { sendVerificationCodeUsingPost } from '@/api/noticeController'
+import { pictureControllerQueryPendingPictures } from '@/api/pictureController'
+import { userControllerBindAccount } from '@/api/userController'
+import { noticeControllerSendVerificationCode } from '@/api/noticeController'
 import { useAliyunCaptcha } from '@/access/useAliyunCaptcha'
 import PictureList from '@/components/PictureList/index.vue'
 import { useTabContent } from './useTabContent'
@@ -110,7 +110,7 @@ const fetchPendingPictures = async (params: {
   current: number
   pageSize: number
 }) => {
-  return await queryPendingPicturesUsingPost({
+  return await pictureControllerQueryPendingPictures({
     current: params.current,
     pageSize: params.pageSize,
   })
@@ -153,7 +153,7 @@ const startPhoneCountdown = () => {
 
 const doSendPhoneCode = async (captchaVerifyParam: string) => {
   try {
-    const res = await sendVerificationCodeUsingPost({
+    const res = await noticeControllerSendVerificationCode({
       account: phoneForm.phone,
       captchaVerifyParam,
       type: 1,
@@ -191,7 +191,7 @@ const handleBindPhone = async () => {
   }
   phoneBindLoading.value = true
   try {
-    const res = await bindAccountUsingPost({
+    const res = await userControllerBindAccount({
       type: 1,
       account: phoneForm.phone,
       verificationCode: phoneForm.code,

@@ -86,7 +86,7 @@
 import { reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { UserOutlined } from '@ant-design/icons-vue';
-import { updateUserUsingPost, updateUserUsingPost1 } from '@/api/userController';
+import { userControllerUpdateUser1, userControllerUpdateUser } from '@/api/userController';
 
 interface EditFormState {
   id: number | undefined;
@@ -200,7 +200,7 @@ const handleOk = async () => {
   editLoading.value = true;
   try {
     // TODO: 调用后端更新用户信息接口
-    const res = await updateUserUsingPost({
+    const res = await userControllerUpdateUser1({
       id: editForm.id,
       userAvatar: editForm.userAvatar,
       userEmail: editForm.userEmail,

@@ -1,55 +1,26 @@
 <template>
-  <aside
-    class="floating-sidebar"
-    :class="{ expanded: isExpanded, pinned: isPinned }"
-    role="navigation"
-    aria-label="主导航"
-    @mouseenter="handleMouseEnter"
-    @mouseleave="handleMouseLeave"
-  >
+  <aside class="floating-sidebar" :class="{ expanded: isExpanded, pinned: isPinned }" role="navigation" aria-label="主导航"
+    @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
     <!-- 普通导航项 -->
     <nav class="sidebar-nav">
-      <SidebarNavItem
-        v-for="item in userNavItems"
-        :key="item.path"
-        :icon="item.icon"
-        :label="item.label"
-        :active="isCurrentRoute(item.path)"
-        :show-label="isExpanded"
-        @click="navigate(item.path)"
-      />
+      <SidebarNavItem v-for="item in userNavItems" :key="item.path" :icon="item.icon" :label="item.label"
+        :active="isCurrentRoute(item.path)" :show-label="isExpanded" @click="navigate(item.path)" />
     </nav>
 
     <!-- 管理员分组 -->
     <template v-if="isAdmin">
       <div class="sidebar-divider"></div>
       <div class="sidebar-admin-group">
-        <div
-          class="admin-group-header"
-          :class="{ active: isAdminRouteActive }"
-          @click="adminExpanded = !adminExpanded"
-        >
+        <div class="admin-group-header" :class="{ active: isAdminRouteActive }" @click="adminExpanded = !adminExpanded">
           <SafetyCertificateOutlined class="nav-item-icon admin-icon" />
           <span v-if="isExpanded" class="admin-label">管理面板</span>
-          <RightOutlined
-            v-if="isExpanded"
-            class="expand-arrow"
-            :class="{ rotated: adminExpanded }"
-          />
+          <RightOutlined v-if="isExpanded" class="expand-arrow" :class="{ rotated: adminExpanded }" />
           <span v-if="isExpanded" class="admin-tag">Admin</span>
         </div>
         <Transition name="slide">
           <div v-if="adminExpanded && isExpanded" class="admin-group-items">
-            <SidebarNavItem
-              v-for="item in adminNavItems"
-              :key="item.path"
-              :icon="item.icon"
-              :label="item.label"
-              :active="isCurrentRoute(item.path)"
-              :indented="true"
-              :show-label="true"
-              @click="navigate(item.path)"
-            />
+            <SidebarNavItem v-for="item in adminNavItems" :key="item.path" :icon="item.icon" :label="item.label"
+              :active="isCurrentRoute(item.path)" :indented="true" :show-label="true" @click="navigate(item.path)" />
           </div>
         </Transition>
       </div>
@@ -57,12 +28,8 @@
 
     <!-- 底部 pin 按钮 -->
     <div class="sidebar-footer">
-      <button
-        class="pin-btn"
-        :class="{ active: isPinned }"
-        @click="togglePin"
-        :aria-label="isPinned ? '取消钉住侧边栏' : '钉住侧边栏'"
-      >
+      <button class="pin-btn" :class="{ active: isPinned }" @click="togglePin"
+        :aria-label="isPinned ? '取消钉住侧边栏' : '钉住侧边栏'">
         <PushpinOutlined :rotate="isPinned ? -45 : 0" />
       </button>
     </div>
@@ -85,6 +52,9 @@ import {
   RightOutlined,
   PushpinOutlined,
   MessageOutlined,
+  StopOutlined,
+  WarningOutlined,
+  CommentOutlined,
 } from '@ant-design/icons-vue'
 import { userLoginUserStore } from '@/stores/user'
 import checkAccess from '@/access/checkAccess'
@@ -113,7 +83,8 @@ const userNavItems = computed(() => {
     { path: '/home', icon: PictureOutlined, label: '公共图库' },
     { path: '/my_space', icon: FolderOutlined, label: '个人空间' },
     { path: `/user/${loginUserStore.loginUser.id}`, icon: UserOutlined, label: '用户主页' },
-    { path: '/feed', icon: ThunderboltOutlined, label: '动态' }, 
+    { path: '/feed', icon: ThunderboltOutlined, label: '动态' },
+    { path: '/feedback/list', icon: CommentOutlined, label: '我的反馈' },
   ]
   // 如果用户未登录，隐藏个人空间和用户主页
   if (!loginUserStore.loginUser.id) {
@@ -130,6 +101,21 @@ const adminNavItems = [
   { path: '/admin/categoryManage', icon: FolderOutlined, label: '分类管理' },
   { path: '/admin/tagManage', icon: TagsOutlined, label: '标签管理' },
   { path: '/admin/systemMessageManage', icon: MessageOutlined, label: '系统消息管理' },
+  {
+    path: '/admin/feedbackManage',
+    label: '反馈管理',
+    icon: () => h(CommentOutlined),
+  },
+  {
+    path: '/admin/reportManage',
+    label: '举报管理',
+    icon: () => h(WarningOutlined),
+  },
+  {
+    path: '/admin/banManage',
+    label: '封禁管理',
+    icon: () => h(StopOutlined),
+  },
 ]
 
 // 当前路由匹配
@@ -199,7 +185,8 @@ const navigate = (path: string) => {
   padding: 12px 0;
   z-index: 100;
   transition: width var(--sidebar-expand-duration, 200ms) var(--sidebar-expand-easing, ease-out);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .floating-sidebar.expanded {
@@ -350,6 +337,7 @@ const navigate = (path: string) => {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .floating-sidebar,
   .admin-group-header,
   .expand-arrow,

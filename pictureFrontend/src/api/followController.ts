@@ -2,12 +2,12 @@
 /* eslint-disable */
 import request from "@/request";
 
-/** toggleFollow POST /api/follow/action */
-export async function toggleFollowUsingPost(
+/** 此处后端没有提供注释 POST /follow/action */
+export async function followControllerToggleFollow(
   body: API.FollowActionDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean_>("/api/follow/action", {
+  return request<API.BaseResponseBoolean>("/follow/action", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -17,75 +17,66 @@ export async function toggleFollowUsingPost(
   });
 }
 
-/** getFollowCount GET /api/follow/count/${param0} */
-export async function getFollowCountUsingGet(
+/** 此处后端没有提供注释 GET /follow/count/${param0} */
+export async function followControllerGetFollowCount(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getFollowCountUsingGETParams,
+  params: API.FollowControllerGetFollowCountParams,
   options?: { [key: string]: any }
 ) {
   const { userId: param0, ...queryParams } = params;
-  return request<API.BaseResponseFollowCountVO_>(
-    `/api/follow/count/${param0}`,
-    {
-      method: "GET",
-      params: { ...queryParams },
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponseFollowCountVO>(`/follow/count/${param0}`, {
+    method: "GET",
+    params: { ...queryParams },
+    ...(options || {}),
+  });
 }
 
-/** listFollowers GET /api/follow/list/followers */
-export async function listFollowersUsingGet(
+/** 此处后端没有提供注释 GET /follow/list/followers */
+export async function followControllerListFollowers(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.listFollowersUsingGETParams,
+  params: API.FollowControllerListFollowersParams,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePageFollowUserVO_>(
-    "/api/follow/list/followers",
-    {
-      method: "GET",
-      params: {
-        // current has a default value: 1
-        current: "1",
-        // pageSize has a default value: 10
-        pageSize: "10",
-        ...params,
-      },
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponsePageFollowUserVO>("/follow/list/followers", {
+    method: "GET",
+    params: {
+      // current has a default value: 1
+      current: "1",
+      // pageSize has a default value: 10
+      pageSize: "10",
+      ...params,
+    },
+    ...(options || {}),
+  });
 }
 
-/** listFollowing GET /api/follow/list/following */
-export async function listFollowingUsingGet(
+/** 此处后端没有提供注释 GET /follow/list/following */
+export async function followControllerListFollowing(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.listFollowingUsingGETParams,
+  params: API.FollowControllerListFollowingParams,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePageFollowUserVO_>(
-    "/api/follow/list/following",
-    {
-      method: "GET",
-      params: {
-        // current has a default value: 1
-        current: "1",
-        // pageSize has a default value: 10
-        pageSize: "10",
-        ...params,
-      },
-      ...(options || {}),
-    }
-  );
+  return request<API.BaseResponsePageFollowUserVO>("/follow/list/following", {
+    method: "GET",
+    params: {
+      // current has a default value: 1
+      current: "1",
+      // pageSize has a default value: 10
+      pageSize: "10",
+      ...params,
+    },
+    ...(options || {}),
+  });
 }
 
-/** isFollowing GET /api/follow/status/${param0} */
-export async function isFollowingUsingGet(
+/** 此处后端没有提供注释 GET /follow/status/${param0} */
+export async function followControllerIsFollowing(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.isFollowingUsingGETParams,
+  params: API.FollowControllerIsFollowingParams,
   options?: { [key: string]: any }
 ) {
   const { targetUserId: param0, ...queryParams } = params;
-  return request<API.BaseResponseBoolean_>(`/api/follow/status/${param0}`, {
+  return request<API.BaseResponseBoolean>(`/follow/status/${param0}`, {
     method: "GET",
     params: { ...queryParams },
     ...(options || {}),
