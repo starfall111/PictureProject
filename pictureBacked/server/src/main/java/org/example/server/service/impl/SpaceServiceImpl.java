@@ -11,6 +11,7 @@ import org.example.common.enums.SpaceLevelEnum;
 import org.example.common.enums.UserEnum;
 import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
+import org.example.common.util.VipUtil;
 import org.example.common.exception.ThrowUtils;
 import org.example.pojo.dto.space.SpaceQueryDTO;
 import org.example.pojo.dto.space.SpaceAddDTO;
@@ -71,8 +72,16 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         User user = UserContext.get();
         Long userId = user.getId();
 
-        if (!SpaceLevelEnum.COMMON.equals(spaceLevel) && !UserEnum.ADMIN.getValue().equals(user.getUserRole())) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权创建指定级别的空间");
+        boolean isAdmin = UserEnum.ADMIN.getValue().equals(user.getUserRole());
+        boolean isVip = VipUtil.isActiveVip(user);
+
+        if (!SpaceLevelEnum.COMMON.equals(spaceLevel)) {
+            if (!isAdmin && !isVip) {
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "升级为VIP会员以解锁专业版空间");
+            }
+        }
+        if (SpaceLevelEnum.FLAGSHIP.equals(spaceLevel) && !isAdmin) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "旗舰版空间仅管理员可创建");
         }
         //构建入库信息
 

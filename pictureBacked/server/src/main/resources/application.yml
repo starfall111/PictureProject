@@ -114,3 +114,6 @@ baidu:
   translate:
     appid: ${BAIDU_TRANSLATE_APPID:}
     secret: ${BAIDU_TRANSLATE_SECRET:}
+
+seckill:
+  hmac-secret: ${SECKILL_HMAC_SECRET:your-random-secret-key-at-least-32-chars}

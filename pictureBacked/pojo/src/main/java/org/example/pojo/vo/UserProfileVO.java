@@ -39,6 +39,21 @@ public class UserProfileVO implements Serializable {
     private String userRole;
 
     /**
+     * VIP会员类型
+     */
+    private Integer vipType;
+
+    /**
+     * VIP到期时间
+     */
+    private Date vipExpireTime;
+
+    /**
+     * 是否为有效VIP
+     */
+    private Boolean isActiveVip;
+
+    /**
      * 创建时间
      */
     private Date createTime;

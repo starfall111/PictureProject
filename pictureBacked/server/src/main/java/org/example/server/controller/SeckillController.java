@@ -1,8 +1,11 @@
 package org.example.server.controller;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.annotation.CheckAuth;
 import org.example.common.context.UserContext;
+import org.example.common.exception.ErrorCode;
+import org.example.common.exception.ThrowUtils;
 import org.example.common.result.BaseResponse;
 import org.example.common.result.ResultUtils;
 import org.example.pojo.dto.seckill.SeckillGrabDTO;
@@ -38,6 +41,8 @@ public class SeckillController {
     @CheckAuth
     public BaseResponse<Map<String, Object>> getToken(@RequestParam Long batchId, HttpServletRequest request) {
         Long userId = UserContext.get().getId();
+        String userPhone = UserContext.get().getUserPhone();
+        ThrowUtils.throwIf(StrUtil.isBlank(userPhone), ErrorCode.PARAMS_ERROR, "请先绑定手机号再参与本次活动");
         String token = seckillService.getToken(userId, batchId);
         Map<String, Object> data = new HashMap<>();
         data.put("token", token);

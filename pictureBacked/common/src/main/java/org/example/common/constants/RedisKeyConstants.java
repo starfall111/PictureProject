@@ -485,4 +485,102 @@ public class RedisKeyConstants {
 
     /** 批量任务统计缓存 TTL（秒）= 5 分钟 */
     public static final int BATCH_TASK_STATS_TTL = 5 * 60;
+
+    // ==================== 秒杀模块 Key ====================
+
+    /**
+     * 秒杀批次库存 Hash
+     * Fields: stock, version
+     * 格式: seckill:batch:stock:{batchId}
+     */
+    public static final String SECKILL_BATCH_STOCK = "seckill:batch:stock:%d";
+
+    /**
+     * 秒杀批次信息缓存
+     * Value: STRING (JSON)
+     * 格式: seckill:batch:info:{batchId}
+     */
+    public static final String SECKILL_BATCH_INFO = "seckill:batch:info:%d";
+
+    /**
+     * 秒杀令牌（防刷）
+     * Value: STRING, TTL 300s
+     * 格式: seckill:token:{token}
+     */
+    public static final String SECKILL_TOKEN = "seckill:token:%s";
+    /** 秒杀令牌 TTL（秒）= 5 分钟 */
+    public static final int SECKILL_TOKEN_TTL = 300;
+
+    /**
+     * 秒杀去重标记（防重复下单）
+     * Value: STRING, TTL 86400s
+     * 格式: seckill:dedupe:{userId}:{batchId}
+     */
+    public static final String SECKILL_DEDUPE = "seckill:dedupe:%d:%d";
+    /** 秒杀去重 TTL（秒）= 24 小时 */
+    public static final int SECKILL_DEDUPE_TTL = 86400;
+
+    /**
+     * 秒杀批次操作分布式锁
+     * Value: STRING, TTL 10s
+     * 格式: lock:seckill:batch:{batchId}
+     */
+    public static final String LOCK_SECKILL_BATCH = "lock:seckill:batch:%d";
+
+    /**
+     * 秒杀降级等级
+     * Value: STRING(INT)
+     */
+    public static final String SECKILL_DEGRADE = "seckill:degrade:level";
+
+    // ==================== VIP 会员模块 Key ====================
+
+    /**
+     * VIP 到期提醒标记
+     * Value: STRING, TTL 到到期日
+     * 格式: vip:expire:remind:{userId}
+     */
+    public static final String VIP_EXPIRE_REMIND_KEY = "vip:expire:remind:%d";
+
+    /**
+     * 编码券激活分布式锁
+     * Value: STRING, TTL 10s
+     * 格式: lock:coupon:activate:{userId}:{couponId}
+     */
+    public static final String COUPON_ACTIVATE_LOCK_KEY = "lock:coupon:activate:%d:%d";
+
+    /**
+     * 编码券激活限流计数
+     * Value: STRING(INT), TTL 60s
+     * 格式: rate_limit:coupon:activate:{userId}
+     */
+    public static final String COUPON_ACTIVATE_RATE_LIMIT_KEY = "rate_limit:coupon:activate:%d";
+    /** 编码券激活限流窗口（秒）= 60 秒 */
+    public static final int COUPON_ACTIVATE_RATE_LIMIT_WINDOW = 60;
+    /** 编码券激活限流最大次数 */
+    public static final int COUPON_ACTIVATE_RATE_LIMIT_MAX = 5;
+
+    /**
+     * VIP 到期处理分布式锁
+     */
+    public static final String LOCK_VIP_EXPIRE = "lock:vip:expire";
+
+    /**
+     * 秒杀对账分布式锁
+     */
+    public static final String LOCK_SECKILL_RECONCILE = "lock:seckill:reconcile";
+
+    /**
+     * Pexels API 每小时调用计数
+     * Value: STRING(INT), TTL 1小时
+     * 格式: pexels:quota:hourly:{dateHour}
+     */
+    public static final String PEXELS_HOURLY_COUNT = "pexels:quota:hourly:%s";
+
+    /**
+     * Pexels API 每月调用计数
+     * Value: STRING(INT), TTL 到月底
+     * 格式: pexels:quota:monthly:{yearMonth}
+     */
+    public static final String PEXELS_MONTHLY_COUNT = "pexels:quota:monthly:%s";
 }

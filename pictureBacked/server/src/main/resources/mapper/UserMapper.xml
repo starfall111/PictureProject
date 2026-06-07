@@ -14,6 +14,10 @@
             <result property="userAvatar" column="userAvatar" />
             <result property="userProfile" column="userProfile" />
             <result property="userRole" column="userRole" />
+            <result property="vipType" column="vipType" />
+            <result property="vipExpireTime" column="vipExpireTime" />
+            <result property="vipActivatedAt" column="vipActivatedAt" />
+            <result property="vipTotalDays" column="vipTotalDays" />
             <result property="banStatus" column="banStatus" />
             <result property="banEndTime" column="banEndTime" />
             <result property="violationCount" column="violationCount" />
@@ -26,8 +30,8 @@
 
     <sql id="Base_Column_List">
         id,userAccount,userPhone,userEmail,userPassword,userName,
-        userAvatar,userProfile,userRole,banStatus,banEndTime,
-        violationCount,lastViolationTime,editTime,createTime,
+        userAvatar,userProfile,userRole,vipType,vipExpireTime,vipActivatedAt,vipTotalDays,
+        banStatus,banEndTime,violationCount,lastViolationTime,editTime,createTime,
         updateTime,isDelete
     </sql>
 

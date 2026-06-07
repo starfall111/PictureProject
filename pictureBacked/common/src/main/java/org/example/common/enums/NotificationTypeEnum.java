@@ -37,7 +37,16 @@ public enum NotificationTypeEnum {
 
     // === 封禁相关 ===
     BAN_EXPIRING("BAN_EXPIRING", "封禁即将到期"),
-    REPORT_RESTRICTED("REPORT_RESTRICTED", "举报权限暂停");
+    REPORT_RESTRICTED("REPORT_RESTRICTED", "举报权限暂停"),
+
+    // === VIP相关 ===
+    VIP_ACTIVATED("VIP_ACTIVATED", "VIP激活成功"),
+    VIP_EXPIRED("VIP_EXPIRED", "VIP已到期"),
+    VIP_EXPIRING("VIP_EXPIRING", "VIP即将到期"),
+
+    // === 秒杀相关 ===
+    SECKILL_SUCCESS("SECKILL_SUCCESS", "秒杀成功"),
+    SECKILL_FAIL("SECKILL_FAIL", "秒杀失败");
 
     private final String type;
     private final String desc;

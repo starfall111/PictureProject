@@ -23,6 +23,7 @@ import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.example.common.util.AliOssUtil;
+import org.example.common.util.VipUtil;
 import org.example.pojo.entity.PictureStatistics;
 import org.example.pojo.vo.CategoryBriefVO;
 import org.example.pojo.vo.UserProfileVO;
@@ -518,6 +519,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         profile.setUserAvatar(user.getUserAvatar());
         profile.setUserProfile(user.getUserProfile());
         profile.setUserRole(user.getUserRole());
+        profile.setVipType(user.getVipType());
+        profile.setVipExpireTime(user.getVipExpireTime());
+        profile.setIsActiveVip(VipUtil.isActiveVip(user));
         profile.setCreateTime(user.getCreateTime());
 
         // 2. 统计用户点赞和收藏的图片数量

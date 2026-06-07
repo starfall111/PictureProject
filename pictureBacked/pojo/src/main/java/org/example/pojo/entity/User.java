@@ -69,6 +69,20 @@ public class User implements Serializable {
     @TableField(updateStrategy = FieldStrategy.NOT_EMPTY)
     private String userRole;
 
+    /** VIP会员类型: 0-普通用户, 1-VIP会员 */
+    private Integer vipType;
+
+    /** VIP到期时间 */
+    @TableField(updateStrategy = FieldStrategy.NOT_EMPTY)
+    private Date vipExpireTime;
+
+    /** 最近一次激活VIP时间 */
+    @TableField(updateStrategy = FieldStrategy.NOT_EMPTY)
+    private Date vipActivatedAt;
+
+    /** VIP累计总天数 */
+    private Integer vipTotalDays;
+
     /**
      * 封禁状态：NONE/TEMP/PERMANENT
      */
