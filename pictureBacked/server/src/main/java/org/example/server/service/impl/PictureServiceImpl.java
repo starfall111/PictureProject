@@ -137,6 +137,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Picture picture = new Picture();
         Picture oldPicture = new Picture();
         User user = UserContext.get();
+        // 异步场景（MQ 消费等）无 ThreadLocal，通过 fileDTO 传入 userId
+        if (user == null && fileDTO != null && fileDTO.getUserId() != null) {
+            user = userService.getById(fileDTO.getUserId());
+        }
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
         Long imageId = null;
         Long spaceId = fileDTO.getSpaceId();
         Space space;

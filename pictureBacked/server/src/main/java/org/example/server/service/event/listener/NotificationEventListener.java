@@ -33,7 +33,7 @@ public class NotificationEventListener {
     @Resource
     private SsePushService ssePushService;
 
-    @Async
+    @Async("asyncTaskExecutor")
     @EventListener
     public void handleNotificationEvent(NotificationEvent event) {
         try {

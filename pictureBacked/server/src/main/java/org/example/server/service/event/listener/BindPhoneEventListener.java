@@ -21,7 +21,7 @@ public class BindPhoneEventListener {
     @Resource(name = "cachedPictureService")
     private PictureService pictureService;
 
-    @Async
+    @Async("asyncTaskExecutor")
     @EventListener
     public void handleBindPhoneEvent(BindPhoneEvent event) {
         try {

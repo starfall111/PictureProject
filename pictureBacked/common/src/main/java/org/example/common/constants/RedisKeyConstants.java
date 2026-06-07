@@ -454,4 +454,35 @@ public class RedisKeyConstants {
      * Value: STRING(JSON), TTL 5分钟
      */
     public static final String BAN_STATS_KEY = "ban:stats";
+
+    // ==================== 批量任务 Key ====================
+
+    /**
+     * 批量任务提交限流
+     * Value: STRING(INT), TTL 60秒
+     * 格式: rate_limit:batch:{userId}
+     */
+    public static final String BATCH_TASK_RATE_LIMIT_KEY = "rate_limit:batch:%d";
+    /** 批量任务限流窗口（秒）= 60 秒 */
+    public static final int BATCH_TASK_RATE_LIMIT_WINDOW = 60;
+    /** 批量任务限流最大次数 */
+    public static final int BATCH_TASK_RATE_LIMIT_MAX = 1;
+
+    /**
+     * 批量任务进度缓存
+     * Value: STRING(JSON), TTL 1小时
+     * 格式: batch:progress:{taskId}
+     */
+    public static final String BATCH_TASK_PROGRESS_KEY = "batch:progress:%d";
+    /** 批量任务进度缓存 TTL（秒）= 1 小时 */
+    public static final int BATCH_TASK_PROGRESS_TTL = 60 * 60;
+
+    /**
+     * 批量任务管理端统计缓存
+     * Value: STRING(JSON), TTL 5分钟
+     */
+    public static final String BATCH_TASK_STATS_KEY = "batch:stats:admin";
+
+    /** 批量任务统计缓存 TTL（秒）= 5 分钟 */
+    public static final int BATCH_TASK_STATS_TTL = 5 * 60;
 }

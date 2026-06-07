@@ -43,7 +43,7 @@ public class PexelsPicture {
             //获取响应体
             HttpResponse response = HttpRequest.get(requestUrl)
                     .header("Authorization", apiKey)
-                    .timeout(5000)
+                    .timeout(10000)
                     .execute();
 
             if (HttpStatus.HTTP_OK != response.getStatus()) {
