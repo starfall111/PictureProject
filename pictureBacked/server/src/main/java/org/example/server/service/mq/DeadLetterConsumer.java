@@ -22,4 +22,9 @@ public class DeadLetterConsumer {
     public void handleBatchPicDead(String message) {
         log.error("【死信告警】批量图片任务消费失败，需人工排查 | payload={}", message);
     }
+
+    @RabbitListener(queues = "seckill.order.dead.queue")
+    public void handleSeckillDead(String message) {
+        log.error("【死信告警】秒杀订单消费失败，需人工排查 | payload={}", message);
+    }
 }

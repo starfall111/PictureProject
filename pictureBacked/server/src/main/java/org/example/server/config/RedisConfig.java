@@ -33,4 +33,20 @@ public class RedisConfig {
         script.setResultType(Long.class);
         return script;
     }
+
+    @Bean
+    public DefaultRedisScript<Long> seckillDeductScript() {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setLocation(new ClassPathResource("scripts/seckill_deduct.lua"));
+        script.setResultType(Long.class);
+        return script;
+    }
+
+    @Bean
+    public DefaultRedisScript<Long> seckillRollbackScript() {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setLocation(new ClassPathResource("scripts/seckill_rollback.lua"));
+        script.setResultType(Long.class);
+        return script;
+    }
 }
