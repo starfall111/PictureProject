@@ -4,6 +4,7 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.constants.RedisKeyConstants;
@@ -11,9 +12,11 @@ import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.example.common.util.RateLimitUtil;
+import org.example.pojo.dto.seckill.BatchQueryDTO;
 import org.example.pojo.dto.seckill.SeckillMessage;
 import org.example.pojo.entity.CodeCouponBatch;
 import org.example.pojo.entity.SeckillOrder;
+import org.example.pojo.vo.seckill.PublicBatchVO;
 import org.example.server.config.RabbitMQConfig;
 import org.example.server.mapper.CodeCouponBatchMapper;
 import org.example.server.mapper.SeckillOrderMapper;
@@ -300,6 +303,61 @@ public class SeckillServiceImpl extends ServiceImpl<SeckillOrderMapper, SeckillO
         result.put("endTime", batch.getEndTime());
         result.put("status", batch.getStatus());
         return result;
+    }
+
+    // ==================== 获取批次列表（公开） ====================
+
+    @Override
+    public Page<PublicBatchVO> listBatches(BatchQueryDTO dto) {
+        ThrowUtils.throwIf(dto == null, ErrorCode.PARAMS_ERROR);
+
+        int current = Math.max(dto.getCurrent(), 1);
+        int pageSize = Math.min(Math.max(dto.getPageSize(), 1), 50);
+
+        LambdaQueryWrapper<CodeCouponBatch> wrapper = new LambdaQueryWrapper<>();
+
+        // 只返回用户可见的批次：预热中(1)、进行中(2)、已结束(3)
+        Integer status = dto.getStatus();
+        if (status != null) {
+            // 限制只允许查询可见状态
+            ThrowUtils.throwIf(status < 1 || status > 3,
+                    ErrorCode.PARAMS_ERROR, "状态筛选值无效，只允许 1(预热中)/2(进行中)/3(已结束)");
+            wrapper.eq(CodeCouponBatch::getStatus, status);
+        } else {
+            wrapper.in(CodeCouponBatch::getStatus, 1, 2, 3);
+        }
+
+        // 优先展示进行中的批次，其次预热中，最后已结束；同状态按开始时间倒序
+        wrapper.orderByAsc(CodeCouponBatch::getStatus)
+                .orderByDesc(CodeCouponBatch::getStartTime);
+
+        Page<CodeCouponBatch> batchPage = codeCouponBatchMapper.selectPage(
+                new Page<>(current, pageSize), wrapper);
+
+        // 转换为 PublicBatchVO
+        Page<PublicBatchVO> voPage = new Page<>(batchPage.getCurrent(), batchPage.getSize(), batchPage.getTotal());
+        List<PublicBatchVO> voList = batchPage.getRecords().stream().map(batch -> {
+            PublicBatchVO vo = new PublicBatchVO();
+            vo.setId(batch.getId());
+            vo.setName(batch.getName());
+            vo.setType(batch.getType());
+            vo.setTotalStock(batch.getTotalStock());
+            vo.setRemainStock(batch.getCurrentStock());
+            vo.setStartTime(batch.getStartTime());
+            vo.setEndTime(batch.getEndTime());
+            vo.setStatus(batch.getStatus());
+            // 计算售出百分比
+            if (batch.getTotalStock() != null && batch.getTotalStock() > 0) {
+                int sold = batch.getTotalStock() - (batch.getCurrentStock() != null ? batch.getCurrentStock() : 0);
+                vo.setProgress((int) ((long) sold * 100 / batch.getTotalStock()));
+            } else {
+                vo.setProgress(0);
+            }
+            return vo;
+        }).toList();
+        voPage.setRecords(voList);
+
+        return voPage;
     }
 
     // ==================== 私有方法 ====================

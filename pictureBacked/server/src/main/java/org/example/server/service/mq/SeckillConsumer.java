@@ -5,30 +5,32 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.rabbitmq.client.Channel;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.constants.RedisKeyConstants;
 import org.example.pojo.dto.seckill.SeckillMessage;
 import org.example.pojo.entity.CodeCoupon;
+import org.example.pojo.entity.CodeCouponBatch;
 import org.example.pojo.entity.SeckillOrder;
+import org.example.server.mapper.CodeCouponBatchMapper;
 import org.example.server.mapper.CodeCouponMapper;
 import org.example.server.mapper.SeckillOrderMapper;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import jakarta.annotation.Resource;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 秒杀订单 MQ 消费者
  * <p>
- * 核心流程:
- * 1. 幂等检查（DB 查重）
- * 2. 写秒杀订单（status=0 处理中）
- * 3. 分配编码券（FOR UPDATE SKIP LOCKED）
- * 4. 绑定用户到券
- * 5. 回填券 ID 到订单（status=1 成功）
- * 6. 异常时进入死信队列
+ * 核心流程（TransactionTemplate 编程式事务）:
+ * 1. 事务外：幂等检查
+ * 2. 事务内：扣减 DB 库存 → 行锁锁定并绑定券 → 创建订单
+ * 3. 事务回滚时回滚 Redis 预扣库存 + 去重标记
  * </p>
  *
  * @author Zou
@@ -44,7 +46,16 @@ public class SeckillConsumer {
     private CodeCouponMapper codeCouponMapper;
 
     @Resource
+    private CodeCouponBatchMapper codeCouponBatchMapper;
+
+    @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private TransactionTemplate transactionTemplate;
+
+    @Resource(name = "seckillRollbackScript")
+    private DefaultRedisScript<Long> seckillRollbackScript;
 
     @RabbitListener(queues = "seckill.order.queue")
     public void handleSeckillOrder(String message, Channel channel,
@@ -76,69 +87,115 @@ public class SeckillConsumer {
     /**
      * 处理秒杀订单
      */
-    @Transactional(rollbackFor = Exception.class)
     public void processOrder(SeckillMessage msg) {
         Long userId = msg.getUserId();
         Long batchId = msg.getBatchId();
         String orderNo = msg.getOrderNo();
 
-        // 1. 幂等检查：是否已处理过该订单号
-        LambdaQueryWrapper<SeckillOrder> existWrapper = new LambdaQueryWrapper<>();
-        existWrapper.eq(SeckillOrder::getOrderNo, orderNo);
-        SeckillOrder existOrder = seckillOrderMapper.selectOne(existWrapper);
+        // 1. 事务外 - 幂等检查
+        SeckillOrder existOrder = checkIdempotent(orderNo);
         if (existOrder != null && Integer.valueOf(1).equals(existOrder.getStatus())) {
             log.info("秒杀订单已处理，跳过 | orderNo={}", orderNo);
             return;
         }
 
-        // 2. 写秒杀订单（status=0 处理中）
+        // 2. 事务内 - 扣减DB库存 → 绑定券 → 创建订单
+        try {
+            transactionTemplate.execute(status -> {
+                try {
+                    doProcessInTransaction(msg, existOrder);
+                    return true;
+                } catch (Exception e) {
+                    status.setRollbackOnly();
+                    throw e;
+                }
+            });
+        } catch (Exception e) {
+            // 3. 事务回滚 → 回滚 Redis 预扣库存 + 去重标记
+            log.error("秒杀事务回滚，回滚 Redis | orderNo={}", orderNo, e);
+            rollbackRedis(userId, batchId);
+            throw e;
+        }
+    }
+
+    /**
+     * 事务内核心处理：① 扣减 DB 库存 → ② 行锁锁定并绑定券 → ③ 创建订单
+     */
+    private void doProcessInTransaction(SeckillMessage msg, SeckillOrder existOrder) {
+        Long userId = msg.getUserId();
+        Long batchId = msg.getBatchId();
+        String orderNo = msg.getOrderNo();
+
+        // ① 扣减 DB 库存（currentStock > 0 作为乐观锁条件，单条 UPDATE 原子操作）
+        LambdaUpdateWrapper<CodeCouponBatch> stockWrapper = new LambdaUpdateWrapper<>();
+        stockWrapper.eq(CodeCouponBatch::getId, batchId)
+                .gt(CodeCouponBatch::getCurrentStock, 0)
+                .setSql("currentStock = currentStock - 1");
+        int stockRows = codeCouponBatchMapper.update(null, stockWrapper);
+        if (stockRows == 0) {
+            throw new RuntimeException("库存不足 | batchId=" + batchId);
+        }
+
+        // ② 行锁锁定并绑定券给用户（FOR UPDATE SKIP LOCKED）
+        CodeCoupon coupon = codeCouponMapper.selectOneAvailableForUpdate(batchId);
+        if (coupon == null) {
+            // 无可用券 → 抛异常回滚整个事务（库存也回滚）
+            throw new RuntimeException("批次无可用券 | batchId=" + batchId);
+        }
+
+        // 直接更新券（行锁已保证独占，无需 version 校验）
+        LambdaUpdateWrapper<CodeCoupon> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(CodeCoupon::getId, coupon.getId())
+                .set(CodeCoupon::getUserId, userId)
+                .set(CodeCoupon::getStatus, 1)
+                .set(CodeCoupon::getIssuedAt, new Date());
+        codeCouponMapper.update(null, updateWrapper);
+
+        // ③ 创建订单（status=1 成功，直接带 couponId）
         SeckillOrder order = new SeckillOrder();
         order.setUserId(userId);
         order.setBatchId(batchId);
         order.setOrderNo(orderNo);
-        order.setStatus(0);
+        order.setCouponId(coupon.getId());
+        order.setStatus(1);
         order.setCreateTime(new Date());
         if (existOrder == null) {
             seckillOrderMapper.insert(order);
-        }
-
-        // 3. 分配编码券 — 乐观查询批次下未发放的券
-        LambdaQueryWrapper<CodeCoupon> couponWrapper = new LambdaQueryWrapper<>();
-        couponWrapper.eq(CodeCoupon::getBatchId, batchId)
-                .eq(CodeCoupon::getStatus, 0)
-                .last("LIMIT 1");
-        CodeCoupon coupon = codeCouponMapper.selectOne(couponWrapper);
-
-        if (coupon == null) {
-            // 无可用券，标记订单失败
-            log.warn("批次无可用券，订单失败 | batchId={}, orderNo={}", batchId, orderNo);
-            order.setStatus(2);
+        } else {
+            order.setId(existOrder.getId());
             seckillOrderMapper.updateById(order);
-            return;
         }
-
-        // 4. 绑定用户到券（使用乐观锁 version 防并发）
-        LambdaUpdateWrapper<CodeCoupon> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(CodeCoupon::getId, coupon.getId())
-                .eq(CodeCoupon::getVersion, coupon.getVersion())
-                .set(CodeCoupon::getUserId, userId)
-                .set(CodeCoupon::getStatus, 1)
-                .set(CodeCoupon::getIssuedAt, new Date());
-        int rows = codeCouponMapper.update(null, updateWrapper);
-
-        if (rows == 0) {
-            // 乐观锁冲突，券已被其他消费者抢占
-            log.warn("券分配冲突，订单失败 | couponId={}, orderNo={}", coupon.getId(), orderNo);
-            order.setStatus(2);
-            seckillOrderMapper.updateById(order);
-            return;
-        }
-
-        // 5. 回填券 ID 到订单（status=1 成功）
-        order.setCouponId(coupon.getId());
-        order.setStatus(1);
-        seckillOrderMapper.updateById(order);
 
         log.info("秒杀订单处理完成 | orderNo={}, couponId={}, userId={}", orderNo, coupon.getId(), userId);
+    }
+
+    /**
+     * 幂等检查：根据订单号查询是否已存在
+     */
+    private SeckillOrder checkIdempotent(String orderNo) {
+        LambdaQueryWrapper<SeckillOrder> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SeckillOrder::getOrderNo, orderNo);
+        return seckillOrderMapper.selectOne(wrapper);
+    }
+
+    /**
+     * 回滚 Redis 预扣库存 + 去重标记
+     */
+    private void rollbackRedis(Long userId, Long batchId) {
+        // 回滚 Redis 预扣库存
+        String stockKey = String.format(RedisKeyConstants.SECKILL_BATCH_STOCK, batchId);
+        try {
+            stringRedisTemplate.execute(seckillRollbackScript, List.of(stockKey), "1");
+        } catch (Exception ex) {
+            log.error("【严重】回滚 Redis 库存失败，需人工介入 | batchId={}", batchId, ex);
+        }
+
+        // 回滚去重标记
+        String dedupeKey = String.format(RedisKeyConstants.SECKILL_DEDUPE, userId, batchId);
+        try {
+            stringRedisTemplate.delete(dedupeKey);
+        } catch (Exception ex) {
+            log.error("【严重】回滚去重标记失败 | key={}", dedupeKey, ex);
+        }
     }
 }

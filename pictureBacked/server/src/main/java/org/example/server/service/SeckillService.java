@@ -1,7 +1,10 @@
 package org.example.server.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.example.pojo.dto.seckill.BatchQueryDTO;
 import org.example.pojo.entity.SeckillOrder;
+import org.example.pojo.vo.seckill.PublicBatchVO;
 
 import java.util.Map;
 
@@ -55,4 +58,16 @@ public interface SeckillService extends IService<SeckillOrder> {
      * @return 批次详情
      */
     Map<String, Object> getBatchInfo(Long batchId);
+
+    /**
+     * 获取公开批次列表（分页 + 状态筛选）
+     * <p>
+     * 只返回对用户可见的批次（预热中、进行中、已结束），
+     * 不返回草稿和已取消的批次
+     * </p>
+     *
+     * @param dto 查询参数（status / current / pageSize）
+     * @return 分页结果
+     */
+    Page<PublicBatchVO> listBatches(BatchQueryDTO dto);
 }

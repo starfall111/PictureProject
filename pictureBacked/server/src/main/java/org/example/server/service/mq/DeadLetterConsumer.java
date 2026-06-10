@@ -27,4 +27,9 @@ public class DeadLetterConsumer {
     public void handleSeckillDead(String message) {
         log.error("【死信告警】秒杀订单消费失败，需人工排查 | payload={}", message);
     }
+
+    @RabbitListener(queues = "social.action.dead.queue")
+    public void handleSocialMediaDead(String message) {
+        log.error("【死信告警】社交操作消费失败，需人工排查 | payload={}", message);
+    }
 }

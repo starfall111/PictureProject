@@ -26,4 +26,15 @@
         createTime,updateTime,isDelete
     </sql>
 
+    <select id="selectOneAvailableForUpdate" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM code_coupon
+        WHERE batchId = #{batchId}
+          AND status = 0
+          AND isDelete = 0
+        ORDER BY id
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
+    </select>
+
 </mapper>
