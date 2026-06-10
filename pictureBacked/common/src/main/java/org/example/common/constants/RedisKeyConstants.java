@@ -79,17 +79,39 @@ public class RedisKeyConstants {
      */
     public static final String PIC_DETAIL_KEY = "pic:detail:%d";
 
+    // ==================== 图片公开状态缓存 Key ====================
+
+    /**
+     * 图片公开状态缓存（公共图库的 Picture 对象 JSON）
+     * Value: STRING (JSON) 或特殊标记 "DELETED" / "PRIVATE"
+     * 格式: pic:public:{pictureId}
+     */
+    public static final String PICTURE_PUBLIC_KEY = "pic:public:%d";
+    /** 图片公开状态缓存 TTL 基础时间（秒）= 10 分钟 */
+    public static final int PICTURE_PUBLIC_TTL_BASE = 10 * 60;
+    /** 图片公开状态缓存 TTL 随机抖动上限（秒）= 2 分钟 */
+    public static final int PICTURE_PUBLIC_TTL_JITTER = 2 * 60;
+
     // ==================== 用户图片列表缓存 Key ====================
 
-    /** 用户点赞列表缓存 */
-    //  todo 用户点赞时失效
-    public static final String LIST_LIKED_KEY = "list:liked:%d:%s";
-    /** 用户收藏列表缓存 */
-    //  todo 用户收藏时失效
-    public static final String LIST_FAV_KEY = "list:fav:%d:%s";
+    /** 用户点赞列表缓存（含版本号） 格式: list:liked:{userId}:v{version}:{md5} */
+    //  todo 用户点赞时 INCR 版本号，旧 key 靠业务 TTL 自然过期
+    public static final String LIST_LIKED_KEY = "list:liked:%d:v%s:%s";
+    /** 用户收藏列表缓存（含版本号） 格式: list:fav:{userId}:v{version}:{md5} */
+    //  todo 用户收藏时 INCR 版本号，旧 key 靠业务 TTL 自然过期
+    public static final String LIST_FAV_KEY = "list:fav:%d:v%s:%s";
     /** 用户上传列表缓存 */
     //  todo 用户上传时失效，管理员审批通过后失效
     public static final String LIST_UPLOADED_KEY = "list:uploaded:%d:%s";
+    /** 关注用户图片列表缓存 */
+    public static final String LIST_FOLLOWING_KEY = "list:following:%d:%s";
+
+    /** 用户点赞列表版本号（INCR 递增实现缓存失效） */
+    public static final String LIST_LIKED_VERSION_KEY = "list:liked:version:%d";
+    /** 用户收藏列表版本号（INCR 递增实现缓存失效） */
+    public static final String LIST_FAV_VERSION_KEY = "list:fav:version:%d";
+    /** 列表版本号 TTL（秒）= 30 天 */
+    public static final int LIST_VERSION_TTL = 30 * 24 * 3600;
 
     // ==================== 社交功能 TTL ====================
 

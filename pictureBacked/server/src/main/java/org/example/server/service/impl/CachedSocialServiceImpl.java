@@ -4,34 +4,34 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
-import org.example.common.exception.BusinessException;
+import org.example.common.annotation.RedisTimed;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.example.common.util.RedisCacheUtil;
+import org.example.pojo.dto.social.SocialActionMessage;
 import org.example.pojo.dto.social.UserPictureQueryDTO;
 import org.example.pojo.entity.Picture;
 import org.example.pojo.entity.PictureFavorite;
 import org.example.pojo.entity.PictureLike;
 import org.example.pojo.entity.PictureStatistics;
-import org.example.pojo.entity.User;
 import org.example.pojo.vo.PictureBriefVO;
 import org.example.pojo.vo.PictureStatisticsVO;
 import org.example.pojo.vo.ToggleFavoriteVO;
 import org.example.pojo.vo.ToggleLikeVO;
 import org.example.common.constants.RedisKeyConstants;
+import org.example.server.config.RabbitMQConfig;
 import org.example.server.mapper.PictureFavoriteMapper;
 import org.example.server.mapper.PictureLikeMapper;
 import org.example.server.mapper.PictureMapper;
 import org.example.server.mapper.PictureStatisticsMapper;
-import org.example.server.mapper.UserMapper;
 import org.example.server.service.SocialService;
-import org.example.server.service.event.NotificationEvent;
-import org.example.common.enums.NotificationTypeEnum;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 
 /**
  * 缓存版社交服务实现
- * - 点赞/收藏 → Redis 计数 + DB 实时双写
+ * - 点赞/收藏 → Redis 同步更新（用户即时响应）+ RabbitMQ 异步写入 DB + 发布通知
  * - 浏览/下载/分享 → 仅 Redis INCR，定时同步到 DB
  *
  * @author Zou
@@ -72,16 +72,13 @@ public class CachedSocialServiceImpl implements SocialService {
     private PictureStatisticsMapper pictureStatisticsMapper;
 
     @Resource
-    private UserMapper userMapper;
-
-    @Resource
     private DefaultRedisScript<Long> releaseLockScript;
 
     @Resource(name = "dbSocialService")
     private SocialService dbSocialService;
 
     @Resource
-    private ApplicationEventPublisher eventPublisher;
+    private RabbitTemplate rabbitTemplate;
 
     /**
      * 分布式锁超时时间（秒）
@@ -89,17 +86,18 @@ public class CachedSocialServiceImpl implements SocialService {
     private static final int LOCK_TIMEOUT_SECONDS = 10;
 
     /**
-     * TODO: 优化方向 — 当前 DB 写操作在分布式锁内执行（锁 TTL 10s）。
-     *       如果未来 DB 写入延迟成为瓶颈，可考虑将 DB 操作移到锁外：
-     *       先完成 Redis 操作 + 释放锁，再同步写 DB（需处理 DB 失败时的回补逻辑）。
-     *       当前业务量级下单行 INSERT/DELETE 正常 < 100ms，暂不需要优化。
-     *       DB 写入延迟成为瓶颈后，采用 rabbitMQ 削峰
-     *
+     * 点赞/取消点赞（toggle）
+     * <p>
+     * Redis 操作同步执行（用户即刻获得响应），DB 写入通过 RabbitMQ 异步处理。
+     * 快速重复点击场景：Redis 分布式锁保证串行化，DB 唯一索引冲突由 Consumer 端静默忽略。
+     * </p>
      */
     @Override
+    @RedisTimed(value = "toggleLike", warnThreshold = 100)
     public ToggleLikeVO toggleLike(Long pictureId, Long userId) {
         Picture picture = validPicturePublic(pictureId);
 
+        // ── 1. 分布式锁（需同步获取结果） ──
         String lockKey = String.format(RedisKeyConstants.SOCIAL_LOCK_KEY, "like", userId, pictureId);
         String lockValue = UUID.randomUUID().toString();
         Boolean locked = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -109,50 +107,92 @@ public class CachedSocialServiceImpl implements SocialService {
             String likeKey = String.format(RedisKeyConstants.SOCIAL_LIKE_KEY, userId, pictureId);
             String statsKey = String.format(RedisKeyConstants.SOCIAL_STATS_KEY, pictureId);
 
-            // 确保 Hash 已初始化
-            initStatsHashIfNeeded(pictureId);
+            // ── 2. Pipeline：批量读取当前状态（1 RTT） ──
+            List<Object> readResults = stringRedisTemplate.executePipelined(new SessionCallback<Object>() {
+                @Override
+                @SuppressWarnings("unchecked")
+                public Object execute(RedisOperations operations) throws DataAccessException {
+                    operations.opsForValue().get(likeKey);
+                    operations.hasKey(statsKey);
+                    return null;
+                }
+            });
+
+            String existing = (String) readResults.get(0);
+            boolean statsInitialized = Boolean.TRUE.equals(readResults.get(1));
 
             boolean liked;
-            String existing = stringRedisTemplate.opsForValue().get(likeKey);
+            String newValue;
+            long delta;
             if ("1".equals(existing)) {
-                // 已点赞 → 取消点赞，value 设为 "0"
-                int ttl = RedisKeyConstants.SOCIAL_STATUS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATUS_TTL_JITTER);
-                stringRedisTemplate.opsForValue().set(likeKey, "0", ttl, TimeUnit.SECONDS);
-                stringRedisTemplate.opsForHash().increment(statsKey, "likeCount", -1);
-                // DB 删除
-                QueryWrapper<PictureLike> qw = new QueryWrapper<>();
-                qw.eq("pictureId", pictureId).eq("userId", userId);
-                pictureLikeMapper.delete(qw);
                 liked = false;
+                newValue = "0";
+                delta = -1;
             } else {
-                // 未点赞 → 点赞，value 设为 "1"
-                int ttl = RedisKeyConstants.SOCIAL_STATUS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATUS_TTL_JITTER);
-                stringRedisTemplate.opsForValue().set(likeKey, "1", ttl, TimeUnit.SECONDS);
-                stringRedisTemplate.opsForHash().increment(statsKey, "likeCount", 1);
-                // DB 插入
-                PictureLike pictureLike = new PictureLike();
-                pictureLike.setPictureId(pictureId);
-                pictureLike.setUserId(userId);
-                pictureLikeMapper.insert(pictureLike);
                 liked = true;
-
-                // 发布点赞通知事件
-                publishNotification(picture, userId, NotificationTypeEnum.LIKE, "赞了你的图片");
+                newValue = "1";
+                delta = 1;
             }
 
-            // 标记脏数据
-            stringRedisTemplate.opsForSet().add(RedisKeyConstants.SOCIAL_STATS_DIRTY_KEY, String.valueOf(pictureId));
+            // ── 3. Hash 未初始化时从 DB 加载（非 Redis 操作） ──
+            final boolean needInit = !statsInitialized;
+            Map<String, String> initFields = null;
+            int statsTtl = 0;
+            if (needInit) {
+                PictureStatistics stat = pictureStatisticsMapper.selectById(pictureId);
+                initFields = new LinkedHashMap<>();
+                initFields.put("likeCount", String.valueOf(stat != null && stat.getLikeCount() != null ? stat.getLikeCount() : 0));
+                initFields.put("favoriteCount", String.valueOf(stat != null && stat.getFavoriteCount() != null ? stat.getFavoriteCount() : 0));
+                initFields.put("shareCount", String.valueOf(stat != null && stat.getShareCount() != null ? stat.getShareCount() : 0));
+                initFields.put("viewCount", String.valueOf(stat != null && stat.getViewCount() != null ? stat.getViewCount() : 0));
+                initFields.put("downloadCount", String.valueOf(stat != null && stat.getDownloadCount() != null ? stat.getDownloadCount() : 0));
+                statsTtl = RedisKeyConstants.SOCIAL_STATS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATS_TTL_JITTER);
+            }
 
-            // 读取最新计数
-            String likeCountStr = (String) stringRedisTemplate.opsForHash().get(statsKey, "likeCount");
+            // ── 4. Pipeline：批量写入 + 读取最终计数（1 RTT） ──
+            int ttl = RedisKeyConstants.SOCIAL_STATUS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATUS_TTL_JITTER);
+            final String fNewValue = newValue;
+            final long fDelta = delta;
+            final int fTtl = ttl;
+            final Map<String, String> fInitFields = initFields;
+            final int fStatsTtl = statsTtl;
+
+            List<Object> writeResults = stringRedisTemplate.executePipelined(new SessionCallback<Object>() {
+                @Override
+                @SuppressWarnings("unchecked")
+                public Object execute(RedisOperations operations) throws DataAccessException {
+                    // 初始化 Hash（如果需要）
+                    if (needInit && fInitFields != null) {
+                        for (Map.Entry<String, String> entry : fInitFields.entrySet()) {
+                            operations.opsForHash().putIfAbsent(statsKey, entry.getKey(), entry.getValue());
+                        }
+                        operations.expire(statsKey, fStatsTtl, TimeUnit.SECONDS);
+                    }
+                    // 写入点赞状态
+                    operations.opsForValue().set(likeKey, fNewValue, fTtl, TimeUnit.SECONDS);
+                    // 更新计数
+                    operations.opsForHash().increment(statsKey, "likeCount", fDelta);
+                    // 标记脏数据
+                    operations.opsForSet().add(RedisKeyConstants.SOCIAL_STATS_DIRTY_KEY, String.valueOf(pictureId));
+                    // 读取最新计数
+                    operations.opsForHash().get(statsKey, "likeCount");
+                    return null;
+                }
+            });
+
+            // 最终计数是 pipeline 最后一个命令的结果
+            String likeCountStr = (String) writeResults.get(writeResults.size() - 1);
             int likeCount = likeCountStr != null ? Integer.parseInt(likeCountStr) : 0;
+
+            // DB 操作 → 异步 MQ
+            sendSocialActionMessage("like", liked ? "insert" : "delete", pictureId, userId, picture.getUserId());
 
             ToggleLikeVO result = new ToggleLikeVO();
             result.setLiked(liked);
             result.setLikeCount(Math.max(likeCount, 0));
 
-            // 失效用户点赞列表缓存
-            redisCacheUtil.deleteByPattern(String.format("list:liked:%d:*", userId));
+            // 版本号递增，使旧缓存自然过期失效
+            incrListVersion(RedisKeyConstants.LIST_LIKED_VERSION_KEY, userId);
 
             return result;
         } finally {
@@ -207,7 +247,11 @@ public class CachedSocialServiceImpl implements SocialService {
     }
 
     /**
-     * TODO: 同 toggleLike — DB 写操作在锁内，当前可接受，未来按需优化
+     * 收藏/取消收藏（toggle）
+     * <p>
+     * Redis 操作同步执行（用户即刻获得响应），DB 写入通过 RabbitMQ 异步处理。
+     * 快速重复点击场景：Redis 分布式锁保证串行化，DB 唯一索引冲突由 Consumer 端静默忽略。
+     * </p>
      */
     @Override
     public ToggleFavoriteVO toggleFavorite(Long pictureId, Long userId) {
@@ -232,28 +276,19 @@ public class CachedSocialServiceImpl implements SocialService {
                 int ttl = RedisKeyConstants.SOCIAL_STATUS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATUS_TTL_JITTER);
                 stringRedisTemplate.opsForValue().set(favKey, "0", ttl, TimeUnit.SECONDS);
                 stringRedisTemplate.opsForHash().increment(statsKey, "favoriteCount", -1);
-                // DB 删除
-                QueryWrapper<PictureFavorite> qw = new QueryWrapper<>();
-                qw.eq("pictureId", pictureId).eq("userId", userId);
-                pictureFavoriteMapper.delete(qw);
+                // DB 删除 → 异步 MQ
+                sendSocialActionMessage("favorite", "delete", pictureId, userId, picture.getUserId());
                 favorited = false;
             } else {
                 // 未收藏 → 收藏，value 设为 "1"
                 int ttl = RedisKeyConstants.SOCIAL_STATUS_TTL_BASE + RandomUtil.randomInt(0, RedisKeyConstants.SOCIAL_STATUS_TTL_JITTER);
                 stringRedisTemplate.opsForValue().set(favKey, "1", ttl, TimeUnit.SECONDS);
                 stringRedisTemplate.opsForHash().increment(statsKey, "favoriteCount", 1);
-                // DB 插入
-                PictureFavorite pictureFavorite = new PictureFavorite();
-                pictureFavorite.setPictureId(pictureId);
-                pictureFavorite.setUserId(userId);
-                pictureFavoriteMapper.insert(pictureFavorite);
+                // DB 插入 + 通知 → 异步 MQ
+                sendSocialActionMessage("favorite", "insert", pictureId, userId, picture.getUserId());
                 favorited = true;
-
-                // 发布收藏通知事件
-                publishNotification(picture, userId, NotificationTypeEnum.FAVORITE, "收藏了你的图片");
             }
 
-            // todo 在点赞收藏阶段 用户重复点击 导致违背数据库唯一索引 需要捕获异常并提示前端点击过快
             // 标记脏数据
             stringRedisTemplate.opsForSet().add(RedisKeyConstants.SOCIAL_STATS_DIRTY_KEY, String.valueOf(pictureId));
 
@@ -265,8 +300,8 @@ public class CachedSocialServiceImpl implements SocialService {
             result.setFavorited(favorited);
             result.setFavoriteCount(Math.max(favoriteCount, 0));
 
-            // 失效用户收藏列表缓存
-            redisCacheUtil.deleteByPattern(String.format("list:fav:%d:*", userId));
+            // 版本号递增，使旧缓存自然过期失效
+            incrListVersion(RedisKeyConstants.LIST_FAV_VERSION_KEY, userId);
 
             return result;
         } finally {
@@ -414,7 +449,8 @@ public class CachedSocialServiceImpl implements SocialService {
     @Override
     public Page<PictureBriefVO> getUserLikedPictures(Long userId, UserPictureQueryDTO queryDTO) {
         String md5 = buildPageMd5(queryDTO.getCurrent(), queryDTO.getPageSize());
-        String cacheKey = String.format(RedisKeyConstants.LIST_LIKED_KEY, userId, md5);
+        String version = getListVersion(RedisKeyConstants.LIST_LIKED_VERSION_KEY, userId);
+        String cacheKey = String.format(RedisKeyConstants.LIST_LIKED_KEY, userId, version, md5);
         int ttl = 300 + RandomUtil.randomInt(0, 180);
 
         String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
@@ -442,7 +478,8 @@ public class CachedSocialServiceImpl implements SocialService {
     @Override
     public Page<PictureBriefVO> getUserFavoritedPictures(Long userId, UserPictureQueryDTO queryDTO) {
         String md5 = buildPageMd5(queryDTO.getCurrent(), queryDTO.getPageSize());
-        String cacheKey = String.format(RedisKeyConstants.LIST_FAV_KEY, userId, md5);
+        String version = getListVersion(RedisKeyConstants.LIST_FAV_VERSION_KEY, userId);
+        String cacheKey = String.format(RedisKeyConstants.LIST_FAV_KEY, userId, version, md5);
         int ttl = 300 + RandomUtil.randomInt(0, 180);
 
         String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
@@ -490,11 +527,69 @@ public class CachedSocialServiceImpl implements SocialService {
         return page;
     }
 
+    /**
+     * 获取当前用户关注对象的图片列表（缓存版）
+     * @param userId   当前登录用户 id
+     * @param queryDTO 查询条件（分页、筛选、排序）
+     * @return
+     */
+    @Override
+    public Page<PictureBriefVO> getFollowingPictures(Long userId, UserPictureQueryDTO queryDTO) {
+        String md5 = buildPageMd5(queryDTO.getCurrent(), queryDTO.getPageSize());
+        String cacheKey = String.format(RedisKeyConstants.LIST_FOLLOWING_KEY, userId, md5);
+        int ttl = 300 + RandomUtil.randomInt(0, 180);
+
+        String json = redisCacheUtil.getWithLock(cacheKey, ttl, () -> {
+            Page<PictureBriefVO> result = dbSocialService.getFollowingPictures(userId, queryDTO);
+            // 缓存前移除社交统计，只存图片基本信息
+            stripSocialStats(result.getRecords());
+            return JSONUtil.toJsonStr(result);
+        });
+
+        if (json == null) {
+            return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize());
+        }
+        Page<PictureBriefVO> page = deserializePictureBriefVOPage(json, queryDTO.getCurrent(), queryDTO.getPageSize());
+        // 反序列化后通过 batchStatistics 实时填充社交数据
+        fillSocialStats(page.getRecords());
+        return page;
+    }
+
     // ==================== 私有方法 ====================
 
     private String buildPageMd5(int current, int pageSize) {
         String raw = "cur=" + current + "|ps=" + pageSize;
         return DigestUtils.md5DigestAsHex(raw.getBytes());
+    }
+
+    /**
+     * 递增列表缓存版本号（O(1) 操作，替代 deleteByPattern 的 SCAN 开销）
+     * 版本号 key 不存在时 INCR 自动从 0 开始递增到 1
+     */
+    private void incrListVersion(String versionKeyTemplate, Long userId) {
+        try {
+            String versionKey = String.format(versionKeyTemplate, userId);
+            stringRedisTemplate.opsForValue().increment(versionKey);
+            // 设置较长 TTL 防止永久残留（30 天）
+            stringRedisTemplate.expire(versionKey, RedisKeyConstants.LIST_VERSION_TTL, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.warn("递增列表缓存版本号失败，降级处理 | userId={}", userId, e);
+        }
+    }
+
+    /**
+     * 获取列表缓存版本号
+     * 版本号不存在时默认返回 "0"
+     */
+    private String getListVersion(String versionKeyTemplate, Long userId) {
+        try {
+            String versionKey = String.format(versionKeyTemplate, userId);
+            String version = stringRedisTemplate.opsForValue().get(versionKey);
+            return version != null ? version : "0";
+        } catch (Exception e) {
+            log.warn("读取列表缓存版本号失败，降级为默认版本 | userId={}", userId, e);
+            return "0";
+        }
     }
 
     private Page<PictureBriefVO> deserializePictureBriefVOPage(String json, int current, int pageSize) {
@@ -512,39 +607,93 @@ public class CachedSocialServiceImpl implements SocialService {
         return page;
     }
 
+    /**
+     * 校验图片是否为公共图库图片（带 Redis 缓存）
+     * <p>
+     * 缓存策略：pic:public:{pictureId} → Picture JSON
+     * - 正常值：Picture 对象的 JSON 字符串
+     * - 特殊标记 "DELETED"：图片不存在，直接抛异常
+     * - 特殊标记 "PRIVATE"：私有空间图片，直接抛异常
+     * - cache miss → 查 DB → 回填缓存
+     * - Redis 异常时降级到 DB 查询，不影响核心功能
+     * </p>
+     */
     private Picture validPicturePublic(Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR, "图片 id 不合法");
+
+        // 尝试从 Redis 缓存读取
+        String cacheKey = String.format(RedisKeyConstants.PICTURE_PUBLIC_KEY, pictureId);
+        try {
+            String cached = stringRedisTemplate.opsForValue().get(cacheKey);
+            if (cached != null) {
+                // 特殊标记：图片已删除
+                if ("DELETED".equals(cached)) {
+                    ThrowUtils.throwIf(true, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+                }
+                // 特殊标记：私有空间图片
+                if ("PRIVATE".equals(cached)) {
+                    ThrowUtils.throwIf(true, ErrorCode.NO_AUTH_ERROR, "仅公共图库支持社交功能");
+                }
+                // 正常缓存命中，反序列化 Picture 对象
+                return JSONUtil.toBean(cached, Picture.class);
+            }
+        } catch (Exception e) {
+            // ThrowUtils.throwIf 抛出的业务异常需要继续向上传播
+            if (e instanceof org.example.common.exception.BusinessException) {
+                throw (org.example.common.exception.BusinessException) e;
+            }
+            // Redis 异常，降级到 DB 查询
+            log.warn("Redis 读取图片公开状态缓存失败，降级到 DB 查询 | pictureId={}", pictureId, e);
+        }
+
+        // 缓存未命中或 Redis 异常降级 → 查 DB
         Picture picture = pictureMapper.selectById(pictureId);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
         ThrowUtils.throwIf(picture.getSpaceId() != null, ErrorCode.NO_AUTH_ERROR, "仅公共图库支持社交功能");
+
+        // 回填缓存（try-catch 不影响主流程）
+        try {
+            String json = JSONUtil.toJsonStr(picture);
+            int ttl = RedisKeyConstants.PICTURE_PUBLIC_TTL_BASE
+                    + RandomUtil.randomInt(0, RedisKeyConstants.PICTURE_PUBLIC_TTL_JITTER);
+            stringRedisTemplate.opsForValue().set(cacheKey, json, ttl, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.warn("Redis 回填图片公开状态缓存失败 | pictureId={}", pictureId, e);
+        }
+
         return picture;
     }
 
     /**
-     * 发布通知事件（异步处理）
+     * 发送社交操作消息到 RabbitMQ（异步处理 DB 写入 + 通知发布）
+     *
+     * @param actionType     操作类型：like / favorite
+     * @param operation      操作行为：insert / delete
+     * @param pictureId      图片ID
+     * @param userId         操作用户ID
+     * @param pictureOwnerId 图片作者ID
      */
-    // todo 如果要考虑高并发场景下的点赞收藏模式下，需要加入 rabbitMQ 进行削峰即可
-    private void publishNotification(Picture picture, Long senderId, NotificationTypeEnum type, String action) {
+    private void sendSocialActionMessage(String actionType, String operation,
+                                         Long pictureId, Long userId, Long pictureOwnerId) {
         try {
-            // 获取触发者信息
-            User sender = userMapper.selectById(senderId);
-            String senderName = sender != null ? sender.getUserName() : "匿名用户";
-            String senderAvatar = sender != null ? sender.getUserAvatar() : null;
+            SocialActionMessage message = new SocialActionMessage();
+            message.setActionType(actionType);
+            message.setOperation(operation);
+            message.setPictureId(pictureId);
+            message.setUserId(userId);
+            message.setPictureOwnerId(pictureOwnerId);
 
-            eventPublisher.publishEvent(new NotificationEvent(
-                    this,
-                    picture.getUserId(),  // 接收者 = 图片作者
-                    senderId,
-                    senderName,
-                    senderAvatar,
-                    type,
-                    action,
-                    null,
-                    picture.getId(),
-                    "/picture/" + picture.getId()
-            ));
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.SOCIAL_ACTION_EXCHANGE,
+                    RabbitMQConfig.SOCIAL_ACTION_ROUTING_KEY,
+                    cn.hutool.json.JSONUtil.toJsonStr(message)
+            );
+
+            log.debug("社交操作消息已发送 | actionType={}, operation={}, userId={}, pictureId={}",
+                    actionType, operation, userId, pictureId);
         } catch (Exception e) {
-            log.warn("发布通知事件失败：pictureId={}, senderId={}, type={}", picture.getId(), senderId, type, e);
+            log.error("社交操作消息发送失败 | actionType={}, operation={}, userId={}, pictureId={}",
+                    actionType, operation, userId, pictureId, e);
         }
     }
 
