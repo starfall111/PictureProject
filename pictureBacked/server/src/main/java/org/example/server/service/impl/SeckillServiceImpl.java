@@ -307,6 +307,7 @@ public class SeckillServiceImpl extends ServiceImpl<SeckillOrderMapper, SeckillO
 
     // ==================== 获取批次列表（公开） ====================
 
+    // 应该去 redis 中查，避免直接查 DB
     @Override
     public Page<PublicBatchVO> listBatches(BatchQueryDTO dto) {
         ThrowUtils.throwIf(dto == null, ErrorCode.PARAMS_ERROR);
