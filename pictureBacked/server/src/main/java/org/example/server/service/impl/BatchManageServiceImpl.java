@@ -221,7 +221,7 @@ public class BatchManageServiceImpl implements BatchManageService {
             // 草稿->预热中：先调用 preheat 写 Redis
             if (targetStatus == 1) {
                 seckillService.preheat(batchId);
-                // preheat 内部已更新状态为 1，无需再更新
+                // preheat 内部已更新状态为 1 并 SADD 到 set:1，无需额外操作
                 log.info("批次状态流转成功 | batchId={}, {}->{}", batchId, currentStatus, targetStatus);
                 return;
             }
@@ -235,6 +235,8 @@ public class BatchManageServiceImpl implements BatchManageService {
 
             // 更新 Redis 缓存
             updateBatchInfoCache(batchId, targetStatus);
+            // 维护状态集合：SMOVE 到目标状态的 Set
+            moveBatchToStatusSet(batchId, currentStatus, targetStatus);
 
             log.info("批次状态流转成功 | batchId={}, {}->{}", batchId, currentStatus, targetStatus);
         } finally {
@@ -254,10 +256,13 @@ public class BatchManageServiceImpl implements BatchManageService {
                         && !Integer.valueOf(1).equals(batch.getStatus()),
                 ErrorCode.OPERATION_ERROR, "只有草稿或预热中状态的批次才能取消");
 
-        // 预热中取消：清理 Redis
+        // 预热中取消：清理 Redis（stock + info + 从状态集合移除）
         if (Integer.valueOf(1).equals(batch.getStatus())) {
             cleanBatchRedisCache(batchId);
         }
+
+        // 从状态集合中移除（草稿状态不在集合中，但防御性移除）
+        removeBatchFromStatusSet(batchId, batch.getStatus());
 
         // 逻辑删除所有未发放券
         couponMapper.update(null, new LambdaUpdateWrapper<CodeCoupon>()
@@ -287,6 +292,12 @@ public class BatchManageServiceImpl implements BatchManageService {
 
         // 清理 Redis 残留缓存
         cleanBatchRedisCache(batchId);
+
+        // 从状态集合中移除残留（防御性清理所有可能的集合）
+        for (int s = 1; s <= 3; s++) {
+            String setKey = String.format(RedisKeyConstants.SECKILL_BATCH_STATUS_SET, s);
+            stringRedisTemplate.opsForSet().remove(setKey, String.valueOf(batchId));
+        }
 
         // 恢复为草稿，重置库存
         batchMapper.update(null, new LambdaUpdateWrapper<CodeCouponBatch>()
@@ -322,6 +333,8 @@ public class BatchManageServiceImpl implements BatchManageService {
 
             // 更新 Redis 缓存
             updateBatchInfoCache(batchId, 3);
+            // 维护状态集合：SMOVE set:2 → set:3
+            moveBatchToStatusSet(batchId, 2, 3);
 
             log.info("批次已结束 | batchId={}", batchId);
 
@@ -411,12 +424,49 @@ public class BatchManageServiceImpl implements BatchManageService {
     }
 
     /**
-     * 清理批次相关的 Redis 缓存
+     * 清理批次相关的 Redis 缓存（stock + info + 状态集合）
      */
     private void cleanBatchRedisCache(Long batchId) {
+        // 1. 清理库存和详情缓存
         String stockKey = String.format(RedisKeyConstants.SECKILL_BATCH_STOCK, batchId);
         String infoKey = String.format(RedisKeyConstants.SECKILL_BATCH_INFO, batchId);
         stringRedisTemplate.delete(List.of(stockKey, infoKey));
+
+        // 2. 清理状态集合（下次查询自动从 DB 重建）
+        cleanBatchStatusSets();
+    }
+
+    /**
+     * 清理所有秒杀批次状态集合（下次查询自动从 DB 重建）
+     */
+    private void cleanBatchStatusSets() {
+        for (int s = 1; s <= 3; s++) {
+            String setKey = String.format(RedisKeyConstants.SECKILL_BATCH_STATUS_SET, s);
+            stringRedisTemplate.delete(setKey);
+        }
+        log.info("已清理秒杀批次状态集合");
+    }
+
+    /**
+     * 将批次从一个状态集合移动到另一个状态集合（SMOVE）
+     */
+    private void moveBatchToStatusSet(Long batchId, int fromStatus, int toStatus) {
+        String fromKey = String.format(RedisKeyConstants.SECKILL_BATCH_STATUS_SET, fromStatus);
+        String toKey = String.format(RedisKeyConstants.SECKILL_BATCH_STATUS_SET, toStatus);
+        stringRedisTemplate.opsForSet().move(fromKey, String.valueOf(batchId), toKey);
+        log.debug("批次状态集合已移动 | batchId={}, {}→{}", batchId, fromStatus, toStatus);
+    }
+
+    /**
+     * 从状态集合中移除指定批次（SREM）
+     */
+    private void removeBatchFromStatusSet(Long batchId, int status) {
+        if (status < 1 || status > 3) {
+            return;
+        }
+        String setKey = String.format(RedisKeyConstants.SECKILL_BATCH_STATUS_SET, status);
+        stringRedisTemplate.opsForSet().remove(setKey, String.valueOf(batchId));
+        log.debug("已从状态集合移除 | batchId={}, status={}", batchId, status);
     }
 
     /**

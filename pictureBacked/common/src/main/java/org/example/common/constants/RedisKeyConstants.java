@@ -550,6 +550,21 @@ public class RedisKeyConstants {
     public static final String LOCK_SECKILL_BATCH = "lock:seckill:batch:%d";
 
     /**
+     * 秒杀批次状态集合（按状态分组管理 batchId）
+     * Value: SET，无 TTL（由管理端维护生命周期）
+     * 格式: seckill:batch:set:{status}  status: 1-等待开始, 2-进行中, 3-已结束
+     */
+    public static final String SECKILL_BATCH_STATUS_SET = "seckill:batch:set:%d";
+
+    /**
+     * 秒杀批次状态集合重建分布式锁（冷启动/Redis 重启后回填）
+     * Value: STRING, TTL 30s
+     */
+    public static final String LOCK_SECKILL_SET_REBUILD = "lock:seckill:batch:set:rebuild";
+    /** 集合重建锁 TTL（秒） */
+    public static final int SECKILL_SET_REBUILD_LOCK_TTL = 30;
+
+    /**
      * 秒杀降级等级
      * Value: STRING(INT)
      */
