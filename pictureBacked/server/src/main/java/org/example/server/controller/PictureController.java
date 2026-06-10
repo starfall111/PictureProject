@@ -438,6 +438,19 @@ public class PictureController {
         return ResultUtils.success(result);
     }
 
+    /**
+     * 获取当前用户关注对象的图片列表（支持筛选）
+     */
+    @PostMapping("/following/user/query")
+    public BaseResponse<Page<PictureBriefVO>> getFollowingPictures(
+            @RequestBody UserPictureQueryDTO queryDTO) {
+        User user = UserContext.get();
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        Page<PictureBriefVO> result = cachedSocialService.getFollowingPictures(user.getId(), queryDTO);
+        return ResultUtils.success(result);
+    }
+
     // ==================== 缓存版接口（/cache/ 前缀） ====================
 
     /**
@@ -583,6 +596,19 @@ public class PictureController {
         // 隐私保护：只能查看自己的列表
 //        verifyOwnershipOrAdmin(userId);
         Page<PictureBriefVO> result = cachedSocialService.getUserUploadedPictures(userId, queryDTO);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * [缓存版] 获取当前用户关注对象的图片列表（不支持筛选）
+     */
+    @PostMapping("/cache/following/user/query")
+    public BaseResponse<Page<PictureBriefVO>> getFollowingPicturesCache(
+            @RequestBody UserPictureQueryDTO queryDTO) {
+        User user = UserContext.get();
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        Page<PictureBriefVO> result = cachedSocialService.getFollowingPictures(user.getId(), queryDTO);
         return ResultUtils.success(result);
     }
 }
