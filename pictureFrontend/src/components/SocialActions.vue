@@ -24,8 +24,8 @@
 import { ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { HeartOutlined, HeartFilled, StarOutlined, StarFilled, ShareAltOutlined } from '@ant-design/icons-vue'
-import { listCategoryUsingGet } from '@/api/categoryController';
-import { toggleFavoriteCacheUsingPost, toggleLikeCacheUsingPost } from '@/api/pictureController';
+import { categoryControllerListCategory } from '@/api/categoryController';
+import { pictureControllerToggleFavoriteCache, pictureControllerToggleLikeCache } from '@/api/pictureController';
 
 interface Props {
   pictureId: number
@@ -58,7 +58,7 @@ const isFavorited = ref(props.isFavorited)
 const handleLike = async () => {
   try {
     // TODO: 替换为真实 API
-    const res = await toggleLikeCacheUsingPost(
+    const res = await pictureControllerToggleLikeCache(
       { pictureId: props.pictureId }
     )
     if (res.data.code === 0) {
@@ -75,7 +75,7 @@ const handleLike = async () => {
 const handleFavorite = async () => {
   try {
     // TODO: 替换为真实 API
-    const res = await toggleFavoriteCacheUsingPost(
+    const res = await pictureControllerToggleFavoriteCache(
       { pictureId: props.pictureId }
     )
     if (res.data.code === 0) {
@@ -92,7 +92,7 @@ const handleFavorite = async () => {
 const handleShare = async () => {
   emit('share', props.pictureId)
   // todo 允许虚空分享 后端要么直接不居鲁分享方式，要么前端直接进行处理，倾向于后端只记录分享数，不记录分享方式
-  // const res = await recordShareUsingPost({
+  // const res = await pictureControllerRecordShare({
   //   pictureId: props.pictureId
   // })
 

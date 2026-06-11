@@ -1,3 +1,4 @@
+<!-- @deprecated 此布局已废弃，不再维护。仅保留作为紧急回退。 -->
 <template>
   <div id="basicLayout">
     <a-layout style="min-height: 100vh">
@@ -21,11 +22,11 @@
 </template>
 
 <script setup lang="ts">
-import { healthUsingGet } from '@/api/mainController';
+import { mainControllerHealth } from '@/api/mainController';
 import GlobalHeader from '@/components/GlobalHeader.vue';
 import GlobalSider from '@/components/GlobalSider.vue';
 
-healthUsingGet().then(res => {
+mainControllerHealth().then(res => {
   console.log('后端健康检查结果:', res.data.data);
 }).catch(err => {
   console.error('后端健康检查失败:', err);

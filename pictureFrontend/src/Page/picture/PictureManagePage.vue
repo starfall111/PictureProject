@@ -94,10 +94,10 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import dayjs from 'dayjs';
-import { deletePictureUsingDelete, queryPictureAdminUsingPost, reviewPictureUsingPost } from '@/api/pictureController';
-import { clearAllCacheUsingPost, clearPictureCacheUsingPost } from '@/api/adminCacheController';
-import { listTagUsingGet } from '@/api/tagController';
-import { listCategoryUsingGet } from '@/api/categoryController';
+import { pictureControllerDeletePicture, pictureControllerQueryPictureAdmin, pictureControllerReviewPicture } from '@/api/pictureController';
+import { adminCacheControllerClearAllCache, adminCacheControllerClearPictureCache } from '@/api/adminCacheController';
+import { tagControllerListTag } from '@/api/tagController';
+import { categoryControllerListCategory } from '@/api/categoryController';
 import { PIC_REVIEW_STATUS_ENUM, PIC_REVIEW_STATUS_MAP, PIC_REVIEW_STATUS_OPTIONS } from '@/constants/picture';
 
 // ==================== 列表相关 ====================
@@ -127,7 +127,7 @@ const pagination = computed(() => {
 
 // 获取数据  
 const fetchData = async () => {
-    const res = await queryPictureAdminUsingPost({
+    const res = await pictureControllerQueryPictureAdmin({
         ...searchParams,
     })
     if (res.data.data) {
@@ -165,7 +165,7 @@ const doDelete = (id: any) => {
         okType: 'danger',
         cancelText: '取消',
         onOk: async () => {
-            const res = await deletePictureUsingDelete({ id: id })
+            const res = await pictureControllerDeletePicture({ id: id })
             if (res.data.code === 0) {
                 message.success('删除成功')
                 fetchData()
@@ -181,8 +181,8 @@ const tagOptions = ref<string[]>([])
 
 // 获取标签和分类选项  
 const getTagCategoryOptions = async () => {
-    const res_tag = await listTagUsingGet()
-    const res_category = await listCategoryUsingGet()
+    const res_tag = await tagControllerListTag()
+    const res_category = await categoryControllerListCategory()
     if (res_category.data.code === 0 && res_category.data.data) {
         // 转换成下拉选项组件接受的格式  
         categoryOptions.value = (res_category.data.data ?? []).map((data: any) => {
@@ -209,7 +209,7 @@ const getTagCategoryOptions = async () => {
 
 const handleReview = async (record: API.Picture, reviewStatus: number) => {
     const reviewMessage = reviewStatus === PIC_REVIEW_STATUS_ENUM.PASS ? '管理员操作通过' : '管理员操作拒绝'
-    const res = await reviewPictureUsingPost({
+    const res = await pictureControllerReviewPicture({
         id: record.id,
         reviewStatus,
         reviewMessage,
@@ -307,7 +307,7 @@ const doClearAllCache = () => {
         onOk: async () => {
             clearAllLoading.value = true
             try {
-                const res = await clearAllCacheUsingPost()
+                const res = await adminCacheControllerClearAllCache()
                 if (res.data.code === 0) {
                     message.success('全部缓存清理成功')
                     fetchData()
@@ -333,7 +333,7 @@ const doClearPictureCache = () => {
         onOk: async () => {
             clearPictureLoading.value = true
             try {
-                const res = await clearPictureCacheUsingPost()
+                const res = await adminCacheControllerClearPictureCache()
                 if (res.data.code === 0) {
                     message.success('热门图片缓存清理成功')
                     fetchData()

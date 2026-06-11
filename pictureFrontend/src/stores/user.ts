@@ -1,4 +1,4 @@
-import { getLoginUserUsingGet } from "@/api/userController";
+import { userControllerGetLoginUser } from "@/api/userController";
 import { message } from "ant-design-vue";
 import { defineStore } from "pinia";
 import { ref } from "vue";
@@ -7,7 +7,7 @@ export const userLoginUserStore = defineStore("loginUser", () => {
     const loginUser = ref<API.LoginUserVO>({});
 
     async function getLoginUser(silent = false) {
-        const res = await getLoginUserUsingGet();
+        const res = await userControllerGetLoginUser();
         if (res.data.code === 0 && res.data.data) {
             if (!silent) {
                 message.success('欢迎回来 ' + res.data.data.userName);

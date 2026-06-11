@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getUserFavoritedPicturesCacheUsingPost, getUserFavoritedPicturesUsingPost } from '@/api/pictureController'
+import { pictureControllerGetUserFavoritedPicturesCache, pictureControllerGetUserFavoritedPictures } from '@/api/pictureController'
 import PictureList from '@/components/PictureList/index.vue'
 import { useTabContent, type TabContentFilters } from './useTabContent'
 
@@ -84,7 +84,7 @@ const fetchFavoritedPictures = async (params: {
     }
   }
 
-  return await getUserFavoritedPicturesCacheUsingPost({ userId: props.userId }, queryParams)
+  return await pictureControllerGetUserFavoritedPicturesCache({ userId: props.userId }, queryParams)
 }
 
 const { dataList, hasMore, isLoading, fetchData } = useTabContent({

@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getUserLikedPicturesCacheUsingPost, getUserLikedPicturesUsingPost } from '@/api/pictureController'
+import { pictureControllerGetUserLikedPicturesCache, pictureControllerGetUserLikedPictures } from '@/api/pictureController'
 import PictureList from '@/components/PictureList/index.vue'
 import { useTabContent, type TabContentFilters } from './useTabContent'
 
@@ -84,7 +84,7 @@ const fetchLikedPictures = async (params: {
     }
   }
 
-  return await getUserLikedPicturesCacheUsingPost({ userId: props.userId }, queryParams)
+  return await pictureControllerGetUserLikedPicturesCache({ userId: props.userId }, queryParams)
 }
 
 const { dataList, hasMore, isLoading, fetchData } = useTabContent({

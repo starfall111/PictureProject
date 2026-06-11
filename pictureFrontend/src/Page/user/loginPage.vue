@@ -95,9 +95,9 @@ import { h, ref, onMounted } from 'vue';
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue';
 import { MenuProps, message } from 'ant-design-vue';
 import { reactive } from 'vue';
-import { loginUsingPost } from '@/api/userController';
+import { userControllerLogin } from '@/api/userController';
 import { useAliyunCaptcha } from '@/access/useAliyunCaptcha';
-import { sendVerificationCodeUsingPost } from '@/api/noticeController';
+import { noticeControllerSendVerificationCode } from '@/api/noticeController';
 import router from '@/router';
 import { userLoginUserStore } from '@/stores/user';
 const current = ref<string[]>(['login']);
@@ -144,7 +144,7 @@ const { init: initCaptcha, triggerCaptcha, captchaVerifying } = useAliyunCaptcha
     onCaptchaVerify: async (captchaVerifyParam: string) => {
         const account = verificationCodeDTO.account ?? '';
         const type = isPhone(account) ? 1 : 2;
-        const res = await sendVerificationCodeUsingPost({
+        const res = await noticeControllerSendVerificationCode({
             account: verificationCodeDTO.account,
             captchaVerifyParam,
             type: type
@@ -233,7 +233,7 @@ const login = async (DTO: any) => {
     }
     loginLoading.value = true;
     try {
-        const res = await loginUsingPost(DTO);
+        const res = await userControllerLogin(DTO);
         if (res.data.code === 0 && res.data.data) {
             await loginUserStore.getLoginUser();
             message.success('登录成功');

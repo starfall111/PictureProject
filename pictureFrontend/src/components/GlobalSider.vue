@@ -8,26 +8,58 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref } from 'vue'
+import { h, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { PictureOutlined, UserOutlined } from '@ant-design/icons-vue'
+import {
+  PictureOutlined,
+  UserOutlined,
+  CommentOutlined,
+  WarningOutlined,
+  StopOutlined,
+} from '@ant-design/icons-vue'
 import { userLoginUserStore } from '@/stores/user'
 const loginUserStore = userLoginUserStore()
 
+const isAdmin = computed(() => {
+  const access = loginUserStore.loginUser?.userRole
+  return access === 'admin'
+})
 
 // 菜单列表
-const menuItems = [
-  {
-    key: '/',
-    label: '公共图库',
-    icon: () => h(PictureOutlined),
-  },
-  {
-    key: '/my_space',
-    label: '我的空间',
-    icon: () => h(UserOutlined),
-  },
-]
+const menuItems = computed(() => {
+  const items: any[] = [
+    {
+      key: '/',
+      label: '公共图库',
+      icon: () => h(PictureOutlined),
+    },
+    {
+      key: '/my_space',
+      label: '我的空间',
+      icon: () => h(UserOutlined),
+    },
+  ]
+  if (isAdmin.value) {
+    items.push(
+      {
+        key: '/admin/feedbackManage',
+        label: '反馈管理',
+        icon: () => h(CommentOutlined),
+      },
+      {
+        key: '/admin/reportManage',
+        label: '举报管理',
+        icon: () => h(WarningOutlined),
+      },
+      {
+        key: '/admin/banManage',
+        label: '封禁管理',
+        icon: () => h(StopOutlined),
+      },
+    )
+  }
+  return items
+})
 
 const router = useRouter()
 

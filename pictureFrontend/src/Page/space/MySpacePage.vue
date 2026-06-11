@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getSpaceByUserIdUsingGet } from '@/api/spaceController'
+import { spaceControllerGetSpaceByUserId } from '@/api/spaceController'
 import { message } from 'ant-design-vue'
 import { userLoginUserStore } from '@/stores/user'
 
@@ -23,7 +23,7 @@ const checkUserSpace = async () => {
       return
     }
     // 获取用户空间信息
-    const res = await getSpaceByUserIdUsingGet({
+    const res = await spaceControllerGetSpaceByUserId({
       id: loginUser.id,
     })
     if (res.data.code === 0) {

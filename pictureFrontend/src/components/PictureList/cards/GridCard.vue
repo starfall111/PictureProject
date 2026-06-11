@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { deletePictureUsingDelete } from '@/api/pictureController'
+import { pictureControllerDeletePicture } from '@/api/pictureController'
 import { message, Modal } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 
@@ -78,7 +78,7 @@ const doDelete = (e: Event) => {
     okType: 'danger',
     cancelText: '取消',
     onOk: async () => {
-      const res = await deletePictureUsingDelete({ id })
+      const res = await pictureControllerDeletePicture({ id })
       if (res.data.code === 0) {
         message.success('删除成功')
         props?.onReload?.()

@@ -57,11 +57,11 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { message } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import {
-  queryCategoryPageUsingPost,
-  addCategoryUsingPost,
-  updateCategoryUsingPost,
-  deleteCategoryUsingDelete,
-  getCategoryByIdUsingGet,
+  categoryControllerQueryCategoryPage,
+  categoryControllerAddCategory,
+  categoryControllerUpdateCategory,
+  categoryControllerDeleteCategory,
+  categoryControllerGetCategoryById,
 } from '@/api/categoryController';
 
 // ==================== 列表相关 ====================
@@ -83,7 +83,7 @@ const columns = [
 ];
 
 const fetchData = async () => {
-  const res = await queryCategoryPageUsingPost({ ...searchParams });
+  const res = await categoryControllerQueryCategoryPage({ ...searchParams });
   if (res.data.code === 0 && res.data.data) {
     dataList.value = res.data.data.records ?? [];
     total.value = res.data.data.total ?? 0;
@@ -137,7 +137,7 @@ const openAddModal = () => {
 
 const openEditModal = async (id: number) => {
   try {
-    const res = await getCategoryByIdUsingGet({ id });
+    const res = await categoryControllerGetCategoryById({ id });
     if (res.data.code === 0 && res.data.data) {
       isEdit.value = true;
       formData.id = res.data.data.id;
@@ -158,7 +158,7 @@ const handleModalOk = async () => {
   }
   try {
     if (isEdit.value) {
-      const res = await updateCategoryUsingPost({ id: formData.id, name: formData.name });
+      const res = await categoryControllerUpdateCategory({ id: formData.id, name: formData.name });
       if (res.data.code === 0) {
         message.success('编辑成功');
         modalVisible.value = false;
@@ -167,7 +167,7 @@ const handleModalOk = async () => {
         message.error(res.data.message || '编辑失败');
       }
     } else {
-      const res = await addCategoryUsingPost({ name: formData.name });
+      const res = await categoryControllerAddCategory({ name: formData.name });
       if (res.data.code === 0) {
         message.success('新增成功');
         modalVisible.value = false;
@@ -188,7 +188,7 @@ const handleModalCancel = () => {
 // ==================== 删除 ====================
 
 const handleDelete = async (id: number) => {
-  const res = await deleteCategoryUsingDelete({ id });
+  const res = await categoryControllerDeleteCategory({ id });
   if (res.data.code === 0) {
     message.success('删除成功');
     fetchData();

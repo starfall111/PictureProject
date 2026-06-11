@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { markReadUsingPost } from '@/api/feedController'
+import { feedControllerMarkRead } from '@/api/feedController'
 import { message } from 'ant-design-vue'
 
 interface Props {
@@ -42,7 +42,7 @@ const markingRead = ref(false)
 const handleMarkRead = async () => {
   markingRead.value = true
   try {
-    const res = await markReadUsingPost()
+    const res = await feedControllerMarkRead()
     if (res.data.code === 0) {
       emit('read')
       message.success('已全部标记为已读')

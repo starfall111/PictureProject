@@ -5,19 +5,20 @@
       <!-- <p v-if="space.spaceDesc" class="space-banner-desc">{{ space.spaceDesc }}</p> -->
     </div>
     <div class="space-banner-actions">
-      <a-button type="primary" :href="`/add_picture?spaceId=${spaceId}`" target="_blank">
-        + 创建图片
-      </a-button>
+      <a-dropdown>
+        <button class="upload-btn">+ 上传</button>
+        <template #overlay>
+          <a-menu>
+            <a-menu-item @click="router.push('/add_picture')">上传图片</a-menu-item>
+            <a-menu-item @click="router.push(`/add_picture/batch?spaceId=${space.id}`)">批量获取</a-menu-item>
+          </a-menu>
+        </template>
+      </a-dropdown>
       <div class="space-banner-capacity">
         <div class="capacity-label">
           已用 {{ totalCount }} / {{ space.maxCount ?? 0 }} 张
         </div>
-        <a-progress
-          :percent="capacityPercent"
-          :strokeColor="'var(--accent, #33A1C9)'"
-          :showInfo="false"
-          size="small"
-        />
+        <a-progress :percent="capacityPercent" :strokeColor="'var(--accent, #33A1C9)'" :showInfo="false" size="small" />
         <a-tooltip :title="`占用空间 ${formatSize(space.totalSize)} / ${formatSize(space.maxSize)}`">
           <div class="capacity-size">
             {{ formatSize(space.totalSize) }} / {{ formatSize(space.maxSize) }}
@@ -30,6 +31,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 interface Props {
   space: API.SpaceVO
@@ -105,6 +109,20 @@ const formatSize = (size: number | string | undefined): string => {
   color: var(--fg-muted, #9CA3AF);
   margin-top: 2px;
   cursor: help;
+}
+
+.upload-btn {
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-pill, 9999px);
+  padding: 0 16px;
+  background: var(--accent, #635BFF);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 @media (max-width: 640px) {

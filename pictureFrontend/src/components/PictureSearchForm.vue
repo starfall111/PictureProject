@@ -121,8 +121,8 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { DownOutlined, FilterOutlined } from '@ant-design/icons-vue';
 import dayjs from 'dayjs';
 import { message } from 'ant-design-vue';
-import { listTagUsingGet } from '@/api/tagController';
-import { listCategoryUsingGet } from '@/api/categoryController';
+import { tagControllerListTag } from '@/api/tagController';
+import { categoryControllerListCategory } from '@/api/categoryController';
 
 interface Props {
   onSearch?: (searchParams: API.PictureQueryDTO) => void
@@ -183,8 +183,8 @@ const tagOptions = ref<string[]>([])
 
 // 获取标签和分类选项
 const getTagCategoryOptions = async () => {
-  const res_tag = await listTagUsingGet()
-  const res_category = await listCategoryUsingGet()
+  const res_tag = await tagControllerListTag()
+  const res_category = await categoryControllerListCategory()
   if (res_category.data.code === 0 && res_category.data.data) {
     categoryOptions.value = (res_category.data.data ?? []).map((data: any) => {
       return {

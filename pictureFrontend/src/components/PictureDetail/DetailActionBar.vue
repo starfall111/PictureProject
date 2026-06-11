@@ -49,6 +49,10 @@
           </a-menu>
         </template>
       </a-dropdown>
+      <a-button v-if="showReport" size="large" danger ghost @click="$emit('report')">
+        <template #icon><WarningOutlined /></template>
+        举报
+      </a-button>
     </div>
   </div>
 </template>
@@ -65,6 +69,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
+  WarningOutlined,
 } from '@ant-design/icons-vue'
 import { formatCount } from '@/utils/formatCount'
 
@@ -73,6 +78,7 @@ interface Props {
   isLiked: boolean
   isFavorited: boolean
   canEdit: boolean
+  showReport?: boolean
 }
 
 defineProps<Props>()
@@ -84,6 +90,7 @@ defineEmits<{
   (e: 'download'): void
   (e: 'edit'): void
   (e: 'delete'): void
+  (e: 'report'): void
 }>()
 </script>
 

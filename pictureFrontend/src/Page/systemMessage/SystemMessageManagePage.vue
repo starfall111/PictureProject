@@ -198,12 +198,12 @@ import { message, Modal } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {
-  createSystemMessageUsingPost,
-  updateSystemMessageUsingPut,
-  deleteSystemMessageUsingDelete,
-  listSystemMessagesUsingGet,
-  publishSystemMessageUsingPost,
-  revokeSystemMessageUsingPost,
+  adminSystemMessageControllerCreateSystemMessage,
+  adminSystemMessageControllerUpdateSystemMessage,
+  adminSystemMessageControllerDeleteSystemMessage,
+  adminSystemMessageControllerListSystemMessages,
+  adminSystemMessageControllerPublishSystemMessage,
+  adminSystemMessageControllerRevokeSystemMessage,
 } from '@/api/adminSystemMessageController';
 import {
   SYSTEM_MESSAGE_STATUS_ENUM,
@@ -240,7 +240,7 @@ const columns = [
 ];
 
 const fetchData = async () => {
-  const res = await listSystemMessagesUsingGet({ ...searchParams });
+  const res = await adminSystemMessageControllerListSystemMessages({ ...searchParams });
   if (res.data.code === 0 && res.data.data) {
     dataList.value = res.data.data.records ?? [];
     total.value = res.data.data.total ?? 0;
@@ -293,7 +293,7 @@ const handlePublish = (id: number) => {
     okText: '确定发布',
     cancelText: '取消',
     onOk: async () => {
-      const res = await publishSystemMessageUsingPost({ id });
+      const res = await adminSystemMessageControllerPublishSystemMessage({ id });
       if (res.data.code === 0) {
         message.success('发布成功');
         fetchData();
@@ -312,7 +312,7 @@ const handleRevoke = (id: number) => {
     okType: 'warning',
     cancelText: '取消',
     onOk: async () => {
-      const res = await revokeSystemMessageUsingPost({ id });
+      const res = await adminSystemMessageControllerRevokeSystemMessage({ id });
       if (res.data.code === 0) {
         message.success('撤回成功');
         fetchData();
@@ -333,7 +333,7 @@ const handleDelete = (id: number) => {
     okType: 'danger',
     cancelText: '取消',
     onOk: async () => {
-      const res = await deleteSystemMessageUsingDelete({ id });
+      const res = await adminSystemMessageControllerDeleteSystemMessage({ id });
       if (res.data.code === 0) {
         message.success('删除成功');
         fetchData();
@@ -437,7 +437,7 @@ const handleModalOk = async () => {
 
   try {
     if (isEdit.value) {
-      const res = await updateSystemMessageUsingPut(body);
+      const res = await adminSystemMessageControllerUpdateSystemMessage(body);
       if (res.data.code === 0) {
         message.success('更新成功');
       } else {
@@ -445,7 +445,7 @@ const handleModalOk = async () => {
         return;
       }
     } else {
-      const res = await createSystemMessageUsingPost(body);
+      const res = await adminSystemMessageControllerCreateSystemMessage(body);
       if (res.data.code === 0) {
         message.success('创建成功');
       } else {

@@ -110,7 +110,7 @@
 import { reactive, ref } from 'vue';
 import { message } from 'ant-design-vue';
 import { EditOutlined } from '@ant-design/icons-vue';
-import { updateUserUsingPost1 } from '@/api/userController';
+import { userControllerUpdateUser } from '@/api/userController';
 import { userLoginUserStore } from '@/stores/user';
 
 interface Props {
@@ -190,7 +190,7 @@ const handleSave = async () => {
 
   saveLoading.value = true;
   try {
-    const res = await updateUserUsingPost1({
+    const res = await userControllerUpdateUser({
       // id: loginUserStore.loginUser.id,
       userName: editForm.userName,
       userPhone: editForm.userPhone,
