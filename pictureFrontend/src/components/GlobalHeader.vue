@@ -15,7 +15,6 @@
             <a-col flex="120px">
                 <div class="user-login-status">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <SchemeSwitcher />
                         <NotificationBell v-if="loginUserStore.loginUser.id" />
                         <div v-if="loginUserStore.loginUser.id">
                             <a-dropdown>
@@ -65,10 +64,10 @@ import { HomeOutlined } from '@ant-design/icons-vue'
 import { message, type MenuProps } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { userLoginUserStore } from '@/stores/user'
+import { useSeckillStore } from '@/stores/seckill'
 import { LogoutOutlined, UserOutlined, CommentOutlined } from '@ant-design/icons-vue'
 import { userControllerLogOut } from '@/api/userController'
 import checkAccess from '@/access/checkAccess'
-import SchemeSwitcher from '@/layouts/scheme-1-immersive/components/SchemeSwitcher.vue'
 import NotificationBell from '@/components/notification/NotificationBell.vue'
 
 
@@ -91,6 +90,11 @@ const originItems = [
         key: '/add_picture',
         label: '创建图片',
         title: '创建图片',
+    },
+    {
+        key: '/add_picture/batch',
+        label: '批量获取',
+        title: '批量获取',
     },
     {
         key: '/admin/pictureManage',
@@ -136,6 +140,7 @@ const logout = async () => {
     const res = await userControllerLogOut();
     if (res.data.code === 0 && res.data.data) {
         loginUserStore.setLoginUser({});
+        useSeckillStore().clearToken();
         message.success('退出登录成功');
         router.push('/user/login');
     } else {

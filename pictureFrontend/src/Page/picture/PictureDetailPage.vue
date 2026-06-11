@@ -42,7 +42,7 @@
     <ReportModal
       v-model:open="reportModalOpen"
       targetType="PICTURE"
-      :targetId="Number(props.id)"
+      :targetId="props.id"
       :targetPreview="picture.url"
     />
   </div>

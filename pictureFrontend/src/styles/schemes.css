@@ -97,4 +97,22 @@
   --sidebar-expand-easing: ease-out;
   --sidebar-hover-delay: 120ms;
   --sidebar-leave-delay: 300ms;
+
+  /* ---- 秒杀/券模块 ---- */
+  --seckill-primary: #FF6B35;
+  --seckill-primary-light: #FFF3ED;
+  --seckill-danger: #FF4757;
+  --seckill-success: #2ED573;
+  --seckill-gold: #FFD700;
+  --seckill-gradient: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+
+  --coupon-bg-unused: #FFF9F0;
+  --coupon-bg-activated: #F0FFF4;
+  --coupon-bg-expired: #F5F5F5;
+  --coupon-border-unused: #FFE4C9;
+  --coupon-border-activated: #C6F6D5;
+  --coupon-border-expired: #E0E0E0;
+
+  --vip-badge-gradient: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  --vip-crown-color: #FFD700;
 }

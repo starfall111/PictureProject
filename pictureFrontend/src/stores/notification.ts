@@ -144,7 +144,7 @@ export const useNotificationStore = defineStore('notification', () => {
   function connectSSE() {
     disconnectSSE()
     try {
-      eventSource = new EventSource('${SSE_BASE}/api/notification/sse', {
+      eventSource = new EventSource('http://localhost:4040/api/notification/sse', {
         withCredentials: true,
       })
 

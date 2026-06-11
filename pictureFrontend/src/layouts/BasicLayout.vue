@@ -1,3 +1,4 @@
+<!-- @deprecated 此布局已废弃，不再维护。仅保留作为紧急回退。 -->
 <template>
   <div id="basicLayout">
     <a-layout style="min-height: 100vh">

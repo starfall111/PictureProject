@@ -19,20 +19,21 @@ export interface SchemeConfig {
 }
 
 const STORAGE_KEY = 'layoutScheme'
-const DEFAULT_SCHEME = 'default'
 
-// Built-in default scheme (always available as fallback)
-// Uses defineAsyncComponent to break circular dependency:
-// useLayoutScheme -> BasicLayout -> GlobalHeader -> SchemeSwitcher -> useLayoutScheme
+/** @deprecated 沉浸式画廊现为唯一维护的布局，默认布局已废弃 */
+const _DEPRECATED_DEFAULT_ID = 'default'
+const DEFAULT_SCHEME = 'scheme-1-immersive'
+
+// Built-in default scheme (DEPRECATED — kept only as emergency fallback)
 const defaultScheme: SchemeConfig = {
-  id: 'default',
-  name: '默认布局',
-  description: '原始布局，Header + Sider + Content + Footer',
+  id: _DEPRECATED_DEFAULT_ID,
+  name: '默认布局（已废弃）',
+  description: '原始布局，已废弃，不再维护',
   layoutComponent: defineAsyncComponent(() => import('@/layouts/BasicLayout.vue')),
 }
 
-// Registered schemes registry (pre-seeded with default)
-const schemes = new Map<string, SchemeConfig>([[DEFAULT_SCHEME, defaultScheme]])
+// Registered schemes registry (pre-seeded with default as fallback)
+const schemes = new Map<string, SchemeConfig>([[_DEPRECATED_DEFAULT_ID, defaultScheme]])
 
 // Reactive active scheme id
 const activeSchemeId = ref<string>(

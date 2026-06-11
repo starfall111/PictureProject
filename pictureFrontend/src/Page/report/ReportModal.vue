@@ -79,7 +79,7 @@ import { reportControllerSubmitReport } from '@/api/reportController'
 interface Props {
   open: boolean
   targetType?: string
-  targetId?: number
+  targetId?: string
   /** 用于预览：图片传缩略图 URL，用户传用户名 */
   targetPreview?: string
 }

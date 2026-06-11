@@ -55,6 +55,11 @@ import {
   StopOutlined,
   WarningOutlined,
   CommentOutlined,
+  CloudDownloadOutlined,
+  ScheduleOutlined,
+  CrownOutlined,
+  IeOutlined,
+  StarOutlined,
 } from '@ant-design/icons-vue'
 import { userLoginUserStore } from '@/stores/user'
 import checkAccess from '@/access/checkAccess'
@@ -82,6 +87,8 @@ const userNavItems = computed(() => {
   const items: { path: string; icon: Component; label: string }[] = [
     { path: '/home', icon: PictureOutlined, label: '公共图库' },
     { path: '/my_space', icon: FolderOutlined, label: '个人空间' },
+    { path: '/add_picture/batch', icon: CloudDownloadOutlined, label: '批量获取' },
+    { path: '/seckill', icon: CrownOutlined, label: '限时抢券' },
     { path: `/user/${loginUserStore.loginUser.id}`, icon: UserOutlined, label: '用户主页' },
     { path: '/feed', icon: ThunderboltOutlined, label: '动态' },
     { path: '/feedback/list', icon: CommentOutlined, label: '我的反馈' },
@@ -115,6 +122,26 @@ const adminNavItems = [
     path: '/admin/banManage',
     label: '封禁管理',
     icon: () => h(StopOutlined),
+  },
+  {
+    path: '/admin/batchTaskManage',
+    label: '批量任务管理',
+    icon: () => h(ScheduleOutlined),
+  },
+  {
+    path: '/admin/batchManage',
+    label: '批次管理',
+    icon: () => h(CrownOutlined),
+  },
+  {
+    path: '/admin/couponManage',
+    label: '券管理',
+    icon: () => h(IeOutlined),
+  },
+  {
+    path: '/admin/vipManage',
+    label: 'VIP管理',
+    icon: () => h(StarOutlined),
   },
 ]
 

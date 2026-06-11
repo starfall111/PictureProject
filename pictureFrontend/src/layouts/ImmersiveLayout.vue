@@ -9,32 +9,47 @@
       <div class="search-area">
         <input class="search-box" type="text" placeholder="搜索图片..." @keyup.enter="handleSearch" />
       </div>
-
-
-
-      <button class="upload-btn" @click="goUpload">+ 上传</button>
+      <a-dropdown>
+        <button class="upload-btn">+ 上传</button>
+        <template #overlay>
+          <a-menu>
+            <a-menu-item @click="router.push('/add_picture')">上传图片</a-menu-item>
+            <a-menu-item @click="router.push('/add_picture/batch')">批量获取</a-menu-item>
+          </a-menu>
+        </template>
+      </a-dropdown>
 
       <NotificationBell style="margin-right: 24px" />
       <div class="user-area">
         <template v-if="loginUserStore.loginUser.id">
           <a-dropdown>
-            <a-avatar :src="loginUserStore.loginUser.userAvatar" :size="32" />
+            <a-space :size="8">
+              <a-avatar :src="loginUserStore.loginUser.userAvatar" :size="32" />
+              <VipBadge size="small" />
+            </a-space>
             <template #overlay>
               <a-menu>
                 <a-menu-item @click="router.push('/user/center')">个人中心</a-menu-item>
                 <a-menu-item @click="router.push('/my_space')">我的空间</a-menu-item>
+                <a-menu-item @click="router.push('/coupon/my')">
+                  <IeOutlined />
+                  我的券包
+                  <VipBadge size="default" style="margin-left: 8px" />
+                </a-menu-item>
                 <a-menu-item @click="router.push('/feedback/list')">
                   <CommentOutlined />
                   我的反馈
                 </a-menu-item>
-                <a-menu-item @click="logout()">退出登录</a-menu-item>
+                <a-menu-item @click="logout()">
+                  <LogoutOutlined />
+                  退出登录
+                </a-menu-item>
               </a-menu>
             </template>
           </a-dropdown>
         </template>
         <a-button v-else type="primary" href="/user/login">登录</a-button>
       </div>
-      <SchemeSwitcher />
     </header>
     <FloatingSidebar />
     <main class="immersive-content">
@@ -46,12 +61,13 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { CommentOutlined } from '@ant-design/icons-vue'
+import { CommentOutlined, IeOutlined, LogoutOutlined } from '@ant-design/icons-vue'
 import { userLoginUserStore } from '@/stores/user'
+import { useSeckillStore } from '@/stores/seckill'
 import { userControllerLogOut } from '@/api/userController'
-import SchemeSwitcher from '@/layouts/scheme-1-immersive/components/SchemeSwitcher.vue'
 import FloatingSidebar from '@/layouts/scheme-1-immersive/components/FloatingSidebar.vue'
 import NotificationBell from '@/components/notification/NotificationBell.vue'
+import VipBadge from '@/components/vip/VipBadge.vue'
 
 const router = useRouter()
 const loginUserStore = userLoginUserStore()
@@ -63,14 +79,11 @@ const handleSearch = (e: KeyboardEvent) => {
   }
 }
 
-const goUpload = () => {
-  router.push('/add_picture')
-}
-
 const logout = async () => {
   const res = await userControllerLogOut()
   if (res.data.code === 0 && res.data.data) {
     loginUserStore.setLoginUser({})
+    useSeckillStore().clearToken()
     message.success('退出登录成功')
     router.push('/user/login')
   } else {
