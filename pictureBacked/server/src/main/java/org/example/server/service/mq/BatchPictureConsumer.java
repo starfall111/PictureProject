@@ -39,7 +39,7 @@ public class BatchPictureConsumer {
     @Resource
     private BatchTaskMapper batchTaskMapper;
 
-    @Resource(name = "dbPictureService")
+    @Resource(name = "cachedPictureService")
     private PictureService pictureService;
 
     @Resource

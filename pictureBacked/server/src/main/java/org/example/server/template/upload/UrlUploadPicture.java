@@ -2,6 +2,7 @@ package org.example.server.template.upload;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpStatus;
 import cn.hutool.http.HttpUtil;
@@ -12,7 +13,6 @@ import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -89,9 +89,17 @@ public class UrlUploadPicture extends PictureUploadTemplate {
     }
 
     @Override
-    protected void getTempFile(Object inputResource, File file) throws IOException {
+    protected byte[] getImageBytes(Object inputResource) throws IOException {
         String filePath = (String) inputResource;
-        //下载URL内容到临时文件
-        HttpUtil.downloadFile(filePath, file);
+        // 带超时的内存下载，替代 HttpUtil.downloadFile 写磁盘
+        HttpResponse response = HttpRequest.get(filePath)
+                .timeout(10_000)        // 总超时 10s
+                .setReadTimeout(15_000) // 读超时 15s
+                .executeAsync();
+        try {
+            return response.bodyStream().readAllBytes();
+        } finally {
+            response.close();
+        }
     }
 }

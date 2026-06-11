@@ -1,6 +1,5 @@
 package org.example.server.template.upload;
 
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -13,8 +12,10 @@ import org.example.pojo.dto.picture.UploadPictureDTO;
 import jakarta.annotation.Resource;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 @Slf4j
 public abstract class PictureUploadTemplate {
@@ -22,61 +23,59 @@ public abstract class PictureUploadTemplate {
     @Resource
     private AliOssUtil aliOssUtil;
 
-    public final UploadPictureDTO upload(Object inputResource) throws Exception {
+    public UploadPictureDTO upload(Object inputResource) throws Exception {
         //校验文件是否合规
         String fileSuffix = validPicture(inputResource);
 
-        ThrowUtils.throwIf(StrUtil.isBlank(fileSuffix),ErrorCode.PARAMS_ERROR,"图片格式错误");
+        ThrowUtils.throwIf(StrUtil.isBlank(fileSuffix), ErrorCode.PARAMS_ERROR, "图片格式错误");
 
         //从URL提取文件名和后缀
         String fileName = getOriginFileName(inputResource);
         //文件名为空时抛出错误
-        ThrowUtils.throwIf(StrUtil.isBlank(fileName),ErrorCode.PARAMS_ERROR,"文件名不能为空");
+        ThrowUtils.throwIf(StrUtil.isBlank(fileName), ErrorCode.PARAMS_ERROR, "文件名不能为空");
         //确保文件名包含后缀
         if (!fileName.endsWith("." + fileSuffix)) {
             fileName = fileName + "." + fileSuffix;
         }
 
-        //下载文件至临时文件
-        File tempFile = null;
+        // 一次性获取图片字节（内存中，无磁盘 I/O）
+        byte[] imageBytes = getImageBytes(inputResource);
+        long fileSize = imageBytes.length;
+
         String url = null;
         try {
-            //创建临时目录
-            //创建临时目录（使用项目根目录下的temp文件夹）
-            String projectRoot = System.getProperty("user.dir");
-            File tempDir = new File(projectRoot, "temp");
-            //创建临时文件（前缀最多3字符，后缀为图片格式）
-            tempFile = File.createTempFile("pic", "." + fileSuffix, tempDir);
+            // 直接上传 byte[] 到 OSS（无中间文件）
+            url = aliOssUtil.upload(imageBytes, fileName);
+            String originImageUrl = url;
 
-            getTempFile(inputResource,tempFile);
-
-
-            url = aliOssUtil.upload(FileUtil.readBytes(tempFile), fileName);
-
-            //OSS中存放三份文件 1.缩略图 2.压缩图 3.原始图像
-            //数据库内也维护三份图片URL 1.缩略图 URL 2. 压缩图URL 3. 原始图片URL
+            // 并行执行 OSS 图片处理
             String format = "image/format,webp";
             String resize = "image/resize,s_180";
 
-            long fileSize = FileUtil.size(tempFile);
+            CompletableFuture<String> compressedFuture = CompletableFuture.supplyAsync(() -> {
+                try { return aliOssUtil.processPicture(format, originImageUrl); }
+                catch (Exception e) { throw new CompletionException(e); }
+            });
+            CompletableFuture<String> thumbnailFuture = CompletableFuture.supplyAsync(() -> {
+                try { return aliOssUtil.processPicture(resize, originImageUrl); }
+                catch (Exception e) { throw new CompletionException(e); }
+            });
 
-            String originImageUrl = url;
-
-            url = aliOssUtil.processPicture(format,originImageUrl);
-            String thumbnailImageUrl = aliOssUtil.processPicture(resize,originImageUrl);
-
-            //获取图片信息：宽度、高度、宽高比
-            BufferedImage bufferedImage = ImageIO.read(tempFile);
+            // 获取图片尺寸（从内存 byte[]，无磁盘读取）
+            BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
             ThrowUtils.throwIf(ObjUtil.isEmpty(bufferedImage), ErrorCode.SYSTEM_ERROR);
-
             int width = bufferedImage.getWidth();
             int height = bufferedImage.getHeight();
             double scale = (double) width / height;
 
+            // 等待两个处理完成
+            String compressedUrl = compressedFuture.join();
+            String thumbnailUrl = thumbnailFuture.join();
+
             UploadPictureDTO uploadPictureDTO = new UploadPictureDTO();
             uploadPictureDTO.setName(fileName);
-            uploadPictureDTO.setUrl(url);
-            uploadPictureDTO.setThumbnailUrl(thumbnailImageUrl);
+            uploadPictureDTO.setUrl(compressedUrl);
+            uploadPictureDTO.setThumbnailUrl(thumbnailUrl);
             uploadPictureDTO.setOriginUrl(originImageUrl);
             uploadPictureDTO.setPicFormat(fileSuffix);
             uploadPictureDTO.setPicSize(fileSize);
@@ -90,11 +89,6 @@ public abstract class PictureUploadTemplate {
             }
             log.error("图片上传失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片上传失败");
-        } finally {
-            //清理临时文件
-            if (tempFile != null && tempFile.exists()) {
-                tempFile.delete();
-            }
         }
     }
 
@@ -109,7 +103,7 @@ public abstract class PictureUploadTemplate {
     protected  abstract String getOriginFileName(Object inputResource);
 
     /**
-     * 获取临时文件字节流
+     * 获取图片字节数据
      * */
-    protected  abstract void getTempFile(Object inputResource, File file) throws IOException;
+    protected abstract byte[] getImageBytes(Object inputResource) throws IOException;
 }

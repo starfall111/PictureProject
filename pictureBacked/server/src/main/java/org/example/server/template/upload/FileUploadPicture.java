@@ -8,7 +8,6 @@ import org.example.common.exception.ThrowUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -40,9 +39,8 @@ public class FileUploadPicture extends PictureUploadTemplate{
     }
 
     @Override
-    protected void getTempFile(Object inputResource, File file) throws IOException {
+    protected byte[] getImageBytes(Object inputResource) throws IOException {
         MultipartFile multipartFile = (MultipartFile) inputResource;
-
-        multipartFile.transferTo(file);
+        return multipartFile.getBytes();
     }
 }
