@@ -26,7 +26,7 @@ spring:
     timeout: 2592000                    # Session 过期时间
     store-type: redis               # 存储类型
     redis:
-        namespace: "myapp:session"    # Redis key 前缀
+      namespace: "myapp:session"    # Redis key 前缀
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -37,8 +37,10 @@ spring:
     publisher-returns: true
     listener:
       simple:
+        concurrency: 5          # 核心消费者数
+        max-concurrency: 15     # 峰期最多扩到 15
+        prefetch: 1             # 每个消费者一次只取 1 条，防止某个消费者积压
         acknowledge-mode: manual
-        prefetch: 50
         retry:
           enabled: true
           max-attempts: 3
@@ -112,3 +114,6 @@ baidu:
   translate:
     appid: ${BAIDU_TRANSLATE_APPID:}
     secret: ${BAIDU_TRANSLATE_SECRET:}
+
+seckill:
+  hmac-secret: ${SECKILL_HMAC_SECRET:your-random-secret-key-at-least-32-chars}

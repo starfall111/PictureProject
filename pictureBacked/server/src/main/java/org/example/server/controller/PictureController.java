@@ -4,6 +4,8 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
 import org.example.common.annotation.CheckAuth;
 import org.example.common.api.imagesearch.ImageSearchApiFacade;
 import org.example.common.api.imagesearch.model.ImageSearchResult;
@@ -12,6 +14,8 @@ import org.example.common.exception.BusinessException;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
 import org.example.common.context.UserContext;
+import org.example.common.constants.RedisKeyConstants;
+import org.example.common.enums.UserEnum;
 import org.example.pojo.entity.User;
 import org.example.common.result.BaseResponse;
 import org.example.common.result.ResultUtils;
@@ -22,21 +26,31 @@ import org.example.pojo.dto.social.BatchStatusQueryDTO;
 import org.example.pojo.dto.social.UserPictureQueryDTO;
 
 import org.example.pojo.entity.Picture;
+import org.example.pojo.entity.Space;
+import org.example.pojo.vo.BatchTaskVO;
 import org.example.pojo.vo.PictureBriefVO;
 import org.example.pojo.vo.PictureEntityVO;
 import org.example.pojo.vo.PictureVO;
 import org.example.pojo.vo.ToggleFavoriteVO;
 import org.example.pojo.vo.ToggleLikeVO;
+import org.example.server.service.BatchTaskService;
 import org.example.server.service.PictureService;
+import org.example.server.service.SpaceService;
 import org.example.server.service.SocialService;
+import org.example.server.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import cn.hutool.core.util.StrUtil;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import java.util.*;
 
 @RestController
@@ -59,12 +73,24 @@ public class PictureController {
     @Resource(name = "cachedPictureService")
     private PictureService cachedPictureService;
 
+    @Resource
+    private BatchTaskService batchTaskService;
+
+    @Resource
+    private SpaceService spaceService;
+
+    @Resource(name = "dbUserService")
+    private UserService userService;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
     /**
      * 图片上传
      */
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public BaseResponse<PictureVO> upload(
-            @RequestParam("files") MultipartFile file,
+            @RequestPart("file") MultipartFile file,
             FileDTO fileDTO) throws Exception {
         //认证检查
         User user = UserContext.get();
@@ -228,14 +254,55 @@ public class PictureController {
 
 
     @PostMapping("/upload/batch")
-    @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
-    public BaseResponse<Integer> pictureUploadByBatch(@RequestBody PictureUploadByBatchDTO pictureUploadByBatchDTO) {
+    public BaseResponse<BatchTaskVO> pictureUploadByBatch(@RequestBody PictureUploadByBatchDTO pictureUploadByBatchDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUploadByBatchDTO), ErrorCode.PARAMS_ERROR);
 
-        ThrowUtils.throwIf(pictureUploadByBatchDTO.getCount() > 30, ErrorCode.PARAMS_ERROR, "最多一次抓取 30 张图片");
-        int result = cachedPictureService.pictureUploadByBatch(pictureUploadByBatchDTO);
+        // 获取当前用户
+        User user = UserContext.get();
+        ThrowUtils.throwIf(ObjUtil.isEmpty(user), ErrorCode.NOT_LOGIN_ERROR);
+        user = userService.getById(user.getId());
 
-        return ResultUtils.success(result);
+        // 同一用户同时只能进行一个批量任务
+        ThrowUtils.throwIf(batchTaskService.hasRunningTask(user.getId()),
+                ErrorCode.OPERATION_ERROR, "您有正在进行的批量任务，请等待完成后再提交");
+
+        // 权限校验：管理员直接通过
+        UserEnum userEnum = UserEnum.getByValue(user.getUserRole());
+        if (!UserEnum.ADMIN.equals(userEnum)) {
+            // TODO: VIP 用户校验，后续实现兑换码功能
+            // 已绑定手机号可通过
+            ThrowUtils.throwIf(StrUtil.isBlank(user.getUserPhone()),
+                    ErrorCode.NO_AUTH_ERROR, "请先绑定手机号");
+        }
+
+        // 限流：每用户每分钟最多 1 次
+        String rateLimitKey = String.format(RedisKeyConstants.BATCH_TASK_RATE_LIMIT_KEY, user.getId());
+        Long count = stringRedisTemplate.opsForValue().increment(rateLimitKey);
+        if (count != null && count == 1) {
+            stringRedisTemplate.expire(rateLimitKey, RedisKeyConstants.BATCH_TASK_RATE_LIMIT_WINDOW, TimeUnit.SECONDS);
+        }
+        ThrowUtils.throwIf(count != null && count > RedisKeyConstants.BATCH_TASK_RATE_LIMIT_MAX,
+                ErrorCode.OPERATION_ERROR, "操作过于频繁，请稍后再试");
+
+        // 参数校验
+        ThrowUtils.throwIf(pictureUploadByBatchDTO.getCount() > 30, ErrorCode.PARAMS_ERROR, "最多一次抓取 30 张图片");
+        ThrowUtils.throwIf(StrUtil.isBlank(pictureUploadByBatchDTO.getSearchText()), ErrorCode.PARAMS_ERROR, "搜索词不能为空");
+
+        // 空间额度校验
+        if (ObjUtil.isNotEmpty(pictureUploadByBatchDTO.getSpaceId())) {
+            Space space = spaceService.getById(pictureUploadByBatchDTO.getSpaceId());
+            ThrowUtils.throwIf(ObjUtil.isEmpty(space), ErrorCode.PARAMS_ERROR, "空间不存在");
+            spaceService.validAuthUser(space, user);
+            long remaining = space.getMaxCount() - space.getTotalCount();
+            ThrowUtils.throwIf(remaining < pictureUploadByBatchDTO.getCount(),
+                    ErrorCode.OPERATION_ERROR,
+                    String.format("空间图片数量不足，剩余 %d 张额度，需要 %d 张", remaining, pictureUploadByBatchDTO.getCount()));
+        }
+
+        // 创建异步任务
+        BatchTaskVO taskVO = batchTaskService.createAndSubmitTask(user, pictureUploadByBatchDTO);
+
+        return ResultUtils.success(taskVO);
     }
 
 
@@ -368,6 +435,19 @@ public class PictureController {
         ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
         ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
         Page<PictureBriefVO> result = cachedSocialService.getUserFavoritedPictures(userId, queryDTO);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 获取当前用户关注对象的图片列表（支持筛选）
+     */
+    @PostMapping("/following/user/query")
+    public BaseResponse<Page<PictureBriefVO>> getFollowingPictures(
+            @RequestBody UserPictureQueryDTO queryDTO) {
+        User user = UserContext.get();
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        Page<PictureBriefVO> result = cachedSocialService.getFollowingPictures(user.getId(), queryDTO);
         return ResultUtils.success(result);
     }
 
@@ -516,6 +596,19 @@ public class PictureController {
         // 隐私保护：只能查看自己的列表
 //        verifyOwnershipOrAdmin(userId);
         Page<PictureBriefVO> result = cachedSocialService.getUserUploadedPictures(userId, queryDTO);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * [缓存版] 获取当前用户关注对象的图片列表（不支持筛选）
+     */
+    @PostMapping("/cache/following/user/query")
+    public BaseResponse<Page<PictureBriefVO>> getFollowingPicturesCache(
+            @RequestBody UserPictureQueryDTO queryDTO) {
+        User user = UserContext.get();
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+        Page<PictureBriefVO> result = cachedSocialService.getFollowingPictures(user.getId(), queryDTO);
         return ResultUtils.success(result);
     }
 }

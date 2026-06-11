@@ -25,4 +25,9 @@ public class FileDTO {
      * 简介
      */
     private String introduction;
+
+    /**
+     * 上传用户 id（异步场景使用，HTTP 场景由 UserContext 自动填充）
+     */
+    private Long userId;
 }

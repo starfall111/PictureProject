@@ -46,6 +46,7 @@ public class BingImageSearchStrategy implements ImageSearchStrategy {
 
         Elements imgElementList = element.select(".iusc");
 
+        int index = 1;
         for (Element imgElement : imgElementList) {
             if (results.size() >= count) {
                 break;
@@ -55,7 +56,8 @@ public class BingImageSearchStrategy implements ImageSearchStrategy {
             try {
                 String fileUrl = JSONUtil.parseObj(dataM).getStr("murl");
                 if (StrUtil.isNotBlank(fileUrl)) {
-                    results.add(new ImageSourceResult(fileUrl));
+                    String imageName = searchText + index++;
+                    results.add(new ImageSourceResult(fileUrl, imageName, null));
                 }
             } catch (Exception e) {
                 log.error("图片url解析失败", e);

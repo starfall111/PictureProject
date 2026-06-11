@@ -109,4 +109,13 @@ public interface SocialService {
      * @return 分页结果
      */
     Page<PictureBriefVO> getUserUploadedPictures(Long userId, UserPictureQueryDTO queryDTO);
+
+    /**
+     * 获取当前用户关注对象的图片列表（分页 + 筛选）
+     *
+     * @param userId   当前登录用户 id
+     * @param queryDTO 查询条件（分页、筛选、排序）
+     * @return 分页结果
+     */
+    Page<PictureBriefVO> getFollowingPictures(Long userId, UserPictureQueryDTO queryDTO);
 }

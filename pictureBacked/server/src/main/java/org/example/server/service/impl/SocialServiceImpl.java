@@ -54,6 +54,9 @@ public class SocialServiceImpl implements SocialService {
     @Resource
     private TransactionTemplate transactionTemplate;
 
+    @Resource
+    private UserFollowMapper userFollowMapper;
+
     /**
      * 本地锁，防止同一用户对同一图片的 toggle 操作并发执行
      * key = "userId:pictureId"
@@ -415,6 +418,54 @@ public class SocialServiceImpl implements SocialService {
 
         QueryWrapper<Picture> qw = new QueryWrapper<>();
         qw.eq("userId", userId)
+                .eq("reviewStatus", 1)
+                .isNull("spaceId")
+                .orderByDesc("editTime");
+
+        Page<Picture> picturePage = pictureMapper.selectPage(new Page<>(current, pageSize), qw);
+        List<PictureBriefVO> records = picturePage.getRecords().stream()
+                .map(picture -> {
+                    PictureBriefVO vo = new PictureBriefVO();
+                    vo.setId(picture.getId());
+                    vo.setName(picture.getName());
+                    vo.setUrl(picture.getUrl());
+                    vo.setThumbnailUrl(picture.getThumbnailUrl());
+                    vo.setPicWidth(picture.getPicWidth());
+                    vo.setPicHeight(picture.getPicHeight());
+                    vo.setCreateTime(picture.getCreateTime());
+                    vo.setUserId(picture.getUserId());
+                    if (picture.getTags() != null) {
+                        vo.setTags(cn.hutool.json.JSONUtil.toList(picture.getTags(), String.class));
+                    }
+                    return vo;
+                })
+                .collect(Collectors.toList());
+
+        Page<PictureBriefVO> page = new Page<>(current, pageSize, picturePage.getTotal());
+        page.setRecords(records);
+
+        // 批量填充用户信息
+        fillUserInfo(records);
+
+        return page;
+    }
+
+    @Override
+    public Page<PictureBriefVO> getFollowingPictures(Long userId, UserPictureQueryDTO queryDTO) {
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "用户 id 不合法");
+        ThrowUtils.throwIf(queryDTO == null, ErrorCode.PARAMS_ERROR, "查询条件不能为空");
+
+        // 查询关注用户 ID 列表
+        List<Long> followeeIds = userFollowMapper.selectFolloweeIds(userId);
+        if (followeeIds == null || followeeIds.isEmpty()) {
+            return new Page<>(queryDTO.getCurrent(), queryDTO.getPageSize(), 0);
+        }
+
+        Integer current = queryDTO.getCurrent();
+        Integer pageSize = queryDTO.getPageSize();
+
+        QueryWrapper<Picture> qw = new QueryWrapper<>();
+        qw.in("userId", followeeIds)
                 .eq("reviewStatus", 1)
                 .isNull("spaceId")
                 .orderByDesc("editTime");

@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.annotation.UploadTimed;
 import org.example.common.constants.PictureConstant;
 import org.example.common.constants.RedisKeyConstants;
 import org.example.common.context.UserContext;
@@ -133,10 +134,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 //    -》更新空间信息（如果spaceId不为空）
 //    -》结束
     @Override
+    @UploadTimed(value = "URL上传图片", warnThreshold = 3000)
     public Picture upload(Object inputResource, FileDTO fileDTO) throws Exception {
         Picture picture = new Picture();
         Picture oldPicture = new Picture();
         User user = UserContext.get();
+        // 异步场景（MQ 消费等）无 ThreadLocal，通过 fileDTO 传入 userId
+        if (user == null && fileDTO != null && fileDTO.getUserId() != null) {
+            user = userService.getById(fileDTO.getUserId());
+        }
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR, "用户未登录");
         Long imageId = null;
         Long spaceId = fileDTO.getSpaceId();
         Space space;

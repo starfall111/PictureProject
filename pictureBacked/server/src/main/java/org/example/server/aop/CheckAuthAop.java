@@ -9,6 +9,7 @@ import org.example.common.context.UserContext;
 import org.example.common.enums.UserEnum;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
+import org.example.common.util.VipUtil;
 import org.example.server.service.UserService;
 import org.springframework.stereotype.Component;
 
@@ -38,6 +39,9 @@ public class CheckAuthAop {
         //管理员权限（当mustRole等于admin时且user的role不为admin时，拦截）
         ThrowUtils.throwIf(UserEnum.ADMIN.equals(mustRoleEnum) && !UserEnum.ADMIN.equals(userEnum), ErrorCode.NO_AUTH_ERROR);
         //VIP会员等等权限
+        if (checkAuth.requireVip()) {
+            ThrowUtils.throwIf(!VipUtil.isActiveVip(user), ErrorCode.NO_AUTH_ERROR, "该功能需要VIP会员");
+        }
         //放行
         return checkPoint.proceed();
     }

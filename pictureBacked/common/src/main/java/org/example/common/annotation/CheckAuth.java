@@ -13,4 +13,6 @@ import java.lang.annotation.Target;
 public @interface CheckAuth {
 
     String mustRole() default "";
+
+    boolean requireVip() default false;
 }

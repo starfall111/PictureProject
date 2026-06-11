@@ -104,7 +104,6 @@ public class SpaceController {
 
     //5.根据Id返回空间详细信息
     @GetMapping("/{id}")
-    @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
     public BaseResponse<Space> getSpaceById(@PathVariable long id){
         ThrowUtils.throwIf(ObjUtil.isEmpty(id),ErrorCode.PARAMS_ERROR);
 
