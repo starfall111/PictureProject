@@ -5,6 +5,80 @@ declare namespace API {
     banStatus?: string;
   };
 
+  type AdminBatchControllerCancelParams = {
+    id: number;
+  };
+
+  type AdminBatchControllerEndParams = {
+    id: number;
+  };
+
+  type AdminBatchControllerGenerateCodesParams = {
+    id: number;
+  };
+
+  type AdminBatchControllerGetBatchDetailParams = {
+    id: number;
+  };
+
+  type AdminBatchControllerListBatchesParams = {
+    current?: number;
+    pageSize?: number;
+    status?: number;
+  };
+
+  type AdminBatchControllerRestoreParams = {
+    id: number;
+  };
+
+  type AdminBatchControllerTransitionParams = {
+    id: number;
+    targetStatus: number;
+  };
+
+  type AdminBatchControllerUpdateBatchParams = {
+    id: number;
+  };
+
+  type AdminBatchTaskControllerGetAdminDetailParams = {
+    id: number;
+  };
+
+  type AdminBatchTaskControllerGetAdminListParams = {
+    dto: BatchTaskQueryDTO;
+  };
+
+  type AdminBatchTaskVO = {
+    taskId?: number;
+    userId?: number;
+    spaceId?: number;
+    searchText?: string;
+    searchSource?: string;
+    totalCount?: number;
+    successCount?: number;
+    failCount?: number;
+    status?: string;
+    categoryId?: number;
+    namePrefix?: string;
+    tags?: string;
+    errorMessage?: string;
+    createTime?: string;
+    updateTime?: string;
+    finishTime?: string;
+  };
+
+  type AdminCouponControllerListCouponsParams = {
+    current?: number;
+    pageSize?: number;
+    status?: number;
+    userId?: number;
+    batchId?: number;
+  };
+
+  type AdminCouponControllerRevokeParams = {
+    id: number;
+  };
+
   type AdminFeedbackControllerAddInternalNoteParams = {
     id: number;
   };
@@ -80,6 +154,24 @@ declare namespace API {
     id?: number;
   };
 
+  type AdminVipControllerGrantVipParams = {
+    userId: number;
+  };
+
+  type AdminVipControllerListVipUsersParams = {
+    current?: number;
+    pageSize?: number;
+    vipType?: number;
+  };
+
+  type AdminVipControllerRevokeVipParams = {
+    userId: number;
+  };
+
+  type AdminVipControllerSetDegradeLevelParams = {
+    level: number;
+  };
+
   type BanRecordVO = {
     id?: number;
     userId?: number;
@@ -104,6 +196,24 @@ declare namespace API {
     unbanReason?: string;
   };
 
+  type BaseResponseAdminBatchTaskVO = {
+    code?: number;
+    data?: AdminBatchTaskVO;
+    message?: string;
+  };
+
+  type BaseResponseBatchTaskStatsVO = {
+    code?: number;
+    data?: BatchTaskStatsVO;
+    message?: string;
+  };
+
+  type BaseResponseBatchTaskVO = {
+    code?: number;
+    data?: BatchTaskVO;
+    message?: string;
+  };
+
   type BaseResponseBoolean = {
     code?: number;
     data?: boolean;
@@ -113,6 +223,18 @@ declare namespace API {
   type BaseResponseCategory = {
     code?: number;
     data?: Category;
+    message?: string;
+  };
+
+  type BaseResponseCodeCouponBatch = {
+    code?: number;
+    data?: CodeCouponBatch;
+    message?: string;
+  };
+
+  type BaseResponseCouponActivateVO = {
+    code?: number;
+    data?: CouponActivateVO;
     message?: string;
   };
 
@@ -155,6 +277,12 @@ declare namespace API {
   type BaseResponseInteger = {
     code?: number;
     data?: number;
+    message?: string;
+  };
+
+  type BaseResponseListBatchTaskVO = {
+    code?: number;
+    data?: BatchTaskVO[];
     message?: string;
   };
 
@@ -212,6 +340,18 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseObject = {
+    code?: number;
+    data?: any;
+    message?: string;
+  };
+
+  type BaseResponsePageAdminBatchTaskVO = {
+    code?: number;
+    data?: PageAdminBatchTaskVO;
+    message?: string;
+  };
+
   type BaseResponsePageBanRecordVO = {
     code?: number;
     data?: PageBanRecordVO;
@@ -221,6 +361,24 @@ declare namespace API {
   type BaseResponsePageCategory = {
     code?: number;
     data?: PageCategory;
+    message?: string;
+  };
+
+  type BaseResponsePageCodeCoupon = {
+    code?: number;
+    data?: PageCodeCoupon;
+    message?: string;
+  };
+
+  type BaseResponsePageCodeCouponBatch = {
+    code?: number;
+    data?: PageCodeCouponBatch;
+    message?: string;
+  };
+
+  type BaseResponsePageCouponVO = {
+    code?: number;
+    data?: PageCouponVO;
     message?: string;
   };
 
@@ -260,6 +418,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePagePublicBatchVO = {
+    code?: number;
+    data?: PagePublicBatchVO;
+    message?: string;
+  };
+
   type BaseResponsePageReportVO = {
     code?: number;
     data?: PageReportVO;
@@ -281,6 +445,12 @@ declare namespace API {
   type BaseResponsePageTag = {
     code?: number;
     data?: PageTag;
+    message?: string;
+  };
+
+  type BaseResponsePageUser = {
+    code?: number;
+    data?: PageUser;
     message?: string;
   };
 
@@ -317,6 +487,18 @@ declare namespace API {
   type BaseResponseReportVO = {
     code?: number;
     data?: ReportVO;
+    message?: string;
+  };
+
+  type BaseResponseSeckillOrder = {
+    code?: number;
+    data?: SeckillOrder;
+    message?: string;
+  };
+
+  type BaseResponseSeckillStatsVO = {
+    code?: number;
+    data?: SeckillStatsVO;
     message?: string;
   };
 
@@ -368,8 +550,89 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseVipStatsVO = {
+    code?: number;
+    data?: VipStatsVO;
+    message?: string;
+  };
+
+  type BatchCreateDTO = {
+    name?: string;
+    type?: number;
+    totalStock?: number;
+    startTime?: string;
+    endTime?: string;
+  };
+
   type BatchStatusQueryDTO = {
     pictureIds?: number[];
+  };
+
+  type BatchTaskControllerGetTaskParams = {
+    taskId: number;
+  };
+
+  type BatchTaskQueryDTO = {
+    current?: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+    status?: string;
+    searchSource?: string;
+    keyword?: string;
+    startTime?: string;
+    endTime?: string;
+    userId?: number;
+  };
+
+  type BatchTaskStatsVO = {
+    totalCount?: number;
+    pendingCount?: number;
+    processingCount?: number;
+    completedCount?: number;
+    failedCount?: number;
+    todayNewCount?: number;
+    successRate?: number;
+  };
+
+  type BatchTaskUpdateDTO = {
+    id?: number;
+    status?: string;
+    errorMessage?: string;
+    tags?: string;
+  };
+
+  type BatchTaskVO = {
+    taskId?: number;
+    status?: string;
+    totalCount?: number;
+    successCount?: number;
+    failCount?: number;
+    message?: string;
+    createTime?: string;
+    finishTime?: string;
+    searchText?: string;
+    searchSource?: string;
+    categoryId?: number;
+    namePrefix?: string;
+    tags?: string[];
+    spaceId?: number;
+  };
+
+  type BatchUpdateDTO = {
+    id?: number;
+    name?: string;
+    type?: number;
+    totalStock?: number;
+    startTime?: string;
+    endTime?: string;
+  };
+
+  type BenchmarkGrabRequest = {
+    userId?: number;
+    batchId?: number;
+    token?: string;
+    clientIP?: string;
   };
 
   type Category = {
@@ -406,6 +669,72 @@ declare namespace API {
   type CategoryUpdateDTO = {
     id?: number;
     name?: string;
+  };
+
+  type CodeCoupon = {
+    id?: number;
+    batchId?: number;
+    userId?: number;
+    code?: string;
+    type?: number;
+    status?: number;
+    issuedAt?: string;
+    activatedAt?: string;
+    expireAt?: string;
+    version?: number;
+    createTime?: string;
+    updateTime?: string;
+    isDelete?: number;
+  };
+
+  type CodeCouponBatch = {
+    id?: number;
+    batchNo?: string;
+    name?: string;
+    type?: number;
+    totalStock?: number;
+    currentStock?: number;
+    startTime?: string;
+    endTime?: string;
+    status?: number;
+    version?: number;
+    editTime?: string;
+    createTime?: string;
+    updateTime?: string;
+    isDelete?: number;
+  };
+
+  type CouponActivateDTO = {
+    couponId?: number;
+  };
+
+  type CouponActivateVO = {
+    activated?: boolean;
+    vipType?: number;
+    vipTypeName?: string;
+    vipExpireTime?: string;
+    couponType?: number;
+    couponTypeName?: string;
+    message?: string;
+  };
+
+  type CouponControllerListMyCouponsParams = {
+    page?: number;
+    size?: number;
+    status?: number;
+  };
+
+  type CouponVO = {
+    id?: number;
+    code?: string;
+    type?: number;
+    typeName?: string;
+    status?: number;
+    statusName?: string;
+    issuedAt?: string;
+    activatedAt?: string;
+    expireAt?: string;
+    remainingDays?: number;
   };
 
   type DeleteRequest = {
@@ -596,6 +925,7 @@ declare namespace API {
     spaceId?: number;
     tags?: string;
     introduction?: string;
+    userId?: number;
   };
 
   type FollowActionDTO = {
@@ -649,6 +979,8 @@ declare namespace API {
     userAvatar?: string;
     userProfile?: string;
     userRole?: string;
+    vipType?: number;
+    vipExpireTime?: string;
     editTime?: string;
     createTime?: string;
     updateTime?: string;
@@ -694,6 +1026,20 @@ declare namespace API {
     asc?: boolean;
   };
 
+  type PageAdminBatchTaskVO = {
+    records?: AdminBatchTaskVO[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: any;
+    searchCount?: any;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+    pages?: number;
+  };
+
   type PageBanRecordVO = {
     records?: BanRecordVO[];
     total?: number;
@@ -710,6 +1056,48 @@ declare namespace API {
 
   type PageCategory = {
     records?: Category[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: any;
+    searchCount?: any;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+    pages?: number;
+  };
+
+  type PageCodeCoupon = {
+    records?: CodeCoupon[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: any;
+    searchCount?: any;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+    pages?: number;
+  };
+
+  type PageCodeCouponBatch = {
+    records?: CodeCouponBatch[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: any;
+    searchCount?: any;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+    pages?: number;
+  };
+
+  type PageCouponVO = {
+    records?: CouponVO[];
     total?: number;
     size?: number;
     current?: number;
@@ -806,6 +1194,20 @@ declare namespace API {
     pages?: number;
   };
 
+  type PagePublicBatchVO = {
+    records?: PublicBatchVO[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: any;
+    searchCount?: any;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+    pages?: number;
+  };
+
   type PageReportVO = {
     records?: ReportVO[];
     total?: number;
@@ -850,6 +1252,20 @@ declare namespace API {
 
   type PageTag = {
     records?: Tag[];
+    total?: number;
+    size?: number;
+    current?: number;
+    orders?: OrderItem[];
+    optimizeCountSql?: any;
+    searchCount?: any;
+    optimizeJoinOfCountSql?: boolean;
+    maxLimit?: number;
+    countId?: string;
+    pages?: number;
+  };
+
+  type PageUser = {
+    records?: User[];
     total?: number;
     size?: number;
     current?: number;
@@ -1087,6 +1503,7 @@ declare namespace API {
     tags?: string[];
     categoryId?: number;
     searchSource?: string;
+    spaceId?: number;
   };
 
   type PictureVO = {
@@ -1112,6 +1529,18 @@ declare namespace API {
     userVO?: UserVO;
     spaceId?: number;
     socialInfo?: PictureSocialVO;
+  };
+
+  type PublicBatchVO = {
+    id?: number;
+    name?: string;
+    type?: number;
+    totalStock?: number;
+    remainStock?: number;
+    startTime?: string;
+    endTime?: string;
+    status?: number;
+    progress?: number;
   };
 
   type RecommendQueryDTO = {
@@ -1214,10 +1643,115 @@ declare namespace API {
     pictureId?: number;
   };
 
+  type SeckillBenchmarkControllerGetResultParams = {
+    userId: number;
+    orderNo: string;
+  };
+
+  type SeckillBenchmarkControllerGetTokenParams = {
+    userId: number;
+    batchId: number;
+  };
+
+  type SeckillBenchmarkControllerInitParams = {
+    batchId: number;
+  };
+
+  type SeckillBenchmarkControllerStatsParams = {
+    batchId: number;
+  };
+
+  type SeckillControllerGetBatchInfoParams = {
+    batchId: number;
+  };
+
+  type SeckillControllerGetResultParams = {
+    orderNo: string;
+  };
+
+  type SeckillControllerGetTokenParams = {
+    batchId: number;
+  };
+
+  type SeckillControllerListBatchesParams = {
+    status?: number;
+    current?: number;
+    pageSize?: number;
+  };
+
+  type SeckillGrabDTO = {
+    batchId?: number;
+    token?: string;
+  };
+
+  type SeckillOrder = {
+    id?: number;
+    userId?: number;
+    batchId?: number;
+    couponId?: number;
+    orderNo?: string;
+    status?: number;
+    createTime?: string;
+  };
+
+  type SeckillStatsVO = {
+    totalBatches?: number;
+    totalCoupons?: number;
+    claimedCount?: number;
+    activatedCount?: number;
+    expiredCount?: number;
+    claimRate?: number;
+    activationRate?: number;
+  };
+
   type SendVerificationCodeDTO = {
     type?: number;
     account?: string;
     captchaVerifyParam?: string;
+  };
+
+  type SocialBenchmarkControllerBatchFavoriteStatusCacheParams = {
+    userId: number;
+  };
+
+  type SocialBenchmarkControllerBatchFavoriteStatusDbParams = {
+    userId: number;
+  };
+
+  type SocialBenchmarkControllerBatchLikeStatusCacheParams = {
+    userId: number;
+  };
+
+  type SocialBenchmarkControllerBatchLikeStatusDbParams = {
+    userId: number;
+  };
+
+  type SocialBenchmarkControllerGetUserFavoritedPicturesParams = {
+    userId: number;
+  };
+
+  type SocialBenchmarkControllerGetUserLikedPicturesParams = {
+    userId: number;
+  };
+
+  type SocialBenchmarkControllerToggleFavoriteCacheParams = {
+    pictureId: number;
+    userId: number;
+  };
+
+  type SocialBenchmarkControllerToggleFavoriteDbParams = {
+    pictureId: number;
+    userId: number;
+  };
+
+  type SocialBenchmarkControllerToggleLikeCacheParams = {
+    pictureId: number;
+    userId: number;
+  };
+
+  type SocialBenchmarkControllerToggleLikeDbParams = {
+    pictureId: number;
+    userId: number;
   };
 
   type Space = {
@@ -1400,6 +1934,10 @@ declare namespace API {
     userAvatar?: string;
     userProfile?: string;
     userRole?: string;
+    vipType?: number;
+    vipExpireTime?: string;
+    vipActivatedAt?: string;
+    vipTotalDays?: number;
     banStatus?: string;
     banEndTime?: string;
     violationCount?: number;
@@ -1464,6 +2002,9 @@ declare namespace API {
     userAvatar?: string;
     userProfile?: string;
     userRole?: string;
+    vipType?: number;
+    vipExpireTime?: string;
+    isActiveVip?: boolean;
     createTime?: string;
     uploadCount?: number;
     totalLikes?: number;
@@ -1515,6 +2056,20 @@ declare namespace API {
     userAvatar?: string;
     userProfile?: string;
     userRole?: string;
+    vipType?: number;
     createTime?: string;
+  };
+
+  type VipGrantDTO = {
+    userId?: number;
+    days?: number;
+    reason?: string;
+  };
+
+  type VipStatsVO = {
+    totalVipUsers?: number;
+    activeVipUsers?: number;
+    todayNewVip?: number;
+    expiringVipUsers?: number;
   };
 }

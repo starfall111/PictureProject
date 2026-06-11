@@ -105,6 +105,24 @@ export async function pictureControllerGetUserFavoritedPicturesCache(
   );
 }
 
+/** 此处后端没有提供注释 POST /picture/cache/following/user/query */
+export async function pictureControllerGetFollowingPicturesCache(
+  body: API.UserPictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponsePagePictureBriefVO>(
+    "/picture/cache/following/user/query",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
 /** 此处后端没有提供注释 POST /picture/cache/like/${param0} */
 export async function pictureControllerToggleLikeCache(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -351,6 +369,24 @@ export async function pictureControllerGetUserFavoritedPictures(
   );
 }
 
+/** 此处后端没有提供注释 POST /picture/following/user/query */
+export async function pictureControllerGetFollowingPictures(
+  body: API.UserPictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponsePagePictureBriefVO>(
+    "/picture/following/user/query",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: body,
+      ...(options || {}),
+    }
+  );
+}
+
 /** 此处后端没有提供注释 POST /picture/like/${param0} */
 export async function pictureControllerToggleLike(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -510,7 +546,7 @@ export async function pictureControllerPictureUploadByBatch(
   body: API.PictureUploadByBatchDTO,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseInteger>("/picture/upload/batch", {
+  return request<API.BaseResponseBatchTaskVO>("/picture/upload/batch", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
