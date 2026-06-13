@@ -2,7 +2,7 @@
     <div id="loginPage">
         <div class="login-brand">
             <div class="brand-title">
-                <h2 class="brand-heading">智能云图库</h2>
+                <h2 class="brand-heading">图境</h2>
                 <span class="brand-subtitle">属于你自己的图片素材库</span>
             </div>
         </div>
@@ -166,7 +166,7 @@ const register = async (DTO: any) => {
     align-items: center;
     width: 50%;
     height: 100%;
-    background-color: #2563EB;
+    background-color: #33A1C9;
 }
 
 .brand-title {

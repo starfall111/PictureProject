@@ -5,7 +5,7 @@
                 <router-link to="/">
                     <div class="title-bar">
                         <img class="img" src="../assets/test.jpg" alt="logo">
-                        <div class="title">智能云图库</div>
+                        <div class="title">图境</div>
                     </div>
                 </router-link>
             </a-col>

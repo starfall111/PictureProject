@@ -2,7 +2,7 @@
     <div id="loginPage">
         <div class="login-brand">
             <div class="brand-title">
-                <h2 class="brand-heading">智能云图库</h2>
+                <h2 class="brand-heading">图境</h2>
                 <span class="brand-subtitle">属于你自己的图片素材库</span>
             </div>
         </div>
@@ -12,7 +12,7 @@
                 <div class="form">
                     <div class="form-menu">
                         <a-menu v-model:selectedKeys="current" mode="horizontal" :items="items"
-                            style="font-size: 24px; width: 100%;" />
+                            style="font-size: 24px; width: 564px;" />
                     </div>
                     <div class="form-form" v-if="current[0] === 'login'">
                         <a-form :model="verificationCodeDTO" name="basic" autocomplete="off"
@@ -36,7 +36,7 @@
                             </a-form-item>
 
                             <div class="form-footer">
-                                <a-checkbox v-model:checked="remember">记住我</a-checkbox>
+                                <a-checkbox v-model:checked="remember">记住密码</a-checkbox>
 
                                 <div class="tips">
                                     没有账号?
@@ -45,8 +45,8 @@
                             </div>
 
                             <a-form-item :wrapper-col="{ span: 24 }">
-                                <a-button type="primary" html-type="submit" class="submit-btn"
-                                    :size="'large'" :loading="loginLoading">登录/注册</a-button>
+                                <a-button type="primary" html-type="submit" class="submit-btn" :size="'large'"
+                                    :loading="loginLoading">登录/注册</a-button>
                             </a-form-item>
                         </a-form>
                     </div>
@@ -60,13 +60,15 @@
                                     :size="'large'" />
                             </a-form-item>
 
-                            <a-form-item name="password" label="密码" :rules="[{ required: true, message: '请输入密码' }, { min: 6, message: '密码长度不能小于6位' }]">
-                                <a-input-password v-model:value="passwordDTO.password" placeholder="请输入密码" :size="'large'" />
+                            <a-form-item name="password" label="密码"
+                                :rules="[{ required: true, message: '请输入密码' }, { min: 6, message: '密码长度不能小于6位' }]">
+                                <a-input-password v-model:value="passwordDTO.password" placeholder="请输入密码"
+                                    :size="'large'" />
                                 <!-- <a-button type="primary" style="width: 40%;" :size="'large'">获取验证码</a-button> -->
                             </a-form-item>
 
                             <div class="form-footer">
-                                <a-checkbox v-model:checked="remember">记住我</a-checkbox>
+                                <a-checkbox v-model:checked="remember">记住密码</a-checkbox>
 
                                 <div class="tips">
                                     没有账号?
@@ -75,8 +77,8 @@
                             </div>
 
                             <a-form-item :wrapper-col="{ span: 24 }">
-                                <a-button type="primary" html-type="submit" class="submit-btn"
-                                    :size="'large'" :loading="loginLoading">登录</a-button>
+                                <a-button type="primary" html-type="submit" class="submit-btn" :size="'large'"
+                                    :loading="loginLoading">登录</a-button>
                             </a-form-item>
                         </a-form>
                     </div>
@@ -105,21 +107,39 @@ const items = ref<MenuProps['items']>([
     {
         key: 'login',
         icon: () => h(UserOutlined),
-        label: '验证码登录',
-        title: '验证码登录',
+        label: '验证码',
+        title: '验证码',
         style: { fontSize: '16px', left: '16px', padding: '0 48px' }
     },
     {
         key: 'password',
         icon: () => h(LockOutlined),
-        label: '密码登录',
-        title: '密码登录',
+        label: '账号密码',
+        title: '账号密码',
         style: { fontSize: '16px', marginLeft: 'auto', marginRight: '16px', padding: '0 48px' }
     },
 ]);
 
 /* 记住密码开关 */
 const remember = ref(false);
+
+/* 记住密码 - localStorage 持久化（base64 编码，非真正加密，仅防肉眼读取） */
+const REMEMBER_KEY = 'login_remember';
+
+const encode = (data: unknown) => btoa(encodeURIComponent(JSON.stringify(data)));
+const decode = (encoded: string): { remember: boolean; account: string; password: string } | null => {
+    try {
+        return JSON.parse(decodeURIComponent(atob(encoded)));
+    } catch {
+        return null;
+    }
+};
+
+const loadRemembered = () => decode(localStorage.getItem(REMEMBER_KEY) || '');
+const saveRemembered = (account: string, password: string) => {
+    localStorage.setItem(REMEMBER_KEY, encode({ remember: true, account, password }));
+};
+const clearRemembered = () => localStorage.removeItem(REMEMBER_KEY);
 
 /* 验证码登录 DTO */
 const verificationCodeDTO = reactive<API.UserLoginDTO>({
@@ -164,6 +184,14 @@ const { init: initCaptcha, triggerCaptcha, captchaVerifying } = useAliyunCaptcha
 
 onMounted(() => {
     initCaptcha();
+    /* 回填记住的账号密码 */
+    const saved = loadRemembered();
+    if (saved && saved.remember) {
+        remember.value = true;
+        verificationCodeDTO.account = saved.account || '';
+        passwordDTO.account = saved.account || '';
+        passwordDTO.password = saved.password || '';
+    }
 });
 
 /* 是否已发送验证码 */
@@ -235,6 +263,12 @@ const login = async (DTO: any) => {
     try {
         const res = await userControllerLogin(DTO);
         if (res.data.code === 0 && res.data.data) {
+            /* 根据勾选状态保存/清除记住的账号密码 */
+            if (remember.value) {
+                saveRemembered(DTO.account, DTO.password || '');
+            } else {
+                clearRemembered();
+            }
             await loginUserStore.getLoginUser();
             message.success('登录成功');
             router.push({
@@ -265,7 +299,7 @@ const login = async (DTO: any) => {
     align-items: center;
     width: 50%;
     height: 100%;
-    background-color: #2563EB;
+    background-color: #33A1C9;
 }
 
 .brand-title {

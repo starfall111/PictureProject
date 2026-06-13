@@ -3,7 +3,7 @@
     <header class="immersive-header">
       <router-link to="/" class="logo-area">
         <div class="logo-icon"></div>
-        <span class="logo-text">智能云图库</span>
+        <span class="logo-text">图境</span>
       </router-link>
       <div class="header-spacer"></div>
       <div class="search-area">
@@ -55,6 +55,11 @@
     <main class="immersive-content">
       <slot />
     </main>
+    <footer class="site-footer">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
+        赣ICP备2026011163号
+      </a>
+    </footer>
   </div>
 </template>
 
@@ -95,6 +100,8 @@ const logout = async () => {
 <style scoped>
 #immersiveLayout {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-content, #F3F4F6);
 }
 
@@ -185,6 +192,7 @@ const logout = async () => {
 }
 
 .immersive-content {
+  flex: 1;
   padding: var(--content-padding, 24px);
   padding-left: calc(var(--content-padding, 24px) + var(--sidebar-collapsed-width, 56px) + var(--sidebar-left-offset, 12px));
 }
@@ -193,5 +201,22 @@ const logout = async () => {
   .immersive-content {
     padding-left: var(--content-padding, 24px);
   }
+}
+
+.site-footer {
+  padding: 16px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--fg-muted, #9CA3AF);
+}
+
+.site-footer a {
+  color: var(--fg-muted, #9CA3AF);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.site-footer a:hover {
+  color: var(--accent, #635BFF);
 }
 </style>
