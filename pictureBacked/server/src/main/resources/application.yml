@@ -154,6 +154,14 @@ ratelimit:
       window-seconds: 60
       max-attempts: 5
 
+    # ===== 用户模块（补充：安全敏感写操作）=====
+    - resource: "user.password"
+      window-seconds: 60
+      max-attempts: 5
+    - resource: "user.bind"
+      window-seconds: 60
+      max-attempts: 5
+
     # ===== 图片模块 =====
     - resource: "picture.upload"
       window-seconds: 60
@@ -179,6 +187,53 @@ ratelimit:
     - resource: "picture.batchUpload"
       window-seconds: 60
       max-attempts: 1
+
+    # ===== 图片模块（补充：公开读/社交互动/埋点）=====
+    - resource: "picture.get"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "picture.cacheQuery"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "picture.cacheGet"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "picture.search"
+      window-seconds: 60
+      max-attempts: 10    # 以图搜图高成本，严格
+    - resource: "picture.view"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.cacheView"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.share"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.cacheShare"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.dlCount"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.cacheDlCount"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.like"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "picture.cacheLike"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "picture.fav"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "picture.cacheFav"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "picture.edit"
+      window-seconds: 60
+      max-attempts: 20
 
     # ===== 秒杀模块（除 grab 外的辅助接口）=====
     - resource: "seckill.token"
@@ -268,3 +323,14 @@ ratelimit:
     - resource: "space.get"
       window-seconds: 60
       max-attempts: 30
+
+    # ===== 空间模块（补充：写操作）=====
+    - resource: "space.add"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "space.edit"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "space.delete"
+      window-seconds: 60
+      max-attempts: 20

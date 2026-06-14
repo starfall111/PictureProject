@@ -60,6 +60,7 @@ public class UserController {
 
     //修改密码
     @PostMapping("/password/update")
+    @RateLimit(resource = "user.password", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> updatePassword(@RequestBody UserPasswordUpdateDTO passwordUpdateDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(passwordUpdateDTO), ErrorCode.PARAMS_ERROR);
 
@@ -166,6 +167,7 @@ public class UserController {
     }
     //换绑手机号/邮箱
     @PostMapping("/bind/account")
+    @RateLimit(resource = "user.bind", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> bindAccount(@RequestBody UserBindAccountDTO userBindAccountDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(userBindAccountDTO), ErrorCode.PARAMS_ERROR);
 
