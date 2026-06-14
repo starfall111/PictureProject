@@ -10,6 +10,15 @@ import lombok.Getter;
 public enum ErrorCode {
 
     SUCCESS(0, "ok"),
+
+    // ==================== 限流相关 ====================
+    /**
+     * 请求过于频繁，触发限流。
+     * 由 {@code RateLimitAop} 抛出 {@code RateLimitException}，
+     * {@code RateLimitExceptionHandler} 统一转换为 HTTP 429 + Retry-After。
+     */
+    RATE_LIMIT_EXCEEDED(42900, "请求过于频繁，请稍后再试"),
+
     PARAMS_ERROR(40000, "请求参数错误"),
     NOT_LOGIN_ERROR(40100, "未登录"),
     NO_AUTH_ERROR(40101, "无权限"),

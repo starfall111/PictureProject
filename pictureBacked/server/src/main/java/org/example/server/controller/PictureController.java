@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.common.api.imagesearch.ImageSearchApiFacade;
 import org.example.common.api.imagesearch.model.ImageSearchResult;
 import org.example.common.constants.UserConstant;
@@ -89,6 +91,7 @@ public class PictureController {
      * 图片上传
      */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
     public BaseResponse<PictureVO> upload(
             @RequestPart("file") MultipartFile file,
             FileDTO fileDTO) throws Exception {
@@ -107,6 +110,7 @@ public class PictureController {
     }
 
     @PostMapping("/upload/url")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
     public BaseResponse<PictureVO> upload(@RequestBody FileDTO fileDTO) throws Exception {
         //认证检查
         User user = UserContext.get();
@@ -126,6 +130,7 @@ public class PictureController {
      * 图片下载
      */
     @GetMapping("/download")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 20)
     public void download(Long id, HttpServletResponse response) throws IOException, ClientException {
         //认证检查
         User user = UserContext.get();
@@ -153,6 +158,7 @@ public class PictureController {
     //1.图片编辑信息：更改图片信息（管理员/普通用户）
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
     @PostMapping("/update")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 20)
     public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateDTO pictureUpdateDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUpdateDTO), ErrorCode.PARAMS_ERROR);
 
@@ -176,6 +182,7 @@ public class PictureController {
 
     //2.删除图片
     @DeleteMapping("/delete")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest) throws Exception {
         ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest), ErrorCode.PARAMS_ERROR);
         Long id = deleteRequest.getId();
@@ -192,6 +199,7 @@ public class PictureController {
     //3.分页查询图片（管理员/普通用户）
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
     @PostMapping("/admin/query")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 30)
     public BaseResponse<Page<PictureEntityVO>> queryPictureAdmin(@RequestBody PictureQueryDTO pictureQueryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
 
@@ -201,6 +209,7 @@ public class PictureController {
     }
 
     @PostMapping("/user/query")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 60)
     public BaseResponse<Page<PictureVO>> queryPictureUser(@RequestBody PictureQueryDTO pictureQueryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
         pictureQueryDTO.setReviewStatus(1);
@@ -254,6 +263,7 @@ public class PictureController {
 
 
     @PostMapping("/upload/batch")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 1)
     public BaseResponse<BatchTaskVO> pictureUploadByBatch(@RequestBody PictureUploadByBatchDTO pictureUploadByBatchDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUploadByBatchDTO), ErrorCode.PARAMS_ERROR);
 
@@ -467,7 +477,7 @@ public class PictureController {
     /**
      * [缓存版] 图片详情查询
      */
-    @GetMapping("/cache/user/{id}")
+    @GetMapping("/cache/user/detail/{id}")
     public BaseResponse<PictureVO> getPictureByIdUserCache(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
         PictureVO pictureVO = cachedPictureService.getByPictureIdUser(id);

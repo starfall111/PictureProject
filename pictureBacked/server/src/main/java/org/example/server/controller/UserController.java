@@ -5,6 +5,8 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.pojo.DeleteRequest;
 import org.example.pojo.dto.user.*;
 import org.example.pojo.entity.User;
@@ -38,6 +40,7 @@ public class UserController {
     private UserService cacheUserService;
 
     @PostMapping("/register")
+    @RateLimit(resource = "register", dimensions = {RateLimitDimension.IP}, windowSeconds = 60, maxAttempts = 3)
     public BaseResponse<Long> register(@RequestBody UserRegisterDTO userRegisterDTO){
         ThrowUtils.throwIf(ObjUtil.isEmpty(userRegisterDTO), ErrorCode.PARAMS_ERROR);
 
@@ -47,6 +50,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
+    @RateLimit(resource = "login", dimensions = {RateLimitDimension.IP}, windowSeconds = 60, maxAttempts = 10)
     public BaseResponse<LoginUserVO> login(@RequestBody UserLoginDTO userLoginDTO, HttpServletRequest request){
         ThrowUtils.throwIf(ObjUtil.isEmpty(userLoginDTO),ErrorCode.PARAMS_ERROR);
         LoginUserVO loginUserVO = cacheUserService.userLogin(userLoginDTO,request);
@@ -93,6 +97,7 @@ public class UserController {
     }
     //更新用户信息
     @PostMapping("/update")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateDTO userUpdateDTO, HttpServletRequest request){
         ThrowUtils.throwIf(ObjUtil.isEmpty(userUpdateDTO),ErrorCode.PARAMS_ERROR);
 
@@ -149,6 +154,7 @@ public class UserController {
     //根据ID获取用户信息（管理员）
     @GetMapping("get/{id}")
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
+    @RateLimit(dimensions = {RateLimitDimension.USER_OR_IP}, windowSeconds = 60, maxAttempts = 60)
     public BaseResponse<User> getUserInfo(@PathVariable Long id){
         ThrowUtils.throwIf(ObjUtil.isEmpty(id),ErrorCode.PARAMS_ERROR);
 
@@ -170,6 +176,7 @@ public class UserController {
 
     //上传用户头像
     @PostMapping("/avatar/upload")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 5)
     public BaseResponse<String> uploadAvatar(@RequestParam("file") MultipartFile file) throws Exception {
         ThrowUtils.throwIf(ObjUtil.isEmpty(file), ErrorCode.PARAMS_ERROR, "文件不能为空");
 

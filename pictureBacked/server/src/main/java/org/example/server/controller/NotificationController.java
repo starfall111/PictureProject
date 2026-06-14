@@ -3,6 +3,8 @@ package org.example.server.controller;
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.common.context.UserContext;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
@@ -52,6 +54,7 @@ public class NotificationController {
      * 获取通知列表（分页）
      */
     @GetMapping("/list")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 60)
     public BaseResponse<Page<NotificationVO>> listNotifications(NotificationQueryDTO queryDTO) {
         User user = UserContext.get();
         ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);

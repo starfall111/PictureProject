@@ -3,6 +3,8 @@ package org.example.server.controller;
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.common.constants.UserConstant;
 import org.example.common.enums.SpaceLevelEnum;
 import org.example.common.exception.ErrorCode;
@@ -104,6 +106,7 @@ public class SpaceController {
 
     //5.根据Id返回空间详细信息
     @GetMapping("/{id}")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 30)
     public BaseResponse<Space> getSpaceById(@PathVariable long id){
         ThrowUtils.throwIf(ObjUtil.isEmpty(id),ErrorCode.PARAMS_ERROR);
 

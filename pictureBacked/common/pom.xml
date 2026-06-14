@@ -40,6 +40,13 @@
             <artifactId>spring-web</artifactId>
         </dependency>
 
+        <!-- Servlet API：IpUtils.getClientIp(HttpServletRequest) 等工具需要 -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>

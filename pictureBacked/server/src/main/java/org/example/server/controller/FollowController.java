@@ -3,6 +3,8 @@ package org.example.server.controller;
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.common.context.UserContext;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
@@ -37,6 +39,7 @@ public class FollowController {
      */
     @PostMapping("/action")
     @CheckAuth
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 20)
     public BaseResponse<Boolean> toggleFollow(@RequestBody FollowActionDTO followActionDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(followActionDTO), ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(ObjUtil.isEmpty(followActionDTO.getTargetUserId()), ErrorCode.PARAMS_ERROR, "目标用户ID不能为空");

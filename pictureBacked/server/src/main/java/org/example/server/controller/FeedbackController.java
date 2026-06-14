@@ -3,6 +3,8 @@ package org.example.server.controller;
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.common.context.UserContext;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
@@ -45,6 +47,7 @@ public class FeedbackController {
      * @return 附件信息（含 ID 和 URL）
      */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
     public BaseResponse<FeedbackAttachmentVO> uploadAttachment(@RequestPart("file") MultipartFile file) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(file), ErrorCode.PARAMS_ERROR);
 
@@ -59,6 +62,7 @@ public class FeedbackController {
      * @return 反馈 ID
      */
     @PostMapping("/submit")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 3)
     public BaseResponse<Long> submitFeedback(@RequestBody FeedbackSubmitDTO dto) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(dto), ErrorCode.PARAMS_ERROR);
 
@@ -76,6 +80,7 @@ public class FeedbackController {
      * @return 操作结果
      */
     @DeleteMapping("/{id}/withdraw")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
     public BaseResponse<Boolean> withdrawFeedback(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
@@ -93,6 +98,7 @@ public class FeedbackController {
      * @return 反馈分页列表
      */
     @GetMapping("/list")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 30)
     public BaseResponse<Page<FeedbackListItemVO>> getMyFeedbackList(FeedbackQueryDTO dto) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(dto), ErrorCode.PARAMS_ERROR);
 
@@ -110,6 +116,7 @@ public class FeedbackController {
      * @return 反馈详情
      */
     @GetMapping("/{id}")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 30)
     public BaseResponse<FeedbackVO> getFeedbackDetail(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
@@ -128,6 +135,7 @@ public class FeedbackController {
      * @return 操作结果
      */
     @PostMapping("/{id}/reply")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
     public BaseResponse<Boolean> replyFeedback(@PathVariable Long id, @RequestBody FeedbackReplyDTO dto) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(ObjUtil.isEmpty(dto), ErrorCode.PARAMS_ERROR);
@@ -146,6 +154,7 @@ public class FeedbackController {
      * @return 操作结果
      */
     @PostMapping("/{id}/reopen")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 5)
     public BaseResponse<Boolean> reopenFeedback(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
@@ -163,6 +172,7 @@ public class FeedbackController {
      * @return 操作结果
      */
     @PostMapping("/{id}/confirm")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
     public BaseResponse<Boolean> confirmFeedback(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
@@ -179,6 +189,7 @@ public class FeedbackController {
      * @return 反馈统计数据
      */
     @GetMapping("/stats")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 30)
     public BaseResponse<FeedbackStatsVO> getMyFeedbackStats() {
         User currentUser = UserContext.get();
         ThrowUtils.throwIf(ObjUtil.isEmpty(currentUser), ErrorCode.NOT_LOGIN_ERROR);

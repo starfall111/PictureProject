@@ -2,6 +2,8 @@ package org.example.server.controller;
 
 import cn.hutool.core.util.ObjUtil;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.common.context.UserContext;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
@@ -40,6 +42,7 @@ public class FeedController {
      * @return 动态分页结果（含 unreadCount）
      */
     @GetMapping("/timeline")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 60)
     public BaseResponse<FeedTimelineVO> getTimeline(FeedQueryDTO queryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(queryDTO), ErrorCode.PARAMS_ERROR);
 

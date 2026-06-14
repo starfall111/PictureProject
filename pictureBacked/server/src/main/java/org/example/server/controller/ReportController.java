@@ -3,6 +3,8 @@ package org.example.server.controller;
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.common.context.UserContext;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
@@ -39,6 +41,7 @@ public class ReportController {
      * @return 举报记录 ID
      */
     @PostMapping("/submit")
+    @RateLimit(resource = "report.submit", dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 3)
     public BaseResponse<Long> submitReport(@RequestBody ReportSubmitDTO dto) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(dto), ErrorCode.PARAMS_ERROR);
 
@@ -56,6 +59,7 @@ public class ReportController {
      * @return 举报分页列表
      */
     @GetMapping("/my-list")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 20)
     public BaseResponse<Page<ReportVO>> getMyReportList(ReportQueryDTO dto) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(dto), ErrorCode.PARAMS_ERROR);
 
@@ -73,6 +77,7 @@ public class ReportController {
      * @return 举报详情
      */
     @GetMapping("/detail/{reportId}")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 30)
     public BaseResponse<ReportVO> getReportDetail(@PathVariable Long reportId) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(reportId), ErrorCode.PARAMS_ERROR);
 
@@ -90,6 +95,7 @@ public class ReportController {
      * @return 操作结果
      */
     @PostMapping("/cancel")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
     public BaseResponse<Boolean> cancelReport(@RequestParam Long reportId) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(reportId), ErrorCode.PARAMS_ERROR);
 

@@ -33,9 +33,8 @@ public class InterceptorConfig implements WebMvcConfigurer {
                         "/v3/api-docs/**",
                         "/webjars/**",
                         "/recommend/query",
-                        "/picture/user/query",
-                        "/picture/user/{id}",
-//                        "/picture/view/{pictureId}"
+                        "/picture/cache/user/query",
+                        "/picture/cache/user/detail/*",
                         "/benchmark/**"
                 );
         // 新增模块不需要排除路径，均走登录拦截

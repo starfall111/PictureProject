@@ -3,6 +3,8 @@ package org.example.server.controller;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.common.constants.UserConstant;
 import org.example.common.context.UserContext;
 import org.example.common.exception.ErrorCode;
@@ -37,6 +39,7 @@ public class RecommendController {
      * homepage 场景无需登录，guess 场景需要登录（未登录降级为 homepage）
      */
     @PostMapping("/query")
+    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 60)
     public BaseResponse<RecommendVO> recommend(@RequestBody RecommendQueryDTO queryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(queryDTO), ErrorCode.PARAMS_ERROR);
 

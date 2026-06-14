@@ -117,3 +117,27 @@ baidu:
 
 seckill:
   hmac-secret: ${SECKILL_HMAC_SECRET:your-random-secret-key-at-least-32-chars}
+
+# ==================== 限流配置 ====================
+# 三级优先级：注解显式指定（非 -1）> rules 按 resource 匹配 > 全局默认
+# 修改后需重启生效（Phase 1 不支持热更新）
+ratelimit:
+  default-window-seconds: 60
+  default-max-attempts: 100
+  default-fallback: FAIL_OPEN
+  rules:
+    - resource: "login"
+      window-seconds: 60
+      max-attempts: 10
+    - resource: "register"
+      window-seconds: 60
+      max-attempts: 3
+    - resource: "seckill.grab"
+      window-seconds: 10
+      max-attempts: 1
+    - resource: "report.submit"
+      window-seconds: 60
+      max-attempts: 3
+    - resource: "notice.verify"
+      window-seconds: 60
+      max-attempts: 1
