@@ -212,7 +212,7 @@ ratelimit:
       max-attempts: 30
     - resource: "picture.cacheShare"
       window-seconds: 60
-      max-attempts: 30
+      max-attempts: 10
     - resource: "picture.dlCount"
       window-seconds: 60
       max-attempts: 30
@@ -221,16 +221,16 @@ ratelimit:
       max-attempts: 30
     - resource: "picture.like"
       window-seconds: 60
-      max-attempts: 60
+      max-attempts: 20
     - resource: "picture.cacheLike"
       window-seconds: 60
-      max-attempts: 60
+      max-attempts: 20
     - resource: "picture.fav"
       window-seconds: 60
-      max-attempts: 60
+      max-attempts: 20
     - resource: "picture.cacheFav"
       window-seconds: 60
-      max-attempts: 60
+      max-attempts: 20
     - resource: "picture.edit"
       window-seconds: 60
       max-attempts: 20
