@@ -43,10 +43,11 @@ import java.util.List;
  * <p>{@code @Order(50)}，确保在 {@code CheckAuthAop}（无 @Order，默认优先级）之后执行，
  * 保证 UserContext 在限流检查前已由 {@code LoginInterceptor} + {@code CheckAuthAop} 完成。</p>
  *
- * <h3>故障兜底</h3>
+ * <h3>故障兜底（Phase 2 起）</h3>
+ * <p>{@link RateLimitUtil.Status#DEGRADED} 时由注解 {@code fallback} 决策：
  * <ul>
- *   <li>{@link FallbackStrategy#FAIL_OPEN}：Redis 故障时放行（RateLimitUtil 已内置此策略）</li>
- *   <li>{@link FallbackStrategy#FAIL_CLOSE}：Phase 1 暂不严格区分，由 RateLimitUtil 的放行逻辑兜底</li>
+ *   <li>{@link FallbackStrategy#FAIL_OPEN}（默认）：放行，业务可用性优先（绝大多数业务接口）</li>
+ *   <li>{@link FallbackStrategy#FAIL_CLOSE}：拒绝，避免关键接口在 Redis 故障期间被刷穿（仅秒杀 grab 等安全接口）</li>
  * </ul>
  *
  * @author Zou
@@ -109,18 +110,42 @@ public class RateLimitAop {
         RateLimitUtil.Result result = rateLimitUtil.checkRateLimit(resource, composedKey, windowSeconds, maxAttempts);
         long elapsed = System.currentTimeMillis() - start;
 
-        // 8. 处理结果
-        if (result.allowed()) {
-            log.info("[RATE-LIMIT] PASS | resource={} | key={} | remaining={} | elapsed={}ms",
-                    resource, composedKey, result.remaining(), elapsed);
-            return joinPoint.proceed();
-        }
+        // 8. 处理结果：基于 Status + fallback 决策
+        RateLimitUtil.Status status = result.status();
+        FallbackStrategy fallback = rateLimit.fallback();
 
-        // 被拒绝：计算 retryAfter，抛出限流异常
-        int retryAfterSec = Math.max(1, (int) ((result.resetMs() - System.currentTimeMillis()) / 1000));
-        log.warn("[RATE-LIMIT] REJECT | resource={} | key={} | window={}s | max={}",
-                resource, composedKey, windowSeconds, maxAttempts);
-        throw new RateLimitException(result.remaining(), result.resetMs(), retryAfterSec);
+        switch (status) {
+            case ALLOWED -> {
+                log.info("[RATE-LIMIT] PASS | resource={} | key={} | remaining={} | elapsed={}ms",
+                        resource, composedKey, result.remaining(), elapsed);
+                return joinPoint.proceed();
+            }
+            case REJECTED -> {
+                int retryAfterSec = Math.max(1, (int) ((result.resetMs() - System.currentTimeMillis()) / 1000));
+                log.warn("[RATE-LIMIT] REJECT | resource={} | key={} | window={}s | max={} | retryAfter={}s",
+                        resource, composedKey, windowSeconds, maxAttempts, retryAfterSec);
+                throw new RateLimitException(result.remaining(), result.resetMs(), retryAfterSec);
+            }
+            case DEGRADED -> {
+                if (fallback == FallbackStrategy.FAIL_CLOSE) {
+                    // FAIL_CLOSE：Redis 故障期间直接拒绝，避免关键接口被刷穿。
+                    // retryAfter 用整个 windowSeconds（故障窗口期内都不可用）
+                    log.error("[RATE-LIMIT] DEGRADED-REJECT | resource={} | key={} | window={}s | FAIL_CLOSE 拒绝 | elapsed={}ms",
+                            resource, composedKey, windowSeconds, elapsed);
+                    throw new RateLimitException(result.remaining(), result.resetMs(), windowSeconds);
+                }
+                // FAIL_OPEN（默认）：Redis 故障时放行，业务可用性优先
+                log.error("[RATE-LIMIT] DEGRADED-OPEN | resource={} | key={} | window={}s | FAIL_OPEN 放行 | elapsed={}ms",
+                        resource, composedKey, windowSeconds, elapsed);
+                return joinPoint.proceed();
+            }
+            default -> {
+                // 理论上不可达（枚举完整覆盖），兜底放行以避免未知状态导致业务中断
+                log.error("[RATE-LIMIT] UNKNOWN-STATUS | resource={} | key={} | status={} | 放行",
+                        resource, composedKey, status);
+                return joinPoint.proceed();
+            }
+        }
     }
 
     /**

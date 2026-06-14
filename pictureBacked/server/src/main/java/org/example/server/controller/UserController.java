@@ -40,7 +40,7 @@ public class UserController {
     private UserService cacheUserService;
 
     @PostMapping("/register")
-    @RateLimit(resource = "register", dimensions = {RateLimitDimension.IP}, windowSeconds = 60, maxAttempts = 3)
+    @RateLimit(resource = "user.register", dimensions = {RateLimitDimension.IP})
     public BaseResponse<Long> register(@RequestBody UserRegisterDTO userRegisterDTO){
         ThrowUtils.throwIf(ObjUtil.isEmpty(userRegisterDTO), ErrorCode.PARAMS_ERROR);
 
@@ -97,7 +97,7 @@ public class UserController {
     }
     //更新用户信息
     @PostMapping("/update")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
+    @RateLimit(resource = "user.update", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateDTO userUpdateDTO, HttpServletRequest request){
         ThrowUtils.throwIf(ObjUtil.isEmpty(userUpdateDTO),ErrorCode.PARAMS_ERROR);
 
@@ -154,7 +154,7 @@ public class UserController {
     //根据ID获取用户信息（管理员）
     @GetMapping("get/{id}")
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
-    @RateLimit(dimensions = {RateLimitDimension.USER_OR_IP}, windowSeconds = 60, maxAttempts = 60)
+    @RateLimit(resource = "user.get", dimensions = {RateLimitDimension.USER_OR_IP})
     public BaseResponse<User> getUserInfo(@PathVariable Long id){
         ThrowUtils.throwIf(ObjUtil.isEmpty(id),ErrorCode.PARAMS_ERROR);
 
@@ -176,7 +176,7 @@ public class UserController {
 
     //上传用户头像
     @PostMapping("/avatar/upload")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 5)
+    @RateLimit(resource = "user.avatar", dimensions = {RateLimitDimension.USER})
     public BaseResponse<String> uploadAvatar(@RequestParam("file") MultipartFile file) throws Exception {
         ThrowUtils.throwIf(ObjUtil.isEmpty(file), ErrorCode.PARAMS_ERROR, "文件不能为空");
 

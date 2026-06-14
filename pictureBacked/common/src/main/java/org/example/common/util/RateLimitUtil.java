@@ -36,16 +36,85 @@ public class RateLimitUtil {
     private static final String KEY_PREFIX = "rate_limit";
 
     /**
-     * 限流结果
+     * 限流结果状态。
+     *
+     * <p>三态语义：
+     * <ul>
+     *   <li>{@link #ALLOWED}：正常允许（窗口内未超限）</li>
+     *   <li>{@link #REJECTED}：被拒绝（窗口内已超限）</li>
+     *   <li>{@link #DEGRADED}：降级（Redis 故障或脚本返回 null），由 AOP 根据 {@code fallback} 决策放行/拒绝</li>
+     * </ul>
+     *
+     * <p>引入三态的目的：让 {@code RateLimitAop} 能区分「Redis 故障」与「超限拒绝」，
+     * 从而对关键接口（如秒杀 grab）启用 {@code FAIL_CLOSE} 兜底。
      */
-    public record Result(boolean allowed, int remaining, long resetMs) {
+    public enum Status {
+        /**
+         * 正常允许（窗口内未超限）。
+         */
+        ALLOWED,
+        /**
+         * 被拒绝（窗口内已超限，滑动窗口内请求数达到上限）。
+         */
+        REJECTED,
+        /**
+         * 降级（Redis 故障或脚本返回 null）。
+         * <p>需配合 {@code RateLimitAop} 的 {@code fallback} 策略决策：FAIL_OPEN 放行 / FAIL_CLOSE 拒绝。</p>
+         */
+        DEGRADED
+    }
 
-        public static Result rejected() {
-            return new Result(false, 0, 0);
+    /**
+     * 限流结果。
+     *
+     * <p>{@code status} 为决策主依据；{@code remaining}/{@code resetMs} 供日志和 429 响应使用。</p>
+     *
+     * <h3>向后兼容</h3>
+     * <p>保留 {@link #allowed()} 方法供旧调用点（UserServiceImpl/SeckillServiceImpl/CouponServiceImpl 等
+     * 未迁移到 AOP 的代码）继续使用：{@code DEGRADED} 视为允许（与 RateLimitUtil 历史 FAIL_OPEN 行为一致）。
+     * 新代码（RateLimitAop）应使用 {@link #status()} 精细判断。</p>
+     */
+    public record Result(Status status, int remaining, long resetMs) {
+
+        /**
+         * 正常允许（{@link Status#ALLOWED}）。
+         */
+        public static Result allowed(int remaining, long resetMs) {
+            return new Result(Status.ALLOWED, remaining, resetMs);
         }
 
-        public static Result allowed(int remaining, long resetMs) {
-            return new Result(true, remaining, resetMs);
+        /**
+         * 被拒绝（{@link Status#REJECTED}）。
+         *
+         * @param remaining 剩余次数（一般为 0）
+         * @param resetMs   窗口重置时间戳（毫秒，一般传 {@code nowMs + windowMs} 以便 AOP 计算 Retry-After）
+         */
+        public static Result rejected(int remaining, long resetMs) {
+            return new Result(Status.REJECTED, remaining, resetMs);
+        }
+
+        /**
+         * 被拒绝（便捷工厂，remaining=0, resetMs=0）。供旧调用点兼容。
+         */
+        public static Result rejected() {
+            return new Result(Status.REJECTED, 0, 0);
+        }
+
+        /**
+         * 降级（{@link Status#DEGRADED}）。由 AOP 根据 fallback 决策放行/拒绝。
+         */
+        public static Result degraded(int remaining, long resetMs) {
+            return new Result(Status.DEGRADED, remaining, resetMs);
+        }
+
+        /**
+         * 兼容旧调用点（UserServiceImpl/SeckillServiceImpl/CouponServiceImpl 等未迁移代码）。
+         *
+         * <p>语义：{@code DEGRADED} 视为允许（FAIL_OPEN 是 RateLimitUtil 传统行为）。
+         * 新代码（RateLimitAop）应使用 {@link #status()} 精细判断。</p>
+         */
+        public boolean allowed() {
+            return status != Status.REJECTED;
         }
     }
 
@@ -62,6 +131,7 @@ public class RateLimitUtil {
         String redisKey = String.format("%s:%s:%s", KEY_PREFIX, resource, key);
         long nowMs = System.currentTimeMillis();
         long windowMs = windowSeconds * 1000L;
+        long resetMs = nowMs + windowMs;
 
         try {
             Long result = stringRedisTemplate.execute(
@@ -74,19 +144,20 @@ public class RateLimitUtil {
             );
 
             if (result == null) {
-                log.warn("限流脚本返回 null，放行请求: key={}", redisKey);
-                return Result.allowed(maxAttempts - 1, nowMs + windowMs);
+                log.warn("限流脚本返回 null，降级: key={} | fallback 由 AOP 决策", redisKey);
+                return Result.degraded(maxAttempts - 1, resetMs);
             }
 
             if (result == -1L) {
-                return Result.rejected();
+                // 窗口已满：resetMs 传真实窗口结束时间，便于 AOP 计算 Retry-After
+                return Result.rejected(0, resetMs);
             }
 
-            return Result.allowed(result.intValue(), nowMs + windowMs);
+            return Result.allowed(result.intValue(), resetMs);
         } catch (Exception e) {
-            log.error("限流检查异常，放行请求: key={}", redisKey, e);
-            // 限流器故障时放行，避免影响正常业务
-            return Result.allowed(maxAttempts - 1, nowMs + windowMs);
+            log.error("限流检查异常，降级: key={} | fallback 由 AOP 决策", redisKey, e);
+            // 限流器故障：交由 AOP 根据 fallback 策略决策（FAIL_OPEN 放行 / FAIL_CLOSE 拒绝）
+            return Result.degraded(maxAttempts - 1, resetMs);
         }
     }
 }

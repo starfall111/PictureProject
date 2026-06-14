@@ -48,7 +48,7 @@ public class CouponController {
      */
     @PostMapping("/activate")
     @CheckAuth
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 5)
+    @RateLimit(resource = "coupon.activate", dimensions = {RateLimitDimension.USER})
     public BaseResponse<CouponActivateVO> activateCoupon(
             @RequestBody CouponActivateDTO couponActivateDTO) {
         Long userId = UserContext.get().getId();

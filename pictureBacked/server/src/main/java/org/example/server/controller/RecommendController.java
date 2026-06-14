@@ -39,7 +39,7 @@ public class RecommendController {
      * homepage 场景无需登录，guess 场景需要登录（未登录降级为 homepage）
      */
     @PostMapping("/query")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 60)
+    @RateLimit(resource = "recommend.query", dimensions = {RateLimitDimension.USER})
     public BaseResponse<RecommendVO> recommend(@RequestBody RecommendQueryDTO queryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(queryDTO), ErrorCode.PARAMS_ERROR);
 

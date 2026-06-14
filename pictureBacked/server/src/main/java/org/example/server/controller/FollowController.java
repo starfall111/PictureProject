@@ -39,7 +39,7 @@ public class FollowController {
      */
     @PostMapping("/action")
     @CheckAuth
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 20)
+    @RateLimit(resource = "follow.toggle", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> toggleFollow(@RequestBody FollowActionDTO followActionDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(followActionDTO), ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(ObjUtil.isEmpty(followActionDTO.getTargetUserId()), ErrorCode.PARAMS_ERROR, "目标用户ID不能为空");

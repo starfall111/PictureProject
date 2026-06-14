@@ -42,7 +42,7 @@ public class FeedController {
      * @return 动态分页结果（含 unreadCount）
      */
     @GetMapping("/timeline")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 60)
+    @RateLimit(resource = "feed.timeline", dimensions = {RateLimitDimension.USER})
     public BaseResponse<FeedTimelineVO> getTimeline(FeedQueryDTO queryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(queryDTO), ErrorCode.PARAMS_ERROR);
 

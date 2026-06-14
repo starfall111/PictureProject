@@ -54,7 +54,7 @@ public class NotificationController {
      * 获取通知列表（分页）
      */
     @GetMapping("/list")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 60)
+    @RateLimit(resource = "notification.list", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Page<NotificationVO>> listNotifications(NotificationQueryDTO queryDTO) {
         User user = UserContext.get();
         ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR);

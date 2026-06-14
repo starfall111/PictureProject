@@ -47,7 +47,7 @@ public class FeedbackController {
      * @return 附件信息（含 ID 和 URL）
      */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
+    @RateLimit(resource = "feedback.upload", dimensions = {RateLimitDimension.USER})
     public BaseResponse<FeedbackAttachmentVO> uploadAttachment(@RequestPart("file") MultipartFile file) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(file), ErrorCode.PARAMS_ERROR);
 
@@ -62,7 +62,7 @@ public class FeedbackController {
      * @return 反馈 ID
      */
     @PostMapping("/submit")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 3)
+    @RateLimit(resource = "feedback.submit", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Long> submitFeedback(@RequestBody FeedbackSubmitDTO dto) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(dto), ErrorCode.PARAMS_ERROR);
 
@@ -80,7 +80,7 @@ public class FeedbackController {
      * @return 操作结果
      */
     @DeleteMapping("/{id}/withdraw")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
+    @RateLimit(resource = "feedback.withdraw", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> withdrawFeedback(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
@@ -98,7 +98,7 @@ public class FeedbackController {
      * @return 反馈分页列表
      */
     @GetMapping("/list")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 30)
+    @RateLimit(resource = "feedback.list", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Page<FeedbackListItemVO>> getMyFeedbackList(FeedbackQueryDTO dto) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(dto), ErrorCode.PARAMS_ERROR);
 
@@ -116,7 +116,7 @@ public class FeedbackController {
      * @return 反馈详情
      */
     @GetMapping("/{id}")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 30)
+    @RateLimit(resource = "feedback.detail", dimensions = {RateLimitDimension.USER})
     public BaseResponse<FeedbackVO> getFeedbackDetail(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
@@ -135,7 +135,7 @@ public class FeedbackController {
      * @return 操作结果
      */
     @PostMapping("/{id}/reply")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
+    @RateLimit(resource = "feedback.reply", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> replyFeedback(@PathVariable Long id, @RequestBody FeedbackReplyDTO dto) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(ObjUtil.isEmpty(dto), ErrorCode.PARAMS_ERROR);
@@ -154,7 +154,7 @@ public class FeedbackController {
      * @return 操作结果
      */
     @PostMapping("/{id}/reopen")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 5)
+    @RateLimit(resource = "feedback.reopen", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> reopenFeedback(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
@@ -172,7 +172,7 @@ public class FeedbackController {
      * @return 操作结果
      */
     @PostMapping("/{id}/confirm")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
+    @RateLimit(resource = "feedback.confirm", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> confirmFeedback(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
@@ -189,7 +189,7 @@ public class FeedbackController {
      * @return 反馈统计数据
      */
     @GetMapping("/stats")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 30)
+    @RateLimit(resource = "feedback.stats", dimensions = {RateLimitDimension.USER})
     public BaseResponse<FeedbackStatsVO> getMyFeedbackStats() {
         User currentUser = UserContext.get();
         ThrowUtils.throwIf(ObjUtil.isEmpty(currentUser), ErrorCode.NOT_LOGIN_ERROR);

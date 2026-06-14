@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.annotation.FallbackStrategy;
 import org.example.common.annotation.RateLimit;
 import org.example.common.annotation.RateLimitDimension;
 import org.example.common.context.UserContext;
@@ -44,7 +45,7 @@ public class SeckillController {
      */
     @GetMapping("/token")
     @CheckAuth
-    @RateLimit(dimensions = {RateLimitDimension.USER, RateLimitDimension.API}, windowSeconds = 10, maxAttempts = 2)
+    @RateLimit(resource = "seckill.token", dimensions = {RateLimitDimension.USER, RateLimitDimension.API})
     public BaseResponse<Map<String, Object>> getToken(@RequestParam Long batchId, HttpServletRequest request) {
         Long userId = UserContext.get().getId();
         String userPhone = UserContext.get().getUserPhone();
@@ -64,7 +65,8 @@ public class SeckillController {
      */
     @PostMapping("/grab")
     @CheckAuth
-    @RateLimit(resource = "seckill.grab", dimensions = {RateLimitDimension.USER, RateLimitDimension.API}, windowSeconds = 10, maxAttempts = 1)
+    @RateLimit(resource = "seckill.grab", dimensions = {RateLimitDimension.USER, RateLimitDimension.API},
+            windowSeconds = 10, maxAttempts = 1, fallback = FallbackStrategy.FAIL_CLOSE)
     public BaseResponse<Map<String, Object>> grab(@RequestBody SeckillGrabDTO dto, HttpServletRequest request) {
         Long userId = UserContext.get().getId();
         String clientIP = getClientIP(request);
@@ -83,7 +85,7 @@ public class SeckillController {
      */
     @GetMapping("/result")
     @CheckAuth
-    @RateLimit(dimensions = {RateLimitDimension.USER, RateLimitDimension.API}, windowSeconds = 5, maxAttempts = 10)
+    @RateLimit(resource = "seckill.result", dimensions = {RateLimitDimension.USER, RateLimitDimension.API})
     public BaseResponse<SeckillOrder> getResult(@RequestParam String orderNo) {
         Long userId = UserContext.get().getId();
         SeckillOrder order = seckillService.getResult(userId, orderNo);
@@ -97,7 +99,7 @@ public class SeckillController {
      * @return 批次详情 + 剩余库存
      */
     @GetMapping("/batch/{batchId}")
-    @RateLimit(dimensions = {RateLimitDimension.IP}, windowSeconds = 60, maxAttempts = 30)
+    @RateLimit(resource = "seckill.batchInfo", dimensions = {RateLimitDimension.IP})
     public BaseResponse<Map<String, Object>> getBatchInfo(@PathVariable Long batchId) {
         return ResultUtils.success(seckillService.getBatchInfo(batchId));
     }
@@ -115,7 +117,7 @@ public class SeckillController {
      * @return 分页批次列表
      */
     @GetMapping("/batch/list")
-    @RateLimit(dimensions = {RateLimitDimension.IP}, windowSeconds = 60, maxAttempts = 30)
+    @RateLimit(resource = "seckill.batchList", dimensions = {RateLimitDimension.IP})
     public BaseResponse<Page<PublicBatchVO>> listBatches(
             @RequestParam(required = false) Integer status,
             @RequestParam(defaultValue = "1") int current,

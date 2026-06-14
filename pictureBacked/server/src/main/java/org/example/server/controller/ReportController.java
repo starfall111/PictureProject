@@ -59,7 +59,7 @@ public class ReportController {
      * @return 举报分页列表
      */
     @GetMapping("/my-list")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 20)
+    @RateLimit(resource = "report.myList", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Page<ReportVO>> getMyReportList(ReportQueryDTO dto) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(dto), ErrorCode.PARAMS_ERROR);
 
@@ -77,7 +77,7 @@ public class ReportController {
      * @return 举报详情
      */
     @GetMapping("/detail/{reportId}")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 30)
+    @RateLimit(resource = "report.detail", dimensions = {RateLimitDimension.USER})
     public BaseResponse<ReportVO> getReportDetail(@PathVariable Long reportId) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(reportId), ErrorCode.PARAMS_ERROR);
 
@@ -95,7 +95,7 @@ public class ReportController {
      * @return 操作结果
      */
     @PostMapping("/cancel")
-    @RateLimit(dimensions = {RateLimitDimension.USER}, windowSeconds = 60, maxAttempts = 10)
+    @RateLimit(resource = "report.cancel", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> cancelReport(@RequestParam Long reportId) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(reportId), ErrorCode.PARAMS_ERROR);
 
