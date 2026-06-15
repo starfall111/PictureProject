@@ -3,6 +3,7 @@ import { message } from 'ant-design-vue'
 
 // 创建 Axios 实例
 const myAxios = axios.create({
+  // 开发环境下：http://localhost:4040/api
   baseURL: 'http://localhost:4040/api',
   timeout: 60000,
   withCredentials: true,
@@ -39,7 +40,11 @@ myAxios.interceptors.response.use(
   },
   function (error) {
     // Any status codes that falls outside the range of 2xx cause this function to trigger
-    // Do something with response error
+    // 限流：HTTP 429 + 业务 code 42900，统一展示后端返回的 message
+    if (error?.response?.status === 429) {
+      const body = error.response.data
+      message.warning(body?.message || '请求过于频繁，请稍后再试')
+    }
     return Promise.reject(error)
   },
 )

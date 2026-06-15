@@ -14,7 +14,10 @@
         <template #overlay>
           <a-menu>
             <a-menu-item @click="router.push('/add_picture')">上传图片</a-menu-item>
-            <a-menu-item @click="router.push('/add_picture/batch')">批量获取</a-menu-item>
+            <a-menu-item @click="router.push('/add_picture/batch')">
+              批量获取
+              <VipBadge feature size="default" style="margin-left: 8px" />
+            </a-menu-item>
           </a-menu>
         </template>
       </a-dropdown>
@@ -29,8 +32,14 @@
             </a-space>
             <template #overlay>
               <a-menu>
-                <a-menu-item @click="router.push('/user/center')">个人中心</a-menu-item>
-                <a-menu-item @click="router.push('/my_space')">我的空间</a-menu-item>
+                <a-menu-item @click="router.push('/user/center')">
+                  <UserOutlined />
+                  个人中心
+                </a-menu-item>
+                <a-menu-item @click="router.push('/my_space')">
+                  <AppstoreOutlined />
+                  我的空间
+                </a-menu-item>
                 <a-menu-item @click="router.push('/coupon/my')">
                   <IeOutlined />
                   我的券包
@@ -66,7 +75,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { CommentOutlined, IeOutlined, LogoutOutlined } from '@ant-design/icons-vue'
+import { AppstoreOutlined, CommentOutlined, IeOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { userLoginUserStore } from '@/stores/user'
 import { useSeckillStore } from '@/stores/seckill'
 import { userControllerLogOut } from '@/api/userController'

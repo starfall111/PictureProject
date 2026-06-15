@@ -98,6 +98,7 @@
       :showSocial="true"
       :hasMore="hasMore"
       :isLoadingMore="isLoading"
+      :emptyText="emptyText"
       @loadMore="onLoadMore"
     />
 
@@ -113,8 +114,8 @@ import { pictureControllerQueryPictureUserCache, pictureControllerGetFollowingPi
 import { recommendControllerRecommend } from '@/api/recommendController'
 import { tagControllerListTag } from '@/api/tagController'
 import { message } from 'ant-design-vue'
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PictureList from '@/components/PictureList/index.vue'
 import ShareModal from '@/components/ShareModal.vue'
 import { useLayoutPreferenceStore } from '@/stores/layoutPreference'
@@ -385,6 +386,20 @@ const onSortChange = () => {
   doSearch()
 }
 
+// 空数据提示文案：根据当前模式差异化
+const emptyText = computed(() => {
+  if (currentSort.value === 'following') {
+    return '还没有关注用户的图片，去发现更多精彩'
+  }
+  if (searchParams.searchText) {
+    return `没有找到与"${searchParams.searchText}"相关的图片`
+  }
+  if (selectedCategory.value !== 0) {
+    return '该分类下暂无图片'
+  }
+  return '暂无图片'
+})
+
 // 分类可见数量
 const CATEGORY_VISIBLE_COUNT = 20
 
@@ -454,16 +469,43 @@ const getTagCategoryOptions = async () => {
   }
 }
 
+const route = useRoute()
 const router = useRouter()
 
 // ==================== 初始化 ====================
 
 onMounted(async () => {
   await getTagCategoryOptions()
+  // 消费路由 query.searchText（从其他页面搜索入口跳转过来时）
+  const q = typeof route.query.searchText === 'string' ? route.query.searchText.trim() : ''
+  if (q) {
+    searchParams.searchText = q
+    // 推荐模式 / 关注模式不消费 searchText，自动切到"最新"模式
+    currentSort.value = 'createTime'
+    searchParams.sortField = 'createTime'
+    searchParams.sortOrder = 'descend'
+  }
   await fetchData(true)
   setupObserver()
   ensureFullPage()
 })
+
+// 监听路由 query.searchText 变化（用户在当前 /home 页面再次触发外部搜索时）
+watch(
+  () => route.query.searchText,
+  (newVal, oldVal) => {
+    if (newVal === oldVal) return
+    const q = typeof newVal === 'string' ? newVal.trim() : ''
+    if (!q) return
+    searchParams.searchText = q
+    if (currentSort.value === '' || currentSort.value === 'following') {
+      currentSort.value = 'createTime'
+      searchParams.sortField = 'createTime'
+      searchParams.sortOrder = 'descend'
+    }
+    doSearch()
+  }
+)
 
 onUnmounted(() => {
   if (observer) {

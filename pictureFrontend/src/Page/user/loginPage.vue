@@ -19,12 +19,12 @@
                             @finish="login(verificationCodeDTO)" layout="vertical" @finishFailed="onFinishFailed"
                             class="login-form">
                             <a-form-item name="account" label="账号"
-                                :rules="[{ required: true, message: '请输入手机号/邮箱' }, { validator: (rule: any, value: string) => isEmail(value) || isPhone(value), message: '请输入有效的手机号/邮箱' }]">
+                                :rules="[{ required: true, message: '请输入手机号/邮箱' }, { validator: validateAccount }]">
                                 <a-input v-model:value="verificationCodeDTO.account" placeholder="请输入手机号/邮箱"
                                     :size="'large'" />
                             </a-form-item>
 
-                            <a-form-item name="verificationCode" label="验证码"
+                            <a-form-item name="verityCode" label="验证码"
                                 :rules="[{ required: true, message: '请输入验证码' }, { len: 6, message: '验证码必须为6位' }, { validator: validateCodeSent }]">
                                 <a-input v-model:value="verificationCodeDTO.verityCode" placeholder="请输入验证码"
                                     :size="'large'" class="code-input" />
@@ -196,6 +196,12 @@ onMounted(() => {
 
 /* 是否已发送验证码 */
 const codeSent = ref(false);
+
+/* 账号格式校验 */
+const validateAccount = (_rule: any, value: string) => {
+    if (!value) return Promise.resolve();
+    return (isPhone(value) || isEmail(value)) ? Promise.resolve() : Promise.reject('请输入有效的手机号/邮箱');
+};
 
 /* 验证码已发送校验 */
 const validateCodeSent = (_rule: any, value: string) => {
