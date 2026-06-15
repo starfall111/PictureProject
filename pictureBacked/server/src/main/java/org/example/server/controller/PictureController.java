@@ -266,6 +266,7 @@ public class PictureController {
 
     @PostMapping("/upload/batch")
     @RateLimit(resource = "picture.batchUpload", dimensions = {RateLimitDimension.USER})
+    @CheckAuth(requireVip = true)
     public BaseResponse<BatchTaskVO> pictureUploadByBatch(@RequestBody PictureUploadByBatchDTO pictureUploadByBatchDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUploadByBatchDTO), ErrorCode.PARAMS_ERROR);
 
@@ -281,7 +282,6 @@ public class PictureController {
         // 权限校验：管理员直接通过
         UserEnum userEnum = UserEnum.getByValue(user.getUserRole());
         if (!UserEnum.ADMIN.equals(userEnum)) {
-            // TODO: VIP 用户校验，后续实现兑换码功能
             // 已绑定手机号可通过
             ThrowUtils.throwIf(StrUtil.isBlank(user.getUserPhone()),
                     ErrorCode.NO_AUTH_ERROR, "请先绑定手机号");
