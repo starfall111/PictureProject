@@ -44,6 +44,9 @@ public class LoginInterceptor implements HandlerInterceptor {
         }
 
         HttpSession session = request.getSession(false);
+        if (session == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
         if (ObjUtil.hasEmpty(session, session.getAttribute(UserConstant.USER_LOGIN_STATE))) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
