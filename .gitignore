@@ -3,3 +3,6 @@ pictureFrontend/
 **/target/
 **/src/test/
 **/temp/
+
+# Docker 部署文件（含本地密钥，不入库）
+pictureBacked/Dockerfile
