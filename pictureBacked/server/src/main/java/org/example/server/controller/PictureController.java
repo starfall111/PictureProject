@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.common.api.imagesearch.ImageSearchApiFacade;
 import org.example.common.api.imagesearch.model.ImageSearchResult;
 import org.example.common.constants.UserConstant;
@@ -89,6 +91,7 @@ public class PictureController {
      * 图片上传
      */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @RateLimit(resource = "picture.upload", dimensions = {RateLimitDimension.USER})
     public BaseResponse<PictureVO> upload(
             @RequestPart("file") MultipartFile file,
             FileDTO fileDTO) throws Exception {
@@ -107,6 +110,7 @@ public class PictureController {
     }
 
     @PostMapping("/upload/url")
+    @RateLimit(resource = "picture.uploadUrl", dimensions = {RateLimitDimension.USER})
     public BaseResponse<PictureVO> upload(@RequestBody FileDTO fileDTO) throws Exception {
         //认证检查
         User user = UserContext.get();
@@ -126,6 +130,7 @@ public class PictureController {
      * 图片下载
      */
     @GetMapping("/download")
+    @RateLimit(resource = "picture.download", dimensions = {RateLimitDimension.USER})
     public void download(Long id, HttpServletResponse response) throws IOException, ClientException {
         //认证检查
         User user = UserContext.get();
@@ -153,6 +158,7 @@ public class PictureController {
     //1.图片编辑信息：更改图片信息（管理员/普通用户）
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
     @PostMapping("/update")
+    @RateLimit(resource = "picture.update", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateDTO pictureUpdateDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUpdateDTO), ErrorCode.PARAMS_ERROR);
 
@@ -164,6 +170,7 @@ public class PictureController {
     }
 
     @PostMapping("/edit")
+    @RateLimit(resource = "picture.edit", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> editPicture(@RequestBody PictureEditDTO pictureEditDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureEditDTO), ErrorCode.PARAMS_ERROR);
 
@@ -176,6 +183,7 @@ public class PictureController {
 
     //2.删除图片
     @DeleteMapping("/delete")
+    @RateLimit(resource = "picture.delete", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest) throws Exception {
         ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest), ErrorCode.PARAMS_ERROR);
         Long id = deleteRequest.getId();
@@ -192,6 +200,7 @@ public class PictureController {
     //3.分页查询图片（管理员/普通用户）
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
     @PostMapping("/admin/query")
+    @RateLimit(resource = "picture.queryAdmin", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Page<PictureEntityVO>> queryPictureAdmin(@RequestBody PictureQueryDTO pictureQueryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
 
@@ -201,6 +210,7 @@ public class PictureController {
     }
 
     @PostMapping("/user/query")
+    @RateLimit(resource = "picture.queryUser", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Page<PictureVO>> queryPictureUser(@RequestBody PictureQueryDTO pictureQueryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
         pictureQueryDTO.setReviewStatus(1);
@@ -233,6 +243,7 @@ public class PictureController {
 
     //5.获取图片详细信息
     @GetMapping("/user/{id}")
+    @RateLimit(resource = "picture.get", dimensions = {RateLimitDimension.USER_OR_IP})
     public BaseResponse<PictureVO> getPictureByIdUser(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
 
@@ -254,6 +265,8 @@ public class PictureController {
 
 
     @PostMapping("/upload/batch")
+    @RateLimit(resource = "picture.batchUpload", dimensions = {RateLimitDimension.USER})
+    @CheckAuth(requireVip = true)
     public BaseResponse<BatchTaskVO> pictureUploadByBatch(@RequestBody PictureUploadByBatchDTO pictureUploadByBatchDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureUploadByBatchDTO), ErrorCode.PARAMS_ERROR);
 
@@ -269,7 +282,6 @@ public class PictureController {
         // 权限校验：管理员直接通过
         UserEnum userEnum = UserEnum.getByValue(user.getUserRole());
         if (!UserEnum.ADMIN.equals(userEnum)) {
-            // TODO: VIP 用户校验，后续实现兑换码功能
             // 已绑定手机号可通过
             ThrowUtils.throwIf(StrUtil.isBlank(user.getUserPhone()),
                     ErrorCode.NO_AUTH_ERROR, "请先绑定手机号");
@@ -320,6 +332,7 @@ public class PictureController {
      * 以图搜图
      */
     @PostMapping("/search/picture")
+    @RateLimit(resource = "picture.search", dimensions = {RateLimitDimension.USER})
     public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureDTO searchPictureByPictureDTO) {
         ThrowUtils.throwIf(searchPictureByPictureDTO == null, ErrorCode.PARAMS_ERROR);
         Long pictureId = searchPictureByPictureDTO.getPictureId();
@@ -337,6 +350,7 @@ public class PictureController {
      * 点赞/取消点赞
      */
     @PostMapping("/like/{pictureId}")
+    @RateLimit(resource = "picture.like", dimensions = {RateLimitDimension.USER})
     public BaseResponse<ToggleLikeVO> toggleLike(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         User user = UserContext.get();
@@ -362,6 +376,7 @@ public class PictureController {
      * 收藏/取消收藏
      */
     @PostMapping("/favorite/{pictureId}")
+    @RateLimit(resource = "picture.fav", dimensions = {RateLimitDimension.USER})
     public BaseResponse<ToggleFavoriteVO> toggleFavorite(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         User user = UserContext.get();
@@ -387,6 +402,7 @@ public class PictureController {
      * 记录分享行为
      */
     @PostMapping("/share/{pictureId}")
+    @RateLimit(resource = "picture.share", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> recordShare(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         cachedSocialService.recordShare(pictureId);
@@ -397,6 +413,7 @@ public class PictureController {
      * 记录浏览行为
      */
     @PostMapping("/view/{pictureId}")
+    @RateLimit(resource = "picture.view", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> recordView(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         cachedSocialService.incrementViewCount(pictureId);
@@ -407,6 +424,7 @@ public class PictureController {
      * 记录下载行为
      */
     @PostMapping("/download/count/{pictureId}")
+    @RateLimit(resource = "picture.dlCount", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> recordDownloadCount(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         cachedSocialService.incrementDownloadCount(pictureId);
@@ -457,6 +475,7 @@ public class PictureController {
      * [缓存版] 图片列表查询
      */
     @PostMapping("/cache/user/query")
+    @RateLimit(resource = "picture.cacheQuery", dimensions = {RateLimitDimension.USER_OR_IP})
     public BaseResponse<Page<PictureVO>> queryPictureUserCache(@RequestBody PictureQueryDTO pictureQueryDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(pictureQueryDTO), ErrorCode.PARAMS_ERROR);
         pictureQueryDTO.setReviewStatus(1);
@@ -467,7 +486,8 @@ public class PictureController {
     /**
      * [缓存版] 图片详情查询
      */
-    @GetMapping("/cache/user/{id}")
+    @GetMapping("/cache/user/detail/{id}")
+    @RateLimit(resource = "picture.cacheGet", dimensions = {RateLimitDimension.USER_OR_IP})
     public BaseResponse<PictureVO> getPictureByIdUserCache(@PathVariable Long id) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(id), ErrorCode.PARAMS_ERROR);
         PictureVO pictureVO = cachedPictureService.getByPictureIdUser(id);
@@ -478,6 +498,7 @@ public class PictureController {
      * [缓存版] 点赞/取消点赞
      */
     @PostMapping("/cache/like/{pictureId}")
+    @RateLimit(resource = "picture.cacheLike", dimensions = {RateLimitDimension.USER})
     public BaseResponse<ToggleLikeVO> toggleLikeCache(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         User user = UserContext.get();
@@ -503,6 +524,7 @@ public class PictureController {
      * [缓存版] 收藏/取消收藏
      */
     @PostMapping("/cache/favorite/{pictureId}")
+    @RateLimit(resource = "picture.cacheFav", dimensions = {RateLimitDimension.USER})
     public BaseResponse<ToggleFavoriteVO> toggleFavoriteCache(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         User user = UserContext.get();
@@ -528,6 +550,7 @@ public class PictureController {
      * [缓存版] 记录分享行为
      */
     @PostMapping("/cache/share/{pictureId}")
+    @RateLimit(resource = "picture.cacheShare", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> recordShareCache(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         cachedSocialService.recordShare(pictureId);
@@ -538,6 +561,7 @@ public class PictureController {
      * [缓存版] 记录浏览行为
      */
     @PostMapping("/cache/view/{pictureId}")
+    @RateLimit(resource = "picture.cacheView", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> recordViewCache(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         cachedSocialService.incrementViewCount(pictureId);
@@ -548,6 +572,7 @@ public class PictureController {
      * [缓存版] 记录下载行为
      */
     @PostMapping("/cache/download/count/{pictureId}")
+    @RateLimit(resource = "picture.cacheDlCount", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> recordDownloadCountCache(@PathVariable Long pictureId) {
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         cachedSocialService.incrementDownloadCount(pictureId);

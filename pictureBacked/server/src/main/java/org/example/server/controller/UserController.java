@@ -5,6 +5,8 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.pojo.DeleteRequest;
 import org.example.pojo.dto.user.*;
 import org.example.pojo.entity.User;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.example.common.result.BaseResponse;
 import org.example.common.result.ResultUtils;
 import org.example.pojo.vo.LoginUserVO;
+import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.annotation.Resource;
@@ -38,6 +41,7 @@ public class UserController {
     private UserService cacheUserService;
 
     @PostMapping("/register")
+    @RateLimit(resource = "user.register", dimensions = {RateLimitDimension.IP})
     public BaseResponse<Long> register(@RequestBody UserRegisterDTO userRegisterDTO){
         ThrowUtils.throwIf(ObjUtil.isEmpty(userRegisterDTO), ErrorCode.PARAMS_ERROR);
 
@@ -47,6 +51,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
+    @RateLimit(resource = "login", dimensions = {RateLimitDimension.IP}, windowSeconds = 60, maxAttempts = 10)
     public BaseResponse<LoginUserVO> login(@RequestBody UserLoginDTO userLoginDTO, HttpServletRequest request){
         ThrowUtils.throwIf(ObjUtil.isEmpty(userLoginDTO),ErrorCode.PARAMS_ERROR);
         LoginUserVO loginUserVO = cacheUserService.userLogin(userLoginDTO,request);
@@ -56,6 +61,7 @@ public class UserController {
 
     //修改密码
     @PostMapping("/password/update")
+    @RateLimit(resource = "user.password", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> updatePassword(@RequestBody UserPasswordUpdateDTO passwordUpdateDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(passwordUpdateDTO), ErrorCode.PARAMS_ERROR);
 
@@ -93,6 +99,7 @@ public class UserController {
     }
     //更新用户信息
     @PostMapping("/update")
+    @RateLimit(resource = "user.update", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateDTO userUpdateDTO, HttpServletRequest request){
         ThrowUtils.throwIf(ObjUtil.isEmpty(userUpdateDTO),ErrorCode.PARAMS_ERROR);
 
@@ -149,6 +156,7 @@ public class UserController {
     //根据ID获取用户信息（管理员）
     @GetMapping("get/{id}")
     @CheckAuth(mustRole = UserConstant.ADMIN_AUTH_ROLE)
+    @RateLimit(resource = "user.get", dimensions = {RateLimitDimension.USER_OR_IP})
     public BaseResponse<User> getUserInfo(@PathVariable Long id){
         ThrowUtils.throwIf(ObjUtil.isEmpty(id),ErrorCode.PARAMS_ERROR);
 
@@ -160,6 +168,7 @@ public class UserController {
     }
     //换绑手机号/邮箱
     @PostMapping("/bind/account")
+    @RateLimit(resource = "user.bind", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> bindAccount(@RequestBody UserBindAccountDTO userBindAccountDTO) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(userBindAccountDTO), ErrorCode.PARAMS_ERROR);
 
@@ -169,8 +178,9 @@ public class UserController {
     }
 
     //上传用户头像
-    @PostMapping("/avatar/upload")
-    public BaseResponse<String> uploadAvatar(@RequestParam("file") MultipartFile file) throws Exception {
+    @PostMapping(value = "/avatar/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @RateLimit(resource = "user.avatar", dimensions = {RateLimitDimension.USER})
+    public BaseResponse<String> uploadAvatar(@RequestPart("file") MultipartFile file) throws Exception {
         ThrowUtils.throwIf(ObjUtil.isEmpty(file), ErrorCode.PARAMS_ERROR, "文件不能为空");
 
         String url = cacheUserService.uploadAvatar(file);

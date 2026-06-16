@@ -47,8 +47,7 @@ public class NoticeServiceImpl implements NoticeService {
         //1.校验账号格式是否正确
         checkPhoneOrEmail(type,account);
         //2.校验图形验证是否正确
-        //TODO 后续前端集成图形验证后进行校验
-//        ThrowUtils.throwIf(!aliCaptchaUtil.checkCaptcha(captchaVerifyParam),ErrorCode.PARAMS_ERROR,"验证错误，请重试");
+        ThrowUtils.throwIf(!aliCaptchaUtil.checkCaptcha(captchaVerifyParam), ErrorCode.PARAMS_ERROR, "验证错误，请重试");
         //3.生成验证码
         // 生成 6 位验证码
         String code = String.format("%06d", random.nextInt(1000000));
@@ -64,7 +63,7 @@ public class NoticeServiceImpl implements NoticeService {
         log.info("邮箱验证码发送成功: email={}, code={}", account, code);
         switch(type){
             case 1 -> {
-//                aliSMSUtil.SMSSendCode(account,code,"100001",5);
+                aliSMSUtil.SMSSendCode(account, code, "100001", 5);
             }
             case 2 ->{
                 emailUtil.sendVerificationCode(account,code);

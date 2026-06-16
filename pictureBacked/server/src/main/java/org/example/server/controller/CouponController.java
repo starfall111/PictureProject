@@ -3,6 +3,8 @@ package org.example.server.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.common.context.UserContext;
 import org.example.common.result.BaseResponse;
 import org.example.common.result.ResultUtils;
@@ -46,6 +48,7 @@ public class CouponController {
      */
     @PostMapping("/activate")
     @CheckAuth
+    @RateLimit(resource = "coupon.activate", dimensions = {RateLimitDimension.USER})
     public BaseResponse<CouponActivateVO> activateCoupon(
             @RequestBody CouponActivateDTO couponActivateDTO) {
         Long userId = UserContext.get().getId();

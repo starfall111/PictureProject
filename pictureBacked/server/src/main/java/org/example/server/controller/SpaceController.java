@@ -3,6 +3,8 @@ package org.example.server.controller;
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.example.common.annotation.CheckAuth;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.common.constants.UserConstant;
 import org.example.common.enums.SpaceLevelEnum;
 import org.example.common.exception.ErrorCode;
@@ -34,6 +36,7 @@ public class SpaceController {
 
     //新增空间操作
     @PostMapping("/add")
+    @RateLimit(resource = "space.add", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Long> addSpace(@RequestBody SpaceAddDTO spaceAddDTO){
         ThrowUtils.throwIf(ObjUtil.isEmpty(spaceAddDTO), ErrorCode.PARAMS_ERROR);
         long id = spaceService.addSpace(spaceAddDTO);
@@ -55,6 +58,7 @@ public class SpaceController {
     }
 
     @PostMapping("/edit")
+    @RateLimit(resource = "space.edit", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> editSpace(@RequestBody SpaceEditDTO spaceEditDTO){
         ThrowUtils.throwIf(ObjUtil.isEmpty(spaceEditDTO),ErrorCode.PARAMS_ERROR);
 
@@ -67,6 +71,7 @@ public class SpaceController {
 
     //2.删除空间
     @DeleteMapping("/delete")
+    @RateLimit(resource = "space.delete", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Boolean> deleteSpace(@RequestBody DeleteRequest deleteRequest) throws Exception{
         ThrowUtils.throwIf(ObjUtil.isEmpty(deleteRequest),ErrorCode.PARAMS_ERROR);
 
@@ -104,6 +109,7 @@ public class SpaceController {
 
     //5.根据Id返回空间详细信息
     @GetMapping("/{id}")
+    @RateLimit(resource = "space.get", dimensions = {RateLimitDimension.USER})
     public BaseResponse<Space> getSpaceById(@PathVariable long id){
         ThrowUtils.throwIf(ObjUtil.isEmpty(id),ErrorCode.PARAMS_ERROR);
 

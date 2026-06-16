@@ -1,6 +1,8 @@
 package org.example.server.controller;
 
 import cn.hutool.core.util.ObjUtil;
+import org.example.common.annotation.RateLimit;
+import org.example.common.annotation.RateLimitDimension;
 import org.example.pojo.dto.user.SendVerificationCodeDTO;
 import org.example.common.exception.ErrorCode;
 import org.example.common.exception.ThrowUtils;
@@ -23,6 +25,7 @@ public class NoticeController {
     private NoticeService noticeService;
 
     @PostMapping("/send")
+    @RateLimit(resource = "notice.verify", dimensions = {RateLimitDimension.IP}, windowSeconds = 60, maxAttempts = 1)
     public BaseResponse<String> sendVerificationCode(@RequestBody SendVerificationCodeDTO sendVerificationCodeDTO) throws ExecutionException, InterruptedException {
         ThrowUtils.throwIf(ObjUtil.isEmpty(sendVerificationCodeDTO), ErrorCode.PARAMS_ERROR);
 
