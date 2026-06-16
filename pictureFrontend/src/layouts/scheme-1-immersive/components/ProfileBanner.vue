@@ -40,14 +40,14 @@
           class="stat-item clickable"
           @click="handleShowFollowing"
         >
-          <span class="stat-value">{{ formatCount(followerCount) }}</span>
+          <span class="stat-value">{{ formatCount(followCount) }}</span>
           <span class="stat-label">关注</span>
         </div>
         <div
           class="stat-item clickable"
           @click="handleShowFollowers"
         >
-          <span class="stat-value">{{ formatCount(followCount) }}</span>
+          <span class="stat-value">{{ formatCount(followerCount) }}</span>
           <span class="stat-label">粉丝</span>
         </div>
       </div>
@@ -215,12 +215,6 @@ const handleFollowChange = (userId: number, isFollowing: boolean) => {
   .profile-banner-stats {
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .profile-banner-stats {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 
