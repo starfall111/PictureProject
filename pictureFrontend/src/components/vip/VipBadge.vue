@@ -1,5 +1,5 @@
 <template>
-  <span v-if="isVip" :class="['vip-badge', `vip-badge--${size}`]">
+  <span v-if="feature || isVip" :class="['vip-badge', `vip-badge--${size}`]">
     <span v-if="size === 'small'" class="vip-badge-crown">👑</span>
     <span v-else class="vip-badge-pill">VIP</span>
   </span>
@@ -11,8 +11,10 @@ import { userLoginUserStore } from '@/stores/user'
 
 const props = withDefaults(defineProps<{
   size?: 'small' | 'default'
+  feature?: boolean
 }>(), {
   size: 'default',
+  feature: false,
 })
 
 const loginUserStore = userLoginUserStore()

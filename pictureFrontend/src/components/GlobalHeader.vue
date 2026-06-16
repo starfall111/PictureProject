@@ -69,6 +69,7 @@ import { LogoutOutlined, UserOutlined, CommentOutlined } from '@ant-design/icons
 import { userControllerLogOut } from '@/api/userController'
 import checkAccess from '@/access/checkAccess'
 import NotificationBell from '@/components/notification/NotificationBell.vue'
+import VipBadge from '@/components/vip/VipBadge.vue'
 
 
 const loginUserStore = userLoginUserStore()
@@ -93,7 +94,10 @@ const originItems = [
     },
     {
         key: '/add_picture/batch',
-        label: '批量获取',
+        label: () => h('span', { style: 'display: inline-flex; align-items: center;' }, [
+            '批量获取',
+            h(VipBadge, { feature: true, size: 'default', style: 'margin-left: 8px' }),
+        ]),
         title: '批量获取',
     },
     {
