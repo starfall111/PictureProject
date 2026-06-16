@@ -1,10 +1,12 @@
-/** 券状态 */
+/**
+ * 券状态（与后端 CouponStatusEnum 严格对齐）
+ * 注意：后端"吊销"复用 EXPIRED，不独立成态，故前端无 REVOKED。
+ */
 export const COUPON_STATUS = {
   UNSOLD: 0,    // 未发放
   CLAIMED: 1,   // 已领取未使用
   ACTIVATED: 2, // 已激活
-  EXPIRED: 3,   // 已过期
-  REFUNDED: 4,  // 已退款
+  EXPIRED: 3,   // 已过期（含管理员吊销）
 } as const
 
 export const COUPON_STATUS_MAP: Record<number, { text: string; color: string }> = {
@@ -12,7 +14,6 @@ export const COUPON_STATUS_MAP: Record<number, { text: string; color: string }> 
   1: { text: '待使用', color: 'warning' },
   2: { text: '已激活', color: 'success' },
   3: { text: '已过期', color: 'default' },
-  4: { text: '已退款', color: 'error' },
 }
 
 /** 券包页 Tab 分组 */

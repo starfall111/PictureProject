@@ -46,7 +46,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { message } from 'ant-design-vue'
-import { adminBatchControllerListBatches } from '@/api/adminBatchController'
+import { adminBatchControllerGetBatchDetail } from '@/api/adminBatchController'
 import { adminCouponControllerListCoupons } from '@/api/adminCouponController'
 import { BATCH_STATUS_MAP, COUPON_TYPE_MAP } from '@/constants/seckill'
 import { COUPON_STATUS_MAP } from '@/constants/coupon'
@@ -89,10 +89,9 @@ async function fetchBatchDetail() {
   if (!props.batchId) return
   batchLoading.value = true
   try {
-    const res = await adminBatchControllerListBatches({ current: 1, pageSize: 1 })
-    // 遍历找到对应批次（API没有单条查询，用列表）
-    if (res.data.code === 0 && res.data.data?.records) {
-      batch.value = res.data.data.records.find(b => b.id === props.batchId) ?? null
+    const res = await adminBatchControllerGetBatchDetail({ id: props.batchId })
+    if (res.data.code === 0) {
+      batch.value = res.data.data ?? null
     }
   } finally {
     batchLoading.value = false

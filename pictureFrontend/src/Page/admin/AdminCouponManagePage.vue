@@ -36,13 +36,27 @@
       :pagination="pagination"
       row-key="id"
       @change="handleTableChange"
-    />
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'action'">
+          <a-button
+            type="link"
+            size="small"
+            danger
+            :disabled="record.status !== COUPON_STATUS.CLAIMED"
+            @click="handleRevoke(record.id)"
+          >
+            吊销
+          </a-button>
+        </template>
+      </template>
+    </a-table>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { message, Modal } from 'ant-design-vue'
+import { ref, onMounted, h } from 'vue'
+import { message, Modal, Tag } from 'ant-design-vue'
 import { adminCouponControllerListCoupons, adminCouponControllerRevoke } from '@/api/adminCouponController'
 import { COUPON_STATUS_MAP, COUPON_STATUS } from '@/constants/coupon'
 import { COUPON_TYPE_MAP } from '@/constants/seckill'
@@ -69,10 +83,8 @@ const columns = [
     dataIndex: 'code',
     width: 140,
     ellipsis: true,
-    customRender: ({ text }: { text: string }) => ({
-      children: text,
-      props: { style: { fontFamily: 'Courier New, monospace' } },
-    }),
+    customRender: ({ text }: { text: string }) =>
+      h('span', { style: { fontFamily: 'Courier New, monospace' } }, text ?? '-'),
   },
   {
     title: '类型',
@@ -86,7 +98,7 @@ const columns = [
     width: 90,
     customRender: ({ text }: { text: number }) => {
       const m = COUPON_STATUS_MAP[text]
-      return { children: m?.text ?? '未知', props: {} }
+      return h(Tag, { color: m?.color ?? 'default' }, () => m?.text ?? '未知')
     },
   },
   {
