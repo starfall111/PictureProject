@@ -10,7 +10,10 @@
         <template #overlay>
           <a-menu>
             <a-menu-item @click="router.push('/add_picture')">上传图片</a-menu-item>
-            <a-menu-item @click="router.push(`/add_picture/batch?spaceId=${space.id}`)">批量获取</a-menu-item>
+            <a-menu-item @click="router.push(`/add_picture/batch?spaceId=${space.id}`)">
+              批量获取
+              <VipBadge feature size="default" style="margin-left: 8px" />
+            </a-menu-item>
           </a-menu>
         </template>
       </a-dropdown>
@@ -32,6 +35,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import VipBadge from '@/components/vip/VipBadge.vue'
 
 const router = useRouter()
 

@@ -167,7 +167,21 @@ defineEmits<{
   }
 
   .action-left {
-    justify-content: space-around;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .action-btn-large {
+    gap: 4px;
+  }
+
+  .action-icon {
+    font-size: 20px;
+  }
+
+  .action-count {
+    font-size: 14px;
   }
 
   .action-right {

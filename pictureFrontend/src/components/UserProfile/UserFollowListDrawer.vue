@@ -3,7 +3,7 @@
     v-model:open="drawerOpen"
     :title="title"
     placement="right"
-    :width="420"
+    :width="drawerWidth"
     :closable="true"
     @close="handleClose"
   >
@@ -97,6 +97,11 @@ const drawerOpen = computed({
 // 标题
 const title = computed(() => {
   return props.type === 'following' ? '关注列表' : '粉丝列表'
+})
+
+// 抽屉宽度：移动端全屏，避免关闭按钮被推出可视区
+const drawerWidth = computed(() => {
+  return typeof window !== 'undefined' && window.innerWidth <= 640 ? '100%' : 420
 })
 
 // 空状态描述

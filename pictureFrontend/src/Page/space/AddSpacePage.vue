@@ -21,7 +21,7 @@
 
         <a-card title="空间级别介绍">
             <a-typography-paragraph>
-                * 目前仅支持开通普通版，如需升级空间，请联系作者邮箱 
+                * 目前仅支持开通普通版，如需升级空间，请联系作者邮箱
                 1824109129@qq.com
                 <!-- <a href="https://codefather.cn" target="_blank">程序员鱼皮</a>。 -->
             </a-typography-paragraph>
@@ -89,7 +89,6 @@ const handleSubmit = async (values: any) => {
 
     if (res.data.code === 0 && res.data.data) {
         message.success('创建成功')
-        loading.value = false
         spaceId = res.data.data
         // 跳转到空间详情页  
         router.push({
@@ -98,6 +97,7 @@ const handleSubmit = async (values: any) => {
     } else {
         message.error('创建失败，' + res.data.message)
     }
+    loading.value = false
 }
 
 

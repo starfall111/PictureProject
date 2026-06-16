@@ -205,6 +205,12 @@ const doDownload = async () => {
 onMounted(() => {
   fetchPictureDetail()
 })
+
+// 兜底：Vue Router 的 scrollBehavior 在移动端（iOS Safari、图片异步撑高场景）经常失效，
+// 这里手动滚到顶部，确保从列表点击进入详情页时从顶部开始渲染
+onMounted(() => {
+  window.scrollTo(0, 0)
+})
 </script>
 
 <style scoped>

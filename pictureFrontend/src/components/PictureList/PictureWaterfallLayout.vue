@@ -44,10 +44,13 @@ const waterfallList = computed(() =>
   }))
 )
 
+// 断点语义：key 升序，取第一个 key ≥ 容器宽度的档位（≤500px 即手机端单列满屏）
 const breakpoints = {
-  1600: { rowPerView: 4 },
-  768: { rowPerView: 3 },
-  500: { rowPerView: 2 },
+  1600: { rowPerView: 5 },
+  1200: { rowPerView: 4 },
+  992: { rowPerView: 3 },
+  768: { rowPerView: 2 },
+  500: { rowPerView: 1 },
 }
 </script>
 

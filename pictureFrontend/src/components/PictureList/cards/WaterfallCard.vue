@@ -208,18 +208,6 @@ const goUserProfile = () => {
   pointer-events: none;
 }
 
-/* ===== 移动端：始终显示信息条 ===== */
-@media (hover: none) {
-  .waterfall-card-hover-bar {
-    transform: translateY(0);
-    opacity: 1;
-  }
-
-  .waterfall-card-overlay {
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.4) 0%, transparent 100%);
-  }
-}
-
 /* ===== 瀑布流卡片飞入动画 ===== */
 .animate__animated {
   animation-fill-mode: both;

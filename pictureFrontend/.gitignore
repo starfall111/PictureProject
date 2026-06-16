@@ -30,3 +30,12 @@ coverage
 *.tsbuildinfo
 
 .env
+
+# Code intelligence index（codegraph 本地索引数据库）
+.codegraph/
+
+# 打包产物压缩包
+dist.zip
+
+# Pencil 设计稿（本地编辑文件，不入库）
+*.pen

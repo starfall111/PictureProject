@@ -11,6 +11,12 @@
       :showOp="showOp"
       :onReload="onReload"
     />
+    <!-- 空状态：非加载中且数据为空时展示 -->
+    <a-empty
+      v-if="!loading && dataList.length === 0"
+      :description="emptyText"
+      class="picture-empty"
+    />
     <!-- 加载状态 -->
     <div v-if="showSocial" class="infinite-scroll-status">
       <a-spin v-if="isLoadingMore" tip="加载中..." class="load-spinner" />
@@ -36,6 +42,8 @@ interface Props {
   showSocial?: boolean
   hasMore?: boolean
   isLoadingMore?: boolean
+  /** 空数据提示文案 */
+  emptyText?: string
 }
 
 withDefaults(defineProps<Props>(), {
@@ -46,6 +54,7 @@ withDefaults(defineProps<Props>(), {
   showSocial: false,
   hasMore: true,
   isLoadingMore: false,
+  emptyText: '暂无图片',
 })
 
 defineEmits<{
@@ -72,5 +81,9 @@ defineEmits<{
 .scroll-sentinel {
   height: 1px;
   width: 100%;
+}
+
+.picture-empty {
+  padding: 60px 0;
 }
 </style>

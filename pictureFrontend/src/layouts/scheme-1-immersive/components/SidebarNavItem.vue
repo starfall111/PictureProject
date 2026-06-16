@@ -10,12 +10,16 @@
   >
     <div class="nav-item-indicator" v-if="active" />
     <component :is="icon" class="nav-item-icon" />
-    <span v-if="showLabel" class="nav-item-label">{{ label }}</span>
+    <span v-if="showLabel" class="nav-item-label">
+      {{ label }}
+      <VipBadge v-if="feature" feature size="small" style="margin-left: 6px" />
+    </span>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Component } from 'vue'
+import VipBadge from '@/components/vip/VipBadge.vue'
 
 defineProps<{
   icon: Component
@@ -23,6 +27,7 @@ defineProps<{
   active?: boolean
   indented?: boolean
   showLabel?: boolean
+  feature?: boolean
 }>()
 
 defineEmits<{

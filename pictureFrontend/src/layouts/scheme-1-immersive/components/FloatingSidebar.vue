@@ -4,7 +4,7 @@
     <!-- 普通导航项 -->
     <nav class="sidebar-nav">
       <SidebarNavItem v-for="item in userNavItems" :key="item.path" :icon="item.icon" :label="item.label"
-        :active="isCurrentRoute(item.path)" :show-label="isExpanded" @click="navigate(item.path)" />
+        :active="isCurrentRoute(item.path)" :show-label="isExpanded" :feature="item.feature" @click="navigate(item.path)" />
     </nav>
 
     <!-- 管理员分组 -->
@@ -37,39 +37,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, type Component } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import {
-  PictureOutlined,
-  FolderOutlined,
-  UserOutlined,
-  SafetyCertificateOutlined,
-  ThunderboltOutlined,
-  TeamOutlined,
-  FileImageOutlined,
-  AppstoreOutlined,
-  TagsOutlined,
-  RightOutlined,
-  PushpinOutlined,
-  MessageOutlined,
-  StopOutlined,
-  WarningOutlined,
-  CommentOutlined,
-  CloudDownloadOutlined,
-  ScheduleOutlined,
-  CrownOutlined,
-  IeOutlined,
-  StarOutlined,
-} from '@ant-design/icons-vue'
-import { userLoginUserStore } from '@/stores/user'
-import checkAccess from '@/access/checkAccess'
-import ACCESS_ENUM from '@/access/accessEnum'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { SafetyCertificateOutlined, RightOutlined, PushpinOutlined } from '@ant-design/icons-vue'
 import SidebarNavItem from './SidebarNavItem.vue'
+import { useSidebarNav } from '../composables/useSidebarNav'
 
 const router = useRouter()
-const route = useRoute()
-const loginUserStore = userLoginUserStore()
 
+// 导航数据（菜单项 / 权限 / 路由高亮）抽自 composable，与移动端 Drawer 共用
+const { userNavItems, adminNavItems, isAdmin, isCurrentRoute, isAdminRouteActive } = useSidebarNav()
+
+// 本地 UI 状态：展开 / 钉住 / 管理员分组折叠
 const isExpanded = ref(false)
 const isPinned = ref(false)
 const adminExpanded = ref(false)
@@ -77,90 +56,7 @@ const adminExpanded = ref(false)
 let expandTimer: ReturnType<typeof setTimeout> | null = null
 let collapseTimer: ReturnType<typeof setTimeout> | null = null
 
-// 判断是否为管理员
-const isAdmin = computed(() =>
-  checkAccess(loginUserStore.loginUser, ACCESS_ENUM.ADMIN)
-)
-
-// 普通用户导航项
-const userNavItems = computed(() => {
-  const items: { path: string; icon: Component; label: string }[] = [
-    { path: '/home', icon: PictureOutlined, label: '公共图库' },
-    { path: '/my_space', icon: FolderOutlined, label: '个人空间' },
-    { path: '/add_picture/batch', icon: CloudDownloadOutlined, label: '批量获取' },
-    { path: '/seckill', icon: CrownOutlined, label: '限时抢券' },
-    { path: `/user/${loginUserStore.loginUser.id}`, icon: UserOutlined, label: '用户主页' },
-    { path: '/feed', icon: ThunderboltOutlined, label: '动态' },
-    { path: '/feedback/list', icon: CommentOutlined, label: '我的反馈' },
-  ]
-  // 如果用户未登录，隐藏个人空间和用户主页
-  if (!loginUserStore.loginUser.id) {
-    return [items[0]]
-  }
-  return items
-})
-
-// 管理员导航项
-const adminNavItems = [
-  { path: '/admin/manage', icon: TeamOutlined, label: '用户管理' },
-  { path: '/admin/pictureManage', icon: FileImageOutlined, label: '图片管理' },
-  { path: '/admin/spaceManage', icon: AppstoreOutlined, label: '空间管理' },
-  { path: '/admin/categoryManage', icon: FolderOutlined, label: '分类管理' },
-  { path: '/admin/tagManage', icon: TagsOutlined, label: '标签管理' },
-  { path: '/admin/systemMessageManage', icon: MessageOutlined, label: '系统消息管理' },
-  {
-    path: '/admin/feedbackManage',
-    label: '反馈管理',
-    icon: () => h(CommentOutlined),
-  },
-  {
-    path: '/admin/reportManage',
-    label: '举报管理',
-    icon: () => h(WarningOutlined),
-  },
-  {
-    path: '/admin/banManage',
-    label: '封禁管理',
-    icon: () => h(StopOutlined),
-  },
-  {
-    path: '/admin/batchTaskManage',
-    label: '批量任务管理',
-    icon: () => h(ScheduleOutlined),
-  },
-  {
-    path: '/admin/batchManage',
-    label: '批次管理',
-    icon: () => h(CrownOutlined),
-  },
-  {
-    path: '/admin/couponManage',
-    label: '券管理',
-    icon: () => h(IeOutlined),
-  },
-  {
-    path: '/admin/vipManage',
-    label: 'VIP管理',
-    icon: () => h(StarOutlined),
-  },
-]
-
-// 当前路由匹配
-const isCurrentRoute = (path: string) => {
-  if (path.includes(':')) {
-    // 动态路由如 /user/:id，用正则匹配
-    const regex = new RegExp('^' + path.replace(/:[^/]+/g, '[^/]+') + '$')
-    return regex.test(route.path)
-  }
-  return route.path === path
-}
-
-// 管理路由是否激活
-const isAdminRouteActive = computed(() =>
-  adminNavItems.some(item => isCurrentRoute(item.path))
-)
-
-// 鼠标交互
+// 鼠标交互（仅桌面生效，移动端此侧边栏已隐藏）
 const handleMouseEnter = () => {
   if (collapseTimer) {
     clearTimeout(collapseTimer)
