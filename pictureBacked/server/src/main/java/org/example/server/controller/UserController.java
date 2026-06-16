@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.example.common.result.BaseResponse;
 import org.example.common.result.ResultUtils;
 import org.example.pojo.vo.LoginUserVO;
+import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.annotation.Resource;
@@ -177,9 +178,9 @@ public class UserController {
     }
 
     //上传用户头像
-    @PostMapping("/avatar/upload")
+    @PostMapping(value = "/avatar/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @RateLimit(resource = "user.avatar", dimensions = {RateLimitDimension.USER})
-    public BaseResponse<String> uploadAvatar(@RequestParam("file") MultipartFile file) throws Exception {
+    public BaseResponse<String> uploadAvatar(@RequestPart("file") MultipartFile file) throws Exception {
         ThrowUtils.throwIf(ObjUtil.isEmpty(file), ErrorCode.PARAMS_ERROR, "文件不能为空");
 
         String url = cacheUserService.uploadAvatar(file);
