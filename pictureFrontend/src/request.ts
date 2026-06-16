@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue'
 // 创建 Axios 实例
 const myAxios = axios.create({
   // 开发环境下：http://localhost:4040/api
-  baseURL: 'http://localhost:4040/api',
+  baseURL: '/api',
   timeout: 60000,
   withCredentials: true,
 })
