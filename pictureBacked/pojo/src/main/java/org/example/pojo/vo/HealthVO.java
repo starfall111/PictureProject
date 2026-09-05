@@ -11,4 +11,5 @@ import lombok.Data;
 public class HealthVO {
     private String status;
     private String version;
+    private String buildTime;
 }
