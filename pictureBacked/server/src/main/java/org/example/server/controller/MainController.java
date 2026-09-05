@@ -25,6 +25,7 @@ public class MainController {
         HealthVO healthVO = new HealthVO();
         healthVO.setStatus("ok");
         healthVO.setVersion(buildProperties != null ? buildProperties.getVersion() : "unknown");
+        healthVO.setBuildTime(buildProperties != null ? buildProperties.getTime().toString() : null);
         return ResultUtils.success(healthVO);
     }
 }
