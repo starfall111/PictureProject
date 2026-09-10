@@ -1,0 +1,14 @@
+# 秒杀压测专属 Profile
+# 启动命令: java -jar app.jar --spring.profiles.active=benchmark
+spring:
+  rabbitmq:
+    listener:
+      simple:
+        concurrency: 10          # 压测时提高消费者并发
+        max-concurrency: 30
+        prefetch: 1
+
+# 压测时降低日志级别，减少 IO 开销
+logging:
+  level:
+    org.example: INFO

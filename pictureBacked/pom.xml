@@ -16,9 +16,12 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
-        <module>common</module>
-        <module>server</module>
-        <module>pojo</module>
+        <module>shared</module>
+        <module>identity</module>
+        <module>notification</module>
+        <module>picture</module>
+        <module>marketing</module>
+        <module>bootstrap</module>
     </modules>
 
     <properties>
@@ -99,6 +102,24 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine}</version>
+            </dependency>
+
+            <!-- 阿里云短信（identity 模块使用） -->
+            <dependency>
+                <groupId>com.aliyun</groupId>
+                <artifactId>alibabacloud-dypnsapi20170525</artifactId>
+                <version>2.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun</groupId>
+                <artifactId>credentials-java</artifactId>
+                <version>1.0.3</version>
+            </dependency>
+            <!-- 阿里云验证码（identity 模块使用） -->
+            <dependency>
+                <groupId>com.aliyun</groupId>
+                <artifactId>captcha20230305</artifactId>
+                <version>1.2.0</version>
             </dependency>
 
         </dependencies>

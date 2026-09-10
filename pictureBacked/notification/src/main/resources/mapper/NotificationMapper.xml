@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.notification.infrastructure.persistence.NotificationMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.notification.domain.model.Notification">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="receiverId" column="receiverId" jdbcType="BIGINT"/>
+            <result property="senderId" column="senderId" jdbcType="BIGINT"/>
+            <result property="senderName" column="senderName" jdbcType="VARCHAR"/>
+            <result property="senderAvatar" column="senderAvatar" jdbcType="VARCHAR"/>
+            <result property="type" column="type" jdbcType="VARCHAR"/>
+            <result property="title" column="title" jdbcType="VARCHAR"/>
+            <result property="content" column="content" jdbcType="VARCHAR"/>
+            <result property="resourceId" column="resourceId" jdbcType="BIGINT"/>
+            <result property="resourceUrl" column="resourceUrl" jdbcType="VARCHAR"/>
+            <result property="isRead" column="isRead" jdbcType="TINYINT"/>
+            <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+            <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,receiverId,senderId,senderName,senderAvatar,
+        type,title,content,resourceId,resourceUrl,
+        isRead,createTime,isDelete
+    </sql>
+</mapper>

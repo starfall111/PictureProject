@@ -1,0 +1,48 @@
+package org.example.bootstrap.aop;
+
+import org.example.identity.api.model.User;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.example.shared.annotation.CheckAuth;
+import org.example.identity.api.UserContext;
+import org.example.identity.api.UserEnum;
+import org.example.shared.exception.ErrorCode;
+import org.example.shared.exception.ThrowUtils;
+import org.example.identity.api.VipUtil;
+import org.example.identity.application.UserService;
+import org.springframework.stereotype.Component;
+
+import jakarta.annotation.Resource;
+
+/**
+ * @author Zou
+ */
+@Aspect
+@Component
+public class CheckAuthAop {
+
+    @Resource(name = "dbUserService")
+    private UserService userService;
+
+    @Around("@annotation(checkAuth)")
+    public Object checkRoleInterceptor(ProceedingJoinPoint checkPoint, CheckAuth checkAuth) throws Throwable {
+        //获取当前接口需要的权限
+        String mustRole = checkAuth.mustRole();
+        UserEnum mustRoleEnum = UserEnum.getByValue(mustRole);
+        //获取当前登录用户
+        User user = UserContext.get();
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_LOGIN_ERROR, "请先登录");
+        user = userService.getById(user.getId());
+        //判断权限是否满足
+        UserEnum userEnum = UserEnum.getByValue(user.getUserRole());
+        //管理员权限（当mustRole等于admin时且user的role不为admin时，拦截）
+        ThrowUtils.throwIf(UserEnum.ADMIN.equals(mustRoleEnum) && !UserEnum.ADMIN.equals(userEnum), ErrorCode.NO_AUTH_ERROR);
+        //VIP会员等等权限
+        if (checkAuth.requireVip()) {
+            ThrowUtils.throwIf(!VipUtil.isActiveVip(user), ErrorCode.NO_AUTH_ERROR, "该功能需要VIP会员");
+        }
+        //放行
+        return checkPoint.proceed();
+    }
+}

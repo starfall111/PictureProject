@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.picture.social.infrastructure.persistence.PictureFavoriteMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.picture.social.domain.model.PictureFavorite">
+        <id property="id" column="id"/>
+        <result property="pictureId" column="pictureId"/>
+        <result property="userId" column="userId"/>
+        <result property="createTime" column="createTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,pictureId,userId,createTime
+    </sql>
+
+    <!-- 图片简要信息 ResultMap -->
+    <resultMap id="PictureBriefMap" type="org.example.picture.core.domain.model.PictureBrief">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="url" column="url"/>
+        <result property="thumbnailUrl" column="thumbnailUrl"/>
+        <result property="picWidth" column="picWidth"/>
+        <result property="picHeight" column="picHeight"/>
+        <result property="categoryName" column="categoryName"/>
+        <result property="userId" column="userId"/>
+        <result property="tags" column="tags"/>
+        <result property="createTime" column="createTime"/>
+        <result property="likeCount" column="likeCount"/>
+        <result property="favoriteCount" column="favoriteCount"/>
+        <result property="viewCount" column="viewCount"/>
+        <result property="downloadCount" column="downloadCount"/>
+        <result property="favoriteTime" column="favoriteTime"/>
+    </resultMap>
+
+    <!-- 查询用户收藏的图片列表 -->
+    <select id="selectUserFavoritedPictures" resultMap="PictureBriefMap">
+        SELECT
+            p.id,
+            p.name,
+            p.url,
+            p.thumbnailUrl,
+            p.picWidth,
+            p.picHeight,
+            c.name AS categoryName,
+            p.userId,
+            p.tags,
+            p.createTime,
+            ps.likeCount,
+            ps.favoriteCount,
+            ps.viewCount,
+            ps.downloadCount,
+            pf.createTime AS favoriteTime
+        FROM picture_favorite pf
+        INNER JOIN picture p ON pf.pictureId = p.id
+        LEFT JOIN category c ON p.categoryId = c.id
+        LEFT JOIN picture_statistics ps ON p.id = ps.pictureId
+        WHERE pf.userId = #{userId}
+          AND p.isDelete = 0
+          AND p.reviewStatus = 1
+        <if test="query.category != null and query.category != ''">
+            AND c.name = #{query.category}
+        </if>
+        <if test="query.tags != null and query.tags.size() > 0">
+            AND
+            <foreach collection="query.tags" item="tag" open="(" separator=" OR " close=")">
+                p.tags LIKE CONCAT('%', #{tag}, '%')
+            </foreach>
+        </if>
+        <choose>
+            <when test="query.sortBy == 'hot'">
+                ORDER BY ps.favoriteCount DESC, pf.createTime DESC
+            </when>
+            <otherwise>
+                ORDER BY pf.createTime DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 统计用户收藏的图片总数 -->
+    <select id="countUserFavoritedPictures" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM picture_favorite pf
+        INNER JOIN picture p ON pf.pictureId = p.id
+        LEFT JOIN category c ON p.categoryId = c.id
+        WHERE pf.userId = #{userId}
+          AND p.isDelete = 0
+          AND p.reviewStatus = 1
+        <if test="query.category != null and query.category != ''">
+            AND c.name = #{query.category}
+        </if>
+        <if test="query.tags != null and query.tags.size() > 0">
+            AND
+            <foreach collection="query.tags" item="tag" open="(" separator=" OR " close=")">
+                p.tags LIKE CONCAT('%', #{tag}, '%')
+            </foreach>
+        </if>
+    </select>
+</mapper>
