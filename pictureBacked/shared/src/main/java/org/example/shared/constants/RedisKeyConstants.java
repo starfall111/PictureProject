@@ -53,7 +53,7 @@ public class RedisKeyConstants {
 
     /**
      * 社交操作分布式锁
-     * Value: STRING, TTL 10s
+     * Value: Redisson RLock（HASH），看门狗自动续期
      */
     public static final String SOCIAL_LOCK_KEY = "lock:social:%s:%d:%d";
 
@@ -347,7 +347,7 @@ public class RedisKeyConstants {
 
     /**
      * 反馈提交防重锁
-     * Value: STRING, TTL 10秒
+     * Value: Redisson RLock（HASH），看门狗自动续期
      */
     public static final String LOCK_FEEDBACK_SUBMIT = "lock:feedback:submit:";
 
@@ -439,9 +439,6 @@ public class RedisKeyConstants {
 
     /** 反馈详情缓存 TTL（秒）= 30 分钟 */
     public static final int FEEDBACK_DETAIL_TTL = 30 * 60;
-
-    /** 反馈防重锁 TTL（秒）= 10 秒 */
-    public static final int FEEDBACK_LOCK_TTL = 10;
 
     /** 管理端待处理计数 TTL（秒）= 5 分钟 */
     public static final int FEEDBACK_ADMIN_PENDING_TTL = 5 * 60;
@@ -558,11 +555,9 @@ public class RedisKeyConstants {
 
     /**
      * 秒杀批次状态集合重建分布式锁（冷启动/Redis 重启后回填）
-     * Value: STRING, TTL 30s
+     * Value: Redisson RLock（HASH），看门狗自动续期，无固定 TTL
      */
     public static final String LOCK_SECKILL_SET_REBUILD = "lock:seckill:batch:set:rebuild";
-    /** 集合重建锁 TTL（秒） */
-    public static final int SECKILL_SET_REBUILD_LOCK_TTL = 30;
 
     /**
      * 秒杀降级等级
@@ -581,7 +576,7 @@ public class RedisKeyConstants {
 
     /**
      * 编码券激活分布式锁
-     * Value: STRING, TTL 10s
+     * Value: Redisson RLock（HASH），看门狗自动续期
      * 格式: lock:coupon:activate:{userId}:{couponId}
      */
     public static final String COUPON_ACTIVATE_LOCK_KEY = "lock:coupon:activate:%d:%d";

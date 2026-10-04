@@ -2,6 +2,7 @@ package org.example.picture.social.application.scheduling;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.shared.constants.RedisKeyConstants;
+import org.example.shared.util.RedisCacheUtil;
 import org.example.picture.core.domain.model.PictureWithStats;
 import org.example.picture.core.infrastructure.persistence.PictureMapper;
 import org.example.picture.social.application.RecommendService;
@@ -39,6 +40,9 @@ public class HotScoreSyncScheduled {
     private StringRedisTemplate stringRedisTemplate;
 
     @Resource
+    private RedisCacheUtil redisCacheUtil;
+
+    @Resource
     private PictureMapper pictureMapper;
 
     @Resource
@@ -49,19 +53,15 @@ public class HotScoreSyncScheduled {
      */
     @Scheduled(fixedRate = 600000)
     public void incrementalScoreUpdate() {
-        Boolean locked = stringRedisTemplate.opsForValue()
-                .setIfAbsent(RedisKeyConstants.LOCK_REC_SCORE_KEY, "1", 120, TimeUnit.SECONDS);
-        if (!Boolean.TRUE.equals(locked)) {
+        boolean executed = redisCacheUtil.tryExecuteWithLock(RedisKeyConstants.LOCK_REC_SCORE_KEY, () -> {
+            try {
+                doIncrementalUpdate();
+            } catch (Exception e) {
+                log.error("热度增量更新任务异常", e);
+            }
+        });
+        if (!executed) {
             log.debug("热度增量更新任务已在其他实例执行，跳过");
-            return;
-        }
-
-        try {
-            doIncrementalUpdate();
-        } catch (Exception e) {
-            log.error("热度增量更新任务异常", e);
-        } finally {
-            stringRedisTemplate.delete(RedisKeyConstants.LOCK_REC_SCORE_KEY);
         }
     }
 
@@ -70,20 +70,16 @@ public class HotScoreSyncScheduled {
      */
     @Scheduled(cron = "0 0 3 * * ?")
     public void fullScoreRebuild() {
-        Boolean locked = stringRedisTemplate.opsForValue()
-                .setIfAbsent(RedisKeyConstants.LOCK_REC_SCORE_KEY, "1", 600, TimeUnit.SECONDS);
-        if (!Boolean.TRUE.equals(locked)) {
+        boolean executed = redisCacheUtil.tryExecuteWithLock(RedisKeyConstants.LOCK_REC_SCORE_KEY, () -> {
+            try {
+                int count = recommendService.rebuildHotScores();
+                log.info("每日全量热度重算完成，共处理 {} 张图片", count);
+            } catch (Exception e) {
+                log.error("热度全量重算任务异常", e);
+            }
+        });
+        if (!executed) {
             log.debug("热度全量重算任务已在其他实例执行，跳过");
-            return;
-        }
-
-        try {
-            int count = recommendService.rebuildHotScores();
-            log.info("每日全量热度重算完成，共处理 {} 张图片", count);
-        } catch (Exception e) {
-            log.error("热度全量重算任务异常", e);
-        } finally {
-            stringRedisTemplate.delete(RedisKeyConstants.LOCK_REC_SCORE_KEY);
         }
     }
 

@@ -20,6 +20,7 @@ import org.example.shared.exception.BusinessException;
 import org.example.shared.exception.ErrorCode;
 import org.example.shared.exception.ThrowUtils;
 import org.example.shared.util.AliOssUtil;
+import org.example.shared.util.RedisCacheUtil;
 import org.example.picture.moderation.interfaces.dto.*;
 import org.example.picture.moderation.interfaces.dto.ReportSubmitDTO;
 import org.example.picture.moderation.domain.model.Feedback;
@@ -53,6 +54,9 @@ public class FeedbackServiceImpl extends ServiceImpl<FeedbackMapper, Feedback> i
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private RedisCacheUtil redisCacheUtil;
 
     @Resource
     private AliOssUtil aliOssUtil;
@@ -140,12 +144,9 @@ public class FeedbackServiceImpl extends ServiceImpl<FeedbackMapper, Feedback> i
         int count = countStr != null ? Integer.parseInt(countStr) : 0;
         ThrowUtils.throwIf(count >= 5, ErrorCode.FEEDBACK_RATE_LIMIT);
 
-        // 防重锁
+        // 防重锁（RLock 看门狗续期）
         String lockKey = RedisKeyConstants.LOCK_FEEDBACK_SUBMIT + userId;
-        Boolean locked = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, "1", RedisKeyConstants.FEEDBACK_LOCK_TTL, TimeUnit.SECONDS);
-        ThrowUtils.throwIf(!Boolean.TRUE.equals(locked), ErrorCode.FEEDBACK_DUPLICATE);
-
-        try {
+        return redisCacheUtil.executeWithLock(lockKey, () -> {
             Feedback feedback = new Feedback();
             feedback.setTitle(dto.getTitle());
             feedback.setContent(dto.getContent());
@@ -190,9 +191,7 @@ public class FeedbackServiceImpl extends ServiceImpl<FeedbackMapper, Feedback> i
 
             log.info("用户 {} 提交反馈 {}", userId, feedback.getId());
             return feedback.getId();
-        } finally {
-            stringRedisTemplate.delete(lockKey);
-        }
+        }, ErrorCode.FEEDBACK_DUPLICATE, "请勿重复提交");
     }
 
     /**

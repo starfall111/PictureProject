@@ -13,6 +13,7 @@ import org.example.marketing.domain.enums.VipTypeEnum;
 import org.example.shared.exception.BusinessException;
 import org.example.shared.exception.ErrorCode;
 import org.example.shared.exception.ThrowUtils;
+import org.example.shared.util.RedisCacheUtil;
 import org.example.identity.api.VipUtil;
 import org.example.marketing.domain.model.CodeCoupon;
 import org.example.picture.space.domain.model.Space;
@@ -70,6 +71,9 @@ public class CouponServiceImpl extends ServiceImpl<CodeCouponMapper, CodeCoupon>
     private StringRedisTemplate stringRedisTemplate;
 
     @Resource
+    private RedisCacheUtil redisCacheUtil;
+
+    @Resource
     private TransactionTemplate transactionTemplate;
 
     @Resource
@@ -90,19 +94,10 @@ public class CouponServiceImpl extends ServiceImpl<CodeCouponMapper, CodeCoupon>
         // 1. 限流检查
         checkRateLimit(userId);
 
-        // 2. 分布式锁防止重复激活
+        // 2. 分布式锁防止重复激活（RLock 看门狗续期：激活事务执行多久锁就持有多久）
         String lockKey = String.format(RedisKeyConstants.COUPON_ACTIVATE_LOCK_KEY, userId, couponId);
-        Boolean locked = stringRedisTemplate.opsForValue()
-                .setIfAbsent(lockKey, "1", 10, TimeUnit.SECONDS);
-        if (!Boolean.TRUE.equals(locked)) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "操作过于频繁，请稍后再试");
-        }
-
-        try {
-            return doActivateCoupon(userId, couponId);
-        } finally {
-            stringRedisTemplate.delete(lockKey);
-        }
+        return redisCacheUtil.executeWithLock(lockKey, () -> doActivateCoupon(userId, couponId),
+                "操作过于频繁，请稍后再试");
     }
 
     /**

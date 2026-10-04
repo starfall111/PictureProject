@@ -11,6 +11,7 @@ import org.example.shared.constants.RedisKeyConstants;
 import org.example.shared.exception.BusinessException;
 import org.example.shared.exception.ErrorCode;
 import org.example.shared.exception.ThrowUtils;
+import org.example.shared.util.RedisCacheUtil;
 import org.example.marketing.interfaces.dto.BatchCreateDTO;
 import org.example.marketing.interfaces.dto.BatchUpdateDTO;
 import org.example.marketing.domain.model.CodeCoupon;
@@ -27,7 +28,6 @@ import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 批次管理服务实现（管理端）
@@ -49,6 +49,9 @@ public class BatchManageServiceImpl implements BatchManageService {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private RedisCacheUtil redisCacheUtil;
 
     /** 允许的券类型 */
     private static final Set<Integer> VALID_TYPES = Set.of(3, 7, 30);
@@ -208,10 +211,7 @@ public class BatchManageServiceImpl implements BatchManageService {
         ThrowUtils.throwIf(batchId == null, ErrorCode.PARAMS_ERROR);
 
         String lockKey = String.format(RedisKeyConstants.LOCK_SECKILL_BATCH, batchId);
-        boolean locked = tryLock(lockKey, 10);
-        ThrowUtils.throwIf(!locked, ErrorCode.OPERATION_ERROR, "操作过于频繁，请稍后再试");
-
-        try {
+        redisCacheUtil.executeWithLock(lockKey, () -> {
             CodeCouponBatch batch = batchMapper.selectById(batchId);
             ThrowUtils.throwIf(batch == null, ErrorCode.NOT_FOUND_ERROR, "批次不存在");
 
@@ -223,7 +223,7 @@ public class BatchManageServiceImpl implements BatchManageService {
                 seckillService.preheat(batchId);
                 // preheat 内部已更新状态为 1 并 SADD 到 set:1，无需额外操作
                 log.info("批次状态流转成功 | batchId={}, {}->{}", batchId, currentStatus, targetStatus);
-                return;
+                return null;
             }
 
             // 更新 DB 状态
@@ -239,9 +239,8 @@ public class BatchManageServiceImpl implements BatchManageService {
             moveBatchToStatusSet(batchId, currentStatus, targetStatus);
 
             log.info("批次状态流转成功 | batchId={}, {}->{}", batchId, currentStatus, targetStatus);
-        } finally {
-            unlock(lockKey);
-        }
+            return null;
+        }, "操作过于频繁，请稍后再试");
     }
 
     // ==================== 取消批次 ====================
@@ -315,10 +314,7 @@ public class BatchManageServiceImpl implements BatchManageService {
         ThrowUtils.throwIf(batchId == null, ErrorCode.PARAMS_ERROR);
 
         String lockKey = String.format(RedisKeyConstants.LOCK_SECKILL_BATCH, batchId);
-        boolean locked = tryLock(lockKey, 10);
-        ThrowUtils.throwIf(!locked, ErrorCode.OPERATION_ERROR, "操作过于频繁，请稍后再试");
-
-        try {
+        redisCacheUtil.executeWithLock(lockKey, () -> {
             CodeCouponBatch batch = batchMapper.selectById(batchId);
             ThrowUtils.throwIf(batch == null, ErrorCode.NOT_FOUND_ERROR, "批次不存在");
             ThrowUtils.throwIf(!Integer.valueOf(2).equals(batch.getStatus()),
@@ -340,9 +336,8 @@ public class BatchManageServiceImpl implements BatchManageService {
 
             // 异步将未发放券标记为过期
             asyncExpireUnsoldCoupons(batchId);
-        } finally {
-            unlock(lockKey);
-        }
+            return null;
+        }, "操作过于频繁，请稍后再试");
     }
 
     // ==================== 异步过期未发放券 ====================
@@ -534,16 +529,6 @@ public class BatchManageServiceImpl implements BatchManageService {
     private String generateBatchNo() {
         return "BATCH" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
                 + String.format("%03d", new Random().nextInt(1000));
-    }
-
-    private boolean tryLock(String key, long ttlSeconds) {
-        Boolean acquired = stringRedisTemplate.opsForValue()
-                .setIfAbsent(key, "1", ttlSeconds, TimeUnit.SECONDS);
-        return Boolean.TRUE.equals(acquired);
-    }
-
-    private void unlock(String key) {
-        stringRedisTemplate.delete(key);
     }
 
     /**

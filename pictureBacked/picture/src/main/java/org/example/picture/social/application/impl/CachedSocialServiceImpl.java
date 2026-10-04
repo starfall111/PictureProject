@@ -33,7 +33,6 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
@@ -71,19 +70,11 @@ public class CachedSocialServiceImpl implements SocialService {
     @Resource
     private PictureStatisticsMapper pictureStatisticsMapper;
 
-    @Resource
-    private DefaultRedisScript<Long> releaseLockScript;
-
     @Resource(name = "dbSocialService")
     private SocialService dbSocialService;
 
     @Resource
     private RabbitTemplate rabbitTemplate;
-
-    /**
-     * 分布式锁超时时间（秒）
-     */
-    private static final int LOCK_TIMEOUT_SECONDS = 10;
 
     /**
      * 点赞/取消点赞（toggle）
@@ -97,13 +88,9 @@ public class CachedSocialServiceImpl implements SocialService {
     public ToggleLikeVO toggleLike(Long pictureId, Long userId) {
         Picture picture = validPicturePublic(pictureId);
 
-        // ── 1. 分布式锁（需同步获取结果） ──
+        // ── 1. 分布式锁（需同步获取结果；RLock 看门狗续期，快速连点在等待期快速失败） ──
         String lockKey = String.format(RedisKeyConstants.SOCIAL_LOCK_KEY, "like", userId, pictureId);
-        String lockValue = UUID.randomUUID().toString();
-        Boolean locked = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        ThrowUtils.throwIf(!Boolean.TRUE.equals(locked), ErrorCode.OPERATION_ERROR, "操作过于频繁，请稍后再试");
-
-        try {
+        return redisCacheUtil.executeWithLock(lockKey, () -> {
             String likeKey = String.format(RedisKeyConstants.SOCIAL_LIKE_KEY, userId, pictureId);
             String statsKey = String.format(RedisKeyConstants.SOCIAL_STATS_KEY, pictureId);
 
@@ -195,9 +182,7 @@ public class CachedSocialServiceImpl implements SocialService {
             incrListVersion(RedisKeyConstants.LIST_LIKED_VERSION_KEY, userId);
 
             return result;
-        } finally {
-            stringRedisTemplate.execute(releaseLockScript, Collections.singletonList(lockKey), lockValue);
-        }
+        }, "操作过于频繁，请稍后再试");
     }
 
     @Override
@@ -258,11 +243,7 @@ public class CachedSocialServiceImpl implements SocialService {
         Picture picture = validPicturePublic(pictureId);
 
         String lockKey = String.format(RedisKeyConstants.SOCIAL_LOCK_KEY, "fav", userId, pictureId);
-        String lockValue = UUID.randomUUID().toString();
-        Boolean locked = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        ThrowUtils.throwIf(!Boolean.TRUE.equals(locked), ErrorCode.OPERATION_ERROR, "操作过于频繁，请稍后再试");
-
-        try {
+        return redisCacheUtil.executeWithLock(lockKey, () -> {
             String favKey = String.format(RedisKeyConstants.SOCIAL_FAV_KEY, userId, pictureId);
             String statsKey = String.format(RedisKeyConstants.SOCIAL_STATS_KEY, pictureId);
 
@@ -304,9 +285,7 @@ public class CachedSocialServiceImpl implements SocialService {
             incrListVersion(RedisKeyConstants.LIST_FAV_VERSION_KEY, userId);
 
             return result;
-        } finally {
-            stringRedisTemplate.execute(releaseLockScript, Collections.singletonList(lockKey), lockValue);
-        }
+        }, "操作过于频繁，请稍后再试");
     }
 
     @Override

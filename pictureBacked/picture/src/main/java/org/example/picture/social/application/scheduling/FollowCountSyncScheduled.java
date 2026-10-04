@@ -3,6 +3,7 @@ package org.example.picture.social.application.scheduling;
 import cn.hutool.core.util.RandomUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.example.shared.constants.RedisKeyConstants;
+import org.example.shared.util.RedisCacheUtil;
 import org.example.picture.social.infrastructure.persistence.UserFollowMapper;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ScanOptions;
@@ -29,6 +30,9 @@ public class FollowCountSyncScheduled {
     private StringRedisTemplate stringRedisTemplate;
 
     @Resource
+    private RedisCacheUtil redisCacheUtil;
+
+    @Resource
     private UserFollowMapper userFollowMapper;
 
     /**
@@ -36,20 +40,16 @@ public class FollowCountSyncScheduled {
      */
     @Scheduled(cron = "0 0 4 * * ?")
     public void syncFollowCount() {
-        // 分布式锁防多实例重复执行，30 分钟超时
-        Boolean locked = stringRedisTemplate.opsForValue()
-                .setIfAbsent(RedisKeyConstants.FOLLOW_SYNC_LOCK_KEY, "1", 30 * 60, TimeUnit.SECONDS);
-        if (!Boolean.TRUE.equals(locked)) {
+        // 分布式锁防多实例重复执行（RLock 看门狗续期，替代固定 30 分钟超时）
+        boolean executed = redisCacheUtil.tryExecuteWithLock(RedisKeyConstants.FOLLOW_SYNC_LOCK_KEY, () -> {
+            try {
+                doSync();
+            } catch (Exception e) {
+                log.error("关注计数同步任务执行异常", e);
+            }
+        });
+        if (!executed) {
             log.debug("关注计数同步任务已在其他实例执行，跳过");
-            return;
-        }
-
-        try {
-            doSync();
-        } catch (Exception e) {
-            log.error("关注计数同步任务执行异常", e);
-        } finally {
-            stringRedisTemplate.delete(RedisKeyConstants.FOLLOW_SYNC_LOCK_KEY);
         }
     }
 

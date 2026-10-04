@@ -2,6 +2,8 @@ package org.example.shared.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.shared.constants.RedisKeyConstants;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisOperations;
@@ -9,28 +11,29 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
+import org.example.shared.exception.BusinessException;
 import org.example.shared.exception.ErrorCode;
 import org.example.shared.exception.ThrowUtils;
 
 /**
  * Redis 缓存工具类
  * 提供分布式锁缓存读取（防击穿 + 防穿透）和 SCAN 模式删除（替代 keys）
+ *
+ * 锁实现基于 Redisson RLock：看门狗自动续期（业务未结束锁不过期）、可重入、
+ * 订阅通知式等待（锁释放立即唤醒，替代旧版固定 TTL + 自旋重试）
  *
  * @author Zou
  */
@@ -42,7 +45,7 @@ public class RedisCacheUtil {
     private StringRedisTemplate stringRedisTemplate;
 
     @Resource
-    private DefaultRedisScript<Long> releaseLockScript;
+    private RedissonClient redissonClient;
 
     /**
      * 空值标记，用于防穿透
@@ -55,19 +58,14 @@ public class RedisCacheUtil {
     private static final int NULL_TTL_SECONDS = 60;
 
     /**
-     * 分布式锁超时时间（秒）
+     * getWithLock 场景抢锁最长等待时间（秒）：等不到说明缓存即将被其他线程回填，直接快速失败
      */
-    private static final int LOCK_TIMEOUT_SECONDS = 10;
+    private static final int GET_LOCK_WAIT_SECONDS = 1;
 
     /**
-     * 获取锁失败后每次等待时间（毫秒）
+     * executeWithLock 写操作场景抢锁最长等待时间（秒）
      */
-    private static final int LOCK_WAIT_MS = 100;
-
-    /**
-     * 自旋重试次数
-     */
-    private static final int SPIN_RETRIES = 3;
+    private static final int EXECUTE_LOCK_WAIT_SECONDS = 3;
 
     // ==================== 缓存监控计数器 ====================
 
@@ -101,53 +99,37 @@ public class RedisCacheUtil {
         missCount.incrementAndGet();
         maybeLogStats();
 
-        // 2. 尝试获取分布式锁（使用 UUID 作为锁值，防止误解锁）
-        String lockKey = "lock:" + cacheKey;
-        String lockValue = UUID.randomUUID().toString();
-        Boolean locked = ops.setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-
-        if (Boolean.TRUE.equals(locked)) {
-            try {
-                // 双重检查：获取锁后再次查缓存
-                cacheValue = ops.get(cacheKey);
-                if (cacheValue != null) {
-                    return NULL_MARKER.equals(cacheValue) ? null : cacheValue;
-                }
-
-                // 查数据库
-                String result = loader.get();
-
-                // 缓存结果（空值短 TTL 防穿透）
-                if (result == null) {
-                    ops.set(cacheKey, NULL_MARKER, NULL_TTL_SECONDS, TimeUnit.SECONDS);
-                } else {
-                    ops.set(cacheKey, result, ttlSeconds, TimeUnit.SECONDS);
-                }
-                return result;
-            } finally {
-                // Lua 脚本原子释放锁（仅删除自己持有的锁）
-                stringRedisTemplate.execute(
-                        releaseLockScript,
-                        Collections.singletonList(lockKey),
-                        lockValue
-                );
+        // 2. 抢锁：最多等 1s；不传 leaseTime → 看门狗自动续期（慢查询不会导致锁提前失效）
+        RLock lock = redissonClient.getLock("lock:" + cacheKey);
+        boolean locked = false;
+        try {
+            locked = lock.tryLock(GET_LOCK_WAIT_SECONDS, TimeUnit.SECONDS);
+            if (!locked) {
+                lockFailCount.incrementAndGet();
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "当前请求过多，请稍后重试");
             }
-        } else {
-            // 未获取锁，自旋重试等待锁持有者写入缓存
-            lockFailCount.incrementAndGet();
-            for (int i = 0; i < SPIN_RETRIES; i++) {
-                try {
-                    Thread.sleep(LOCK_WAIT_MS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                cacheValue = ops.get(cacheKey);
-                if (cacheValue != null) {
-                    return NULL_MARKER.equals(cacheValue) ? null : cacheValue;
-                }
+
+            // 3. 双重检查：获取锁后再次查缓存（锁等待期间可能已被回填）
+            cacheValue = ops.get(cacheKey);
+            if (cacheValue != null) {
+                return NULL_MARKER.equals(cacheValue) ? null : cacheValue;
             }
-            throw new org.example.shared.exception.BusinessException(
-                    org.example.shared.exception.ErrorCode.OPERATION_ERROR, "当前请求过多，请稍后重试");
+
+            // 4. 查数据库并回填（空值短 TTL 防穿透）
+            String result = loader.get();
+            if (result == null) {
+                ops.set(cacheKey, NULL_MARKER, NULL_TTL_SECONDS, TimeUnit.SECONDS);
+            } else {
+                ops.set(cacheKey, result, ttlSeconds, TimeUnit.SECONDS);
+            }
+            return result;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "当前请求过多，请稍后重试");
+        } finally {
+            if (locked && lock.isHeldByCurrentThread()) {
+                lock.unlock();   // 看门狗随 unlock 停止续期
+            }
         }
     }
 
@@ -161,15 +143,63 @@ public class RedisCacheUtil {
      * @return 业务逻辑返回值
      */
     public <T> T executeWithLock(String lockKey, Supplier<T> action, String errorMsg) {
-        String lockValue = UUID.randomUUID().toString();
-        Boolean locked = stringRedisTemplate.opsForValue()
-                .setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        ThrowUtils.throwIf(!Boolean.TRUE.equals(locked), ErrorCode.OPERATION_ERROR, errorMsg);
+        return executeWithLock(lockKey, action, ErrorCode.OPERATION_ERROR, errorMsg);
+    }
+
+    /**
+     * 分布式锁执行器（写操作场景，支持自定义抢锁失败的错误码）
+     *
+     * @param lockKey          锁 key
+     * @param action           业务逻辑
+     * @param lockFailErrorCode 抢锁失败抛出的错误码
+     * @param lockFailMsg      抢锁失败抛出的错误信息
+     * @return 业务逻辑返回值
+     */
+    public <T> T executeWithLock(String lockKey, Supplier<T> action, ErrorCode lockFailErrorCode, String lockFailMsg) {
+        RLock lock = redissonClient.getLock(lockKey);
+        boolean locked = false;
         try {
+            locked = lock.tryLock(EXECUTE_LOCK_WAIT_SECONDS, TimeUnit.SECONDS);
+            ThrowUtils.throwIf(!locked, lockFailErrorCode, lockFailMsg);
             return action.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BusinessException(lockFailErrorCode, lockFailMsg);
         } finally {
-            stringRedisTemplate.execute(releaseLockScript,
-                    Collections.singletonList(lockKey), lockValue);
+            if (locked && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+
+    /**
+     * 非阻塞式锁执行器：抢不到锁立即跳过且不抛异常
+     * 适用于定时任务防多实例并发——任务已由其他实例执行时静默跳过本轮
+     *
+     * @param lockKey 锁 key
+     * @param action  业务逻辑
+     * @return true=已执行业务；false=未抢到锁（跳过）
+     */
+    public boolean tryExecuteWithLock(String lockKey, Runnable action) {
+        RLock lock = redissonClient.getLock(lockKey);
+        boolean locked = false;
+        try {
+            locked = lock.tryLock(0, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+        if (!locked) {
+            lockFailCount.incrementAndGet();
+            return false;
+        }
+        try {
+            action.run();
+            return true;
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
     }
 

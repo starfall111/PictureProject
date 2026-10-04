@@ -12,6 +12,7 @@ import org.example.shared.exception.BusinessException;
 import org.example.shared.exception.ErrorCode;
 import org.example.shared.exception.ThrowUtils;
 import org.example.shared.util.RateLimitUtil;
+import org.example.shared.util.RedisCacheUtil;
 import org.example.marketing.interfaces.dto.BatchQueryDTO;
 import org.example.marketing.interfaces.dto.SeckillMessage;
 import org.example.marketing.domain.model.CodeCouponBatch;
@@ -56,6 +57,9 @@ public class SeckillServiceImpl extends ServiceImpl<SeckillOrderMapper, SeckillO
 
     @Resource
     private RateLimitUtil rateLimitUtil;
+
+    @Resource
+    private RedisCacheUtil redisCacheUtil;
 
     @Resource
     private SeckillDegradationService degradationService;
@@ -459,17 +463,7 @@ public class SeckillServiceImpl extends ServiceImpl<SeckillOrderMapper, SeckillO
      */
     private void rebuildStatusSetsFromDB() {
         String lockKey = RedisKeyConstants.LOCK_SECKILL_SET_REBUILD;
-        if (!tryLock(lockKey, RedisKeyConstants.SECKILL_SET_REBUILD_LOCK_TTL)) {
-            // 未获取到锁，短暂等待后返回（其他线程正在回填）
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            return;
-        }
-
-        try {
+        boolean executed = redisCacheUtil.tryExecuteWithLock(lockKey, () -> {
             // Double-check：再查一次是否有 Set 已存在
             if (isAnyStatusSetExists()) {
                 return;
@@ -524,8 +518,14 @@ public class SeckillServiceImpl extends ServiceImpl<SeckillOrderMapper, SeckillO
             }
 
             log.info("秒杀批次状态集合已从 DB 重建 | 总数={}", batches.size());
-        } finally {
-            unlock(lockKey);
+        });
+        if (!executed) {
+            // 未获取到锁，短暂等待后返回（其他线程正在回填）
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -584,28 +584,6 @@ public class SeckillServiceImpl extends ServiceImpl<SeckillOrderMapper, SeckillO
     }
 
     // ==================== 私有方法 ====================
-
-    /**
-     * 尝试获取分布式锁（SET NX + TTL）
-     *
-     * @param key        锁 key
-     * @param ttlSeconds 锁持有时间（秒）
-     * @return 是否获取成功
-     */
-    private boolean tryLock(String key, long ttlSeconds) {
-        Boolean acquired = stringRedisTemplate.opsForValue()
-                .setIfAbsent(key, "1", ttlSeconds, TimeUnit.SECONDS);
-        return Boolean.TRUE.equals(acquired);
-    }
-
-    /**
-     * 释放分布式锁
-     *
-     * @param key 锁 key
-     */
-    private void unlock(String key) {
-        stringRedisTemplate.delete(key);
-    }
 
     /**
      * 生成订单号: 时间戳 + userId 后6位 + batchId 后4位 + 4位随机数

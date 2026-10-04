@@ -34,6 +34,7 @@
         <knife4j.next.version>5.0.7</knife4j.next.version>
         <jsoup>1.15.3</jsoup>
         <caffeine>3.1.8</caffeine>
+        <redisson>3.27.2</redisson>
 
     </properties>
 
@@ -102,6 +103,13 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine}</version>
+            </dependency>
+
+            <!-- Redisson：分布式锁（shared 模块引入，全模块传递） -->
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson</artifactId>
+                <version>${redisson}</version>
             </dependency>
 
             <!-- 阿里云短信（identity 模块使用） -->

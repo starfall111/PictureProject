@@ -16,7 +16,6 @@ import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 统计数据定时同步任务
@@ -44,20 +43,16 @@ public class PictureStatisticsSyncScheduled {
      */
     @Scheduled(fixedRate = 60000 * 5)
     public void syncStatistics() {
-        // 分布式锁防多实例重复执行
-        Boolean locked = stringRedisTemplate.opsForValue()
-                .setIfAbsent(RedisKeyConstants.STATS_SYNC_LOCK_KEY, "1", 50, TimeUnit.SECONDS);
-        if (!Boolean.TRUE.equals(locked)) {
+        // 分布式锁防多实例重复执行（RLock 看门狗续期：同步耗时再长锁也不会中途失效）
+        boolean executed = redisCacheUtil.tryExecuteWithLock(RedisKeyConstants.STATS_SYNC_LOCK_KEY, () -> {
+            try {
+                doSync();
+            } catch (Exception e) {
+                log.error("统计同步任务执行异常", e);
+            }
+        });
+        if (!executed) {
             log.debug("统计同步任务已在其他实例执行，跳过");
-            return;
-        }
-
-        try {
-            doSync();
-        } catch (Exception e) {
-            log.error("统计同步任务执行异常", e);
-        } finally {
-            stringRedisTemplate.delete(RedisKeyConstants.STATS_SYNC_LOCK_KEY);
         }
     }
 
