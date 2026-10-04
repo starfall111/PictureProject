@@ -5,3 +5,7 @@
 
 # Docker 部署文件（含本地密钥，不入库）
 pictureBacked/Dockerfile
+
+# 本地造数工具（生成 insert_users.sql 测试数据，仅本机使用）
+pictureBacked/scripts/generate_users.py
+pictureBacked/scripts/insert_users.sql
