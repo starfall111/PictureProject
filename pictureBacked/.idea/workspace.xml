@@ -5,55 +5,36 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="084bdd92-78ad-4864-b42b-f27f1ad8b803" name="更改" comment="测试worktree">
-      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/config/RedissonConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/f69d62c3-0bda-4042-b8c7-a8f4fad72f80.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/f69d62c3-0bda-4042-b8c7-a8f4fad72f80/storage_v2/_src_/schema/picture._lyQ3Q.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/common/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/constants/UserConstant.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/constants/UserConstant.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/context/UserContext.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/context/UserContext.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/enums/UserEnum.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/enums/UserEnum.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/exception/BusinessException.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/exception/BusinessException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/exception/ErrorCode.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/exception/ErrorCode.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/exception/GlobalExceptionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/exception/GlobalExceptionHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/exception/ThrowUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/exception/ThrowUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/result/BaseResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/result/BaseResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/result/ResultUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/result/ResultUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/util/AliCaptchaUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/util/AliCaptchaUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/util/AliOssUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/util/AliOssUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/util/AliSMSUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/util/AliSMSUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/util/EmailUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/util/EmailUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/org/example/common/util/SnowflakeIdWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/org/example/common/util/SnowflakeIdWorker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/target/classes/exception/BusinessException.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/target/classes/exception/ErrorCode.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/target/classes/exception/GlobalExceptionHandler.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/target/classes/exception/ThrowUtils.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/target/classes/result/BaseResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/target/classes/result/ResultUtils.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pojo/src/main/java/dto/SendVerificationCodeDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/pojo/src/main/java/dto/SendVerificationCodeDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pojo/src/main/java/dto/UserLoginDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/pojo/src/main/java/dto/UserLoginDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pojo/src/main/java/dto/UserRegisterDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/pojo/src/main/java/dto/UserRegisterDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pojo/src/main/java/vo/LoginUserVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/pojo/src/main/java/vo/LoginUserVO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pojo/target/classes/entity/DeleteRequest.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pojo/target/classes/entity/PageRequest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/impl/BatchManageServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/impl/BatchManageServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/impl/CouponServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/impl/CouponServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/impl/SeckillServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/impl/SeckillServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/scheduling/BatchStatusScheduled.java" beforeDir="false" afterPath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/scheduling/BatchStatusScheduled.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/scheduling/CouponExpireScheduled.java" beforeDir="false" afterPath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/scheduling/CouponExpireScheduled.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/scheduling/VipScheduled.java" beforeDir="false" afterPath="$PROJECT_DIR$/marketing/src/main/java/org/example/marketing/application/scheduling/VipScheduled.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/core/application/scheduling/PictureStatisticsSyncScheduled.java" beforeDir="false" afterPath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/core/application/scheduling/PictureStatisticsSyncScheduled.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/moderation/application/impl/FeedbackServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/moderation/application/impl/FeedbackServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/moderation/application/scheduling/BanScheduled.java" beforeDir="false" afterPath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/moderation/application/scheduling/BanScheduled.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/moderation/application/scheduling/FeedbackAutoCloseScheduled.java" beforeDir="false" afterPath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/moderation/application/scheduling/FeedbackAutoCloseScheduled.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/moderation/application/scheduling/ReportStatsSyncScheduled.java" beforeDir="false" afterPath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/moderation/application/scheduling/ReportStatsSyncScheduled.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/social/application/impl/CachedSocialServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/social/application/impl/CachedSocialServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/social/application/scheduling/FollowCountSyncScheduled.java" beforeDir="false" afterPath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/social/application/scheduling/FollowCountSyncScheduled.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/social/application/scheduling/HotScoreSyncScheduled.java" beforeDir="false" afterPath="$PROJECT_DIR$/picture/src/main/java/org/example/picture/social/application/scheduling/HotScoreSyncScheduled.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/server/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/Interceptor/LoginInterceptor.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/Interceptor/LoginInterceptor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/PictureBackedApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/PictureBackedApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/config/CorsConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/config/CorsConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/config/RedisConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/config/RedisConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/config/SessionConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/config/SessionConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/controller/MainController.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/controller/MainController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/controller/UserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/controller/UserController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/controller/VerificationCodeController.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/controller/VerificationCodeController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/mapper/UserMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/mapper/UserMapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/service/UserService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/service/VerityCodeService.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/service/VerityCodeService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/service/impl/UserServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/service/impl/UserServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/java/org/example/server/service/impl/VerityCodeServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/org/example/server/service/impl/VerityCodeServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/target/classes/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/server/target/classes/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/target/classes/org/example/pictureBacked/PictureBackedApplication.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/target/classes/org/example/pictureBacked/config/CorsConfig.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/target/classes/org/example/pictureBacked/controller/MainController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/generate_users.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/generate_users.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shared/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/shared/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/config/RedisSupportConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/config/RedisSupportConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/constants/RedisKeyConstants.java" beforeDir="false" afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/constants/RedisKeyConstants.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/util/RedisCacheUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/shared/src/main/java/org/example/shared/util/RedisCacheUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shared/src/main/resources/scripts/release_lock.lua" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../pictureFrontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../pictureFrontend/package-lock.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -72,18 +53,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "starfall111"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;starfall111&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/starfall111/PictureProject.git",
-    "accountId": "d6dfce2a-e458-4901-80b3-9ead27d5712e"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/starfall111/PictureProject.git&quot;,
+    &quot;accountId&quot;: &quot;d6dfce2a-e458-4901-80b3-9ead27d5712e&quot;
   }
-}]]></component>
+}</component>
   <component name="KubernetesApiPersistence">{}</component>
   <component name="KubernetesApiProvider">{
   &quot;isMigrated&quot;: true
@@ -91,8 +72,8 @@
   <component name="MavenImportPreferences">
     <option name="generalSettings">
       <MavenGeneralSettings>
-        <option name="localRepository" value="E:\Maven\apache-maven-3.9.9-bin\apache-maven-3.9.9\local_repo" />
-        <option name="userSettingsFile" value="E:\Maven\apache-maven-3.9.9-bin\apache-maven-3.9.9\conf\settings.xml" />
+        <option name="localRepository" value="D:\Maven\repository" />
+        <option name="userSettingsFile" value="D:\Maven\settings.xml" />
       </MavenGeneralSettings>
     </option>
   </component>
@@ -100,44 +81,48 @@
   &quot;associatedIndex&quot;: 4
 }</component>
   <component name="ProjectId" id="3DZ7JDHOZnvNXEldW16jzw47TOe" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+  <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
   </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Maven.pictureBacked [clean].executor": "Run",
-    "Maven.pictureBacked [compile].executor": "Run",
-    "Maven.pictureBacked [install].executor": "Run",
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "Spring Boot.PictureBackedApplication.executor": "Debug",
-    "git-widget-placeholder": "backed-git",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "E:/aaa-Picture-Project/PictureProject -backed/pictureBacked/common/src/main/java/util",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "模块",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;JUnit.Stage0Test.手写静态代理实现计时增强.executor&quot;: &quot;Debug&quot;,
+    &quot;JUnit.Stage1Test.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.Stage1Test.用动态代理替代手写代理.executor&quot;: &quot;Run&quot;,
+    &quot;Maven.pictureBacked [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.pictureBacked [compile].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.pictureBacked [install].executor&quot;: &quot;Run&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Spring Boot.PictureBackedApplication.executor&quot;: &quot;Debug&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;refactor/ddd-multi-module&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Learn/MyProject/PictureProject/pictureBacked&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;项目&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "mysql"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;mysql&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="ReactorSettings">
     <option name="notificationShown" value="true" />
   </component>
@@ -156,7 +141,61 @@
       <recent name="util" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="JUnit.Stage1Test">
+    <configuration name="Stage0Test.手写静态代理实现计时增强" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="bootstrap" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.example.bootstrap.proxydemo.s0static.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="org.example.bootstrap.proxydemo.s0static" />
+      <option name="MAIN_CLASS_NAME" value="org.example.bootstrap.proxydemo.s0static.Stage0Test" />
+      <option name="METHOD_NAME" value="手写静态代理实现计时增强" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Stage1Test" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="bootstrap" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.example.bootstrap.proxydemo.s1jdk.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="org.example.bootstrap.proxydemo.s1jdk" />
+      <option name="MAIN_CLASS_NAME" value="org.example.bootstrap.proxydemo.s1jdk.Stage1Test" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Stage1Test.用动态代理替代手写代理" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="bootstrap" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.example.bootstrap.proxydemo.s1jdk.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="org.example.bootstrap.proxydemo.s1jdk" />
+      <option name="MAIN_CLASS_NAME" value="org.example.bootstrap.proxydemo.s1jdk.Stage1Test" />
+      <option name="METHOD_NAME" value="用动态代理替代手写代理" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="PictureBackedApplication (1)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="bootstrap" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="org.example.bootstrap.PictureBackedApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="PictureBackedApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
       <module name="server" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="org.example.server.PictureBackedApplication" />
@@ -172,9 +211,20 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.Stage1Test" />
+        <item itemvalue="JUnit.Stage1Test.用动态代理替代手写代理" />
+        <item itemvalue="JUnit.Stage0Test.手写静态代理实现计时增强" />
         <item itemvalue="Spring Boot.PictureBackedApplication" />
       </list>
     </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.23774.435" />
+        <option value="bundled-js-predefined-d6986cc7102b-f27c65a3e318-JavaScript-IU-251.23774.435" />
+      </set>
+    </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -187,6 +237,23 @@
       <workItem from="1778477665859" duration="9104000" />
       <workItem from="1778491744907" duration="13772000" />
       <workItem from="1778552609256" duration="14325000" />
+      <workItem from="1784707839202" duration="713000" />
+      <workItem from="1784708570365" duration="358000" />
+      <workItem from="1784708946676" duration="3018000" />
+      <workItem from="1785918576715" duration="287000" />
+      <workItem from="1785918888691" duration="36000" />
+      <workItem from="1785919443368" duration="1328000" />
+      <workItem from="1785995204486" duration="78000" />
+      <workItem from="1785999806621" duration="1377000" />
+      <workItem from="1786088513597" duration="24000" />
+      <workItem from="1788397930135" duration="1836000" />
+      <workItem from="1788579343330" duration="1999000" />
+      <workItem from="1789020124527" duration="2974000" />
+      <workItem from="1789694520818" duration="13437000" />
+      <workItem from="1789875327018" duration="3495000" />
+      <workItem from="1790562119780" duration="6833000" />
+      <workItem from="1790583889845" duration="13319000" />
+      <workItem from="1791114272189" duration="227000" />
     </task>
     <task id="LOCAL-00001" summary="测试worktree">
       <option name="closed" value="true" />

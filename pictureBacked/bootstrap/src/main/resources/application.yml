@@ -1,0 +1,336 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 5
+      password: "125801"
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 5
+          max-wait: 3000ms
+        shutdown-timeout: 200ms
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/picture
+    username: root
+    password: 125801
+  session:
+    timeout: 2592000                    # Session 过期时间
+    store-type: redis               # 存储类型
+    redis:
+      namespace: "myapp:session"    # Redis key 前缀
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:admin}
+    password: ${RABBITMQ_PASSWORD:125801}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        concurrency: 5          # 核心消费者数
+        max-concurrency: 15     # 峰期最多扩到 15
+        prefetch: 1             # 每个消费者一次只取 1 条，防止某个消费者积压
+        acknowledge-mode: manual
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000ms
+
+  mail:
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:1824109129@qq.com}
+    password: ${MAIL_PASSWORD:mdotctsxusxhbeih}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            port: 465
+mybatis-plus:
+  configuration:
+    # Mybatis-plus 配置
+    map-underscore-to-camel-case: false
+    #日志输出（开发阶段）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDelete # 逻辑删除字段
+      logic-delete-value: 1 # 逻辑已删除（默认为1）
+      logic-not-delete-value: 0 # 逻辑未删除（默认为0）
+  mapper-locations: classpath*:mapper/*.xml
+# 接口文档配置
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  packages-to-scan: org.example.identity.interfaces, org.example.notification.interfaces, org.example.picture.core.interfaces, org.example.picture.social.interfaces, org.example.picture.moderation.interfaces, org.example.picture.space.interfaces, org.example.marketing.interfaces
+
+aliyun:
+  oss:
+    endpoint: https://oss-cn-beijing.aliyuncs.com
+    bucketName: zjx-project
+    region: cn-beijing
+    cdn: zoustarfall.xin
+  sms:
+    sign-name: 速通互联验证服务
+    region: cn-shanghai
+    server-url: dypnsapi.aliyuncs.com
+  captcha:
+    sceneId: bgyregln
+
+server:
+  port: 4040
+  servlet:
+    context-path: /api
+    session:
+      cookie:
+        max-age: 2592000
+
+pexels:
+  api-key: ${PEXELS_API_KEY:}
+
+baidu:
+  translate:
+    appid: ${BAIDU_TRANSLATE_APPID:}
+    secret: ${BAIDU_TRANSLATE_SECRET:}
+
+seckill:
+  hmac-secret: ${SECKILL_HMAC_SECRET:your-random-secret-key-at-least-32-chars}
+
+# ==================== 限流配置 ====================
+# 三级优先级：注解显式指定（非 -1）> rules 按 resource 匹配 > 全局默认
+# 修改后需重启生效（Phase 2 不支持热更新）
+ratelimit:
+  default-window-seconds: 60
+  default-max-attempts: 100
+  default-fallback: FAIL_OPEN
+  rules:
+    # ===== 关键接口（注解显式值优先，此处仅文档化，便于运维一目了然）=====
+    # login:      60s / 10  （UserController.login，显式阈值，防爆破）
+    # notice.verify: 60s / 1 （NoticeController.sendVerificationCode，显式阈值，防短信轰炸）
+    # seckill.grab: 10s / 1  （SeckillController.grab，显式阈值 + FAIL_CLOSE，防超卖/刷券）
+    - resource: "login"
+      window-seconds: 60
+      max-attempts: 10
+    - resource: "notice.verify"
+      window-seconds: 60
+      max-attempts: 1
+    - resource: "seckill.grab"
+      window-seconds: 10
+      max-attempts: 1
+
+    # ===== 用户模块 =====
+    - resource: "user.register"
+      window-seconds: 60
+      max-attempts: 3
+    - resource: "user.get"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "user.update"
+      window-seconds: 60
+      max-attempts: 10
+    - resource: "user.avatar"
+      window-seconds: 60
+      max-attempts: 5
+
+    # ===== 用户模块（补充：安全敏感写操作）=====
+    - resource: "user.password"
+      window-seconds: 60
+      max-attempts: 5
+    - resource: "user.bind"
+      window-seconds: 60
+      max-attempts: 5
+
+    # ===== 图片模块 =====
+    - resource: "picture.upload"
+      window-seconds: 60
+      max-attempts: 10
+    - resource: "picture.uploadUrl"
+      window-seconds: 60
+      max-attempts: 10
+    - resource: "picture.download"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "picture.queryUser"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "picture.queryAdmin"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.update"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "picture.delete"
+      window-seconds: 60
+      max-attempts: 10
+    - resource: "picture.batchUpload"
+      window-seconds: 60
+      max-attempts: 1
+
+    # ===== 图片模块（补充：公开读/社交互动/埋点）=====
+    - resource: "picture.get"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "picture.cacheQuery"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "picture.cacheGet"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "picture.search"
+      window-seconds: 60
+      max-attempts: 10    # 以图搜图高成本，严格
+    - resource: "picture.view"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.cacheView"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.share"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.cacheShare"
+      window-seconds: 60
+      max-attempts: 10
+    - resource: "picture.dlCount"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.cacheDlCount"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "picture.like"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "picture.cacheLike"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "picture.fav"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "picture.cacheFav"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "picture.edit"
+      window-seconds: 60
+      max-attempts: 20
+
+    # ===== 秒杀模块（除 grab 外的辅助接口）=====
+    - resource: "seckill.token"
+      window-seconds: 10
+      max-attempts: 2
+    - resource: "seckill.result"
+      window-seconds: 5
+      max-attempts: 10
+    - resource: "seckill.batchInfo"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "seckill.batchList"
+      window-seconds: 60
+      max-attempts: 30
+
+    # ===== 举报模块 =====
+    - resource: "report.submit"
+      window-seconds: 60
+      max-attempts: 3
+    - resource: "report.myList"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "report.detail"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "report.cancel"
+      window-seconds: 60
+      max-attempts: 10
+
+    # ===== 反馈模块 =====
+    - resource: "feedback.upload"
+      window-seconds: 60
+      max-attempts: 10
+    - resource: "feedback.submit"
+      window-seconds: 60
+      max-attempts: 3
+    - resource: "feedback.withdraw"
+      window-seconds: 60
+      max-attempts: 10
+    - resource: "feedback.list"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "feedback.detail"
+      window-seconds: 60
+      max-attempts: 30
+    - resource: "feedback.reply"
+      window-seconds: 60
+      max-attempts: 10
+    - resource: "feedback.reopen"
+      window-seconds: 60
+      max-attempts: 5
+    - resource: "feedback.confirm"
+      window-seconds: 60
+      max-attempts: 10
+    - resource: "feedback.stats"
+      window-seconds: 60
+      max-attempts: 30
+
+    # ===== 批量任务模块 =====
+    - resource: "batchtask.progress"
+      window-seconds: 5
+      max-attempts: 5
+    - resource: "batchtask.list"
+      window-seconds: 60
+      max-attempts: 20
+
+    # ===== 优惠券模块 =====
+    - resource: "coupon.activate"
+      window-seconds: 60
+      max-attempts: 5
+
+    # ===== 社交模块 =====
+    - resource: "follow.toggle"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "feed.timeline"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "recommend.query"
+      window-seconds: 60
+      max-attempts: 60
+    - resource: "notification.list"
+      window-seconds: 60
+      max-attempts: 60
+
+    # ===== 空间模块 =====
+    - resource: "space.get"
+      window-seconds: 60
+      max-attempts: 30
+
+    # ===== 空间模块（补充：写操作）=====
+    - resource: "space.add"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "space.edit"
+      window-seconds: 60
+      max-attempts: 20
+    - resource: "space.delete"
+      window-seconds: 60
+      max-attempts: 20
